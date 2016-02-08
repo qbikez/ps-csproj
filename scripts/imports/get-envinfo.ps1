@@ -1,11 +1,11 @@
 function get-envinfo($checkcommands) {
     $result = @{} 
     
-    write-host "Powershell version:"    
-    $result.Version = $PSVersionTable.PSVersion 
-    $result.Version | format-table | out-string | write-host
+    write-verbose "Powershell version:"    
+    $result.PSVersion = $PSVersionTable.PSVersion 
+    $result.PSVersion | format-table | out-string | write-verbose
     
-    write-host "Available commands:"
+    write-verbose "Available commands:"
     if ($checkcommands -eq $null) {
         $commands = "Install-Module"
     } else {
@@ -14,17 +14,21 @@ function get-envinfo($checkcommands) {
     $result.Commands = @{}    
     $commands | % {
         $c = $_
+        $cmd = $null
         try {
             $cmd = get-command $c -ErrorAction SilentlyContinue
-            $result.Commands[$_] = $cmd
+            if ($cmd -ne $null) {
+                $result.Commands[$_] = $cmd
+            }
         } catch {
+            write-error $_
             $cmd = $null
         }
         if ($cmd -eq $null) {
-            write-warning "$($c):`t MISSING"            
+            write-warning "$($c):`t MISSING COMMAND"            
         }
         else {
-             write-host "$($c):`t $(($cmd | format-table -HideTableHeaders | out-string) -replace ""`r`n"",'')"
+             write-verbose "$($c):`t $(($cmd | format-table -HideTableHeaders | out-string) -replace ""`r`n"",'')"
         }
     }
 
