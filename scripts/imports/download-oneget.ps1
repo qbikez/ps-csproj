@@ -1,8 +1,13 @@
 ﻿function download-oneget() {
 $url = "https://download.microsoft.com/download/4/1/A/41A369FA-AA36-4EE9-845B-20BCC1691FC5/PackageManagement_x64.msi"
 
-$dest = "$($env:USERPROFILE)\PackageManagement_x64.msi"
-$log = "$($env:USERPROFILE)\log.txt"
+$tmpdir = "temp"
+if (!(test-path $tmpdir)) {
+    $null = new-item -type Directory $tmpdir
+}
+
+$dest = "$tmpdir\PackageManagement_x64.msi"
+$log = "$tmpdir\log.txt"
 if (!(test-path $dest)) {
     write-host "downloading $dest"
     wget -Uri $url -OutFile $dest
@@ -15,4 +20,17 @@ if (!(test-path $dest)) {
     write-host "log end"
 }
 
+function fix-oneget() {
+    if ($PSVersionTable.PSVersion.Major -lt 5) {
+        $target = (get-module powershellget).path
+        $src = "https://raw.githubusercontent.com/qbikez/PowerShellGet/master/PowerShellGet/PSGet.psm1"
+        $tmp = "$tmpdir\PSGet.psm1"
+        write-host "downloading patched Psget.psm1 from $src to $tmp"
+        wget $src -OutFile $tmp
+        write-host "overwriting $target with $tmp"
+        Copy-Item $tmp $target -Force -Verbose
+    }
+}
+
 download-oneget
+fix-oneget

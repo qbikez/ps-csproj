@@ -1,3 +1,3 @@
 cd "$PSScriptRoot\.."
  
-install-module pester -Verbose
+install-module pester -Verbose -Confirm:$false
