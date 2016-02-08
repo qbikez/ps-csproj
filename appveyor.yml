@@ -1,0 +1,9 @@
+version: 1.0.{build}
+install:
+- ps: scripts/init.ps1
+build_script:
+- ps: write-host "no need to build powershell"
+test_script:
+- ps: write-host "no tests"
+artifacts:
+- path: artifacts
