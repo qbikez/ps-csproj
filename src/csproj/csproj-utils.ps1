@@ -1,6 +1,3 @@
-rmo logging
-ipmo logging -DisableNameChecking
-
 $ns = 'http://schemas.microsoft.com/developer/msbuild/2003'
 
 . "$PSScriptRoot\nuget-utils.ps1"
@@ -98,7 +95,7 @@ param ($csproj, $file)
 
     $none.Include = "$file"
     
-    log-verbose "adding item '$file': $($itemgroup.OuterXml)"
+    write-verbose "adding item '$file': $($itemgroup.OuterXml)"
 
     $other = get-nodes -csproj $document -nodeName "ItemGroup"
     if ($other.Count -gt 0) {
@@ -109,7 +106,7 @@ param ($csproj, $file)
     }
 
     if ($csprojPath -ne $null) {
-        log-verbose "saving project '$csprojPath'" -verbref $VerbosePreference
+        write-verbose "saving project '$csprojPath'" -verbref $VerbosePreference
         $document.Save($csprojPath)
     }
 }
