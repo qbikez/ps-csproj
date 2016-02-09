@@ -1,0 +1,11 @@
+{
+    "devDependencies": {
+        "grunt": "^0.4.5",
+        "grunt-shell": "^1.1.2"
+    },
+    "scripts": {
+        "init": "powershell scripts\\init.ps1", 
+        "restore": "powershell scripts\\restore.ps1",
+        "test": "powershell scripts\\test.ps1"
+    }
+}
