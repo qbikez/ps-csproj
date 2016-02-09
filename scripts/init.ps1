@@ -11,5 +11,8 @@ if ($e.commands["Install-Module"] -eq $null) {
 
     $e
 
-    get-module packagemanagement -ListAvailable
+    get-module packagemanagement -ListAvailable   
 }
+
+Get-PSRepository
+Set-PSRepository -name PSGallery -InstallationPolicy Trusted -verbose

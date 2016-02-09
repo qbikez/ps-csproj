@@ -9,7 +9,10 @@ module.exports = function (grunt) {
             },
             push: {
                 command: "powershell scripts\\push.ps1 -newversion"
-            }          
+            },
+            init: {
+                command: "npm run init"
+            }     
         }
     });
 
@@ -17,4 +20,6 @@ module.exports = function (grunt) {
     
     grunt.registerTask('test', ['shell:test']);
     grunt.registerTask('push', ['shell:test', 'shell:push']);
+    grunt.registerTask('init', ['shell:init']);
+     
 }
