@@ -12,7 +12,10 @@ module.exports = function (grunt) {
             },
             init: {
                 command: "npm run init"
-            }     
+            },     
+            restore: {
+                command: "nmp run restore"
+            }
         }
     });
 

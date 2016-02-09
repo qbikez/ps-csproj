@@ -1,6 +1,4 @@
-$pesterPath = "$psscriptroot\..\paket-files\pester\pester\pester.psm1"
-
-import-module $pesterPath 
+import-module pester 
 
 $artifacts = "$psscriptroot\..\artifacts"
 if (!(Test-Path $artifacts)) {

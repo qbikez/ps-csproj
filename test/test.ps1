@@ -1,7 +1,4 @@
-
-$Global:logpattern.Add("""(?<magenta>.*?)""", "quoted names")
-$Global:logpattern.Add("<(?<cyan>[a-zA-Z]+)", "xml node start")
-$Global:logpattern.Add("/(?<cyan>[a-zA-Z]+)>", "xml node end")
+. "$psscriptroot\includes.ps1"
 
 Push-Location
 try {

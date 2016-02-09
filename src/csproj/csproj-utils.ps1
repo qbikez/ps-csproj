@@ -5,8 +5,17 @@ $ns = 'http://schemas.microsoft.com/developer/msbuild/2003'
 
 . "$PSScriptRoot\nuget-utils.ps1"
 
-function load-csproj([Parameter(ValueFromPipeline=$true)]$file) {
-    $content = get-content $file
+function import-csproj([Parameter(ValueFromPipeline=$true)]$file) {
+    if (test-path $file) { 
+        $content = get-content $file
+    }
+    elseif ($file.Contains("<?xml") -or $file.Contains("<Project")) {
+        $content = $file
+    }
+    else {
+        throw "file not found: '$file'"
+    }
+
     $csproj = [xml]$content
 
     return $csproj
@@ -42,7 +51,7 @@ function remove-node([Parameter(ValueFromPipeline=$true)]$node) {
     $node.ParentNode.RemoveChild($node)
 }
 
-function create-referenceNode([System.Xml.xmldocument]$document) {
+function new-referenceNode([System.Xml.xmldocument]$document) {
 
     $nugetref = [System.Xml.XmlElement]$document.CreateNode([System.Xml.XmlNodeType]::Element, "", "Reference", $ns);
     #$nugetref = [System.Xml.XmlElement]$document.CreateElement("Reference");
