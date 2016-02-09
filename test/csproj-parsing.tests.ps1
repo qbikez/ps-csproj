@@ -43,6 +43,19 @@ $xml = @'
          It "should return a valid object" {
             $csproj | Should Not BeNullOrEmpty
         }
+        It "should have 2 package references" {
+            $refs = get-nugetreferences $csproj
+            $refs.Count | Should Be 2
+            $refs | ? { $_.Node.INclude -ieq "Castle.Core" } | Should Not BeNullOrEmpty
+            $refs | ? { $_.Node.INclude -imatch "^Common.Configuration.log4net" } | Should Not BeNullOrEmpty
+        }
+        It "should have 2 project references" {
+            $refs = get-projectreferences $csproj
+            $refs.Count | Should Be 2
+            $refs | ? { $_.Node.Name -ieq "NowaEra.Core.Boundaries.Client" } | Should Not BeNullOrEmpty
+            $refs | ? { $_.Node.Name -ieq "NowaEra.Core.Boundaries" } | Should Not BeNullOrEmpty
+            
+        }
    }
 }
 
