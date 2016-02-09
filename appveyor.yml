@@ -5,6 +5,6 @@ install:
 build_script:
 - ps: write-host "no need to build powershell"
 test_script:
-- ps: write-host "no tests"
+- ps: scripts/test.appveyor.ps1
 artifacts:
 - path: artifacts
