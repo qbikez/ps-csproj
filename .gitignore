@@ -5,3 +5,4 @@ paket.lock
 artifacts/
 node_modules/
 .env.ps1
+tmp.csproj

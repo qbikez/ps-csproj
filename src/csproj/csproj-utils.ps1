@@ -63,7 +63,7 @@ function new-referenceNode([System.Xml.xmldocument]$document) {
 
 function add-projectItem {
 [CmdletBinding()]
-param ($csproj, $file)
+param ([Parameter(Mandatory=$true)] $csproj, [Parameter(Mandatory=$true)] $file)
 
     ipmo deployment
 
@@ -113,7 +113,16 @@ param ($csproj, $file)
 
 
 
-function convertto-nuget($ref, $packagesRelPath) {
+function convertto-nuget(
+    [Parameter(Mandatory=$true)]
+    $ref, 
+    [Parameter(Mandatory=$true)]
+    $packagesRelPath
+) 
+{
+    if ($ref.Node -ne $null) {
+        $ref = $ref.Node
+    }
     $projectPath = $ref.Include
     $projectId = $ref.Project
     $projectName = $ref.Name
@@ -128,7 +137,11 @@ function convertto-nuget($ref, $packagesRelPath) {
     $nugetref.Include = $projectName  
 
     $nugetref.hintpath = $path
-    $null = $ref.parentNode.AppendChild($nugetref)
+}
+
+function replace-reference ($csproj, $originalref, $newref) {
+
+    $null = $originalref.parentNode.AppendChild($newref)
 }
 
 function get-project($name, [switch][bool]$all) {

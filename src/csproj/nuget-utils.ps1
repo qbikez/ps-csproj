@@ -1,7 +1,7 @@
 . "$PSScriptRoot\choco-utils.ps1"
 
 
-function find-nugetdll($name, $path) {
+function find-nugetdll([Parameter(Mandatory=$true)] $name, [Parameter(Mandatory=$true)]  $path) {
     $dll = join-path $path "$name.dll"
     if (test-path $dll) { return $dll } 
     $dlls = @(gci $path -Filter "*.dll")
@@ -34,7 +34,7 @@ end {
     }
 }
 
-function find-nugetPath($name, $packagesRelPath, $frameworkHint) {
+function find-nugetPath([Parameter(Mandatory=$true)] $name, [Parameter(Mandatory=$true)] $packagesRelPath, [Parameter(Mandatory=$false)] $frameworkHint) {
     # get latest package version
     $versions = Get-PackageFolderVersions -packageName $name -packagesDir $packagesRelPath
     if ($versions.count -eq 0) { return $null }

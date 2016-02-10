@@ -3,8 +3,7 @@ import-module Pester
 
 $inputdir = "$psscriptroot\input"
 
-Describe "parsing minimal xml" {
-$xml = @'
+$xml = invoke-command { @'
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
@@ -37,6 +36,9 @@ $xml = @'
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />  
 </Project>
 '@
+}
+
+Describe "Basic reference parsing" {
    
    Context "when parsing csproj string" {
         $csproj = import-csproj $xml
@@ -53,13 +55,49 @@ $xml = @'
             $refs = get-projectreferences $csproj
             $refs.Count | Should Be 2
             $refs | ? { $_.Node.Name -ieq "NowaEra.Core.Boundaries.Client" } | Should Not BeNullOrEmpty
-            $refs | ? { $_.Node.Name -ieq "NowaEra.Core.Boundaries" } | Should Not BeNullOrEmpty
+            $refs | ? { $_.Node.Name -ieq "NowaEra.Core.Boundaries" } | Should Not BeNullOrEmpty            
+        }
+        It "reference should contain generated meta" {
+            $refs = get-projectreferences $csproj
             
+            $refs | % { $_.Name | Should Not BeNullOrEmpty }
+            $refs | % { $_.Version | Should Not BeNullOrEmpty }
+            
+            $refs = get-nugetreferences $csproj
+            
+            $refs | % { $_.Name | Should Not BeNullOrEmpty }
+            $refs | % { $_.Version | Should Not BeNullOrEmpty }
+
+            $refs | % { $_.Name | Should Be $_.Node.Name }
         }
    }
 }
 
-Describe "Parsing references" {
+
+Describe "Reference manipulation" {
+    $csproj = import-csproj $xml
+    Context "When converting project reference to nuget" {
+        $refs = get-projectreferences -csproj $csproj
+        $projref = $refs[0]
+        $nuget = convertto-nuget -ref $projref 
+
+
+        It "Project reference should become nuget reference" {
+            
+        }
+        It "Nuget reference shuld point to a valid file" {
+        }
+        It "packages.config should contain nuget reference" {
+        }
+        It "Should restore properly" {
+        }
+        It "Should Still Compile" {
+        }
+    }
+}
+
+
+Describe "Basic file parsing" {
     Context "When parsing csproj" {
         
         $dir = "$inputdir\Platform\src\sample.project1"
