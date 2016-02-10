@@ -1,3 +1,5 @@
+. $PSScriptRoot\includes.ps1
+
 
 $xml = invoke-command { @'
 <?xml version="1.0" encoding="utf-8"?>
@@ -38,7 +40,6 @@ $xml = invoke-command { @'
 Describe "Reference conversion" {
    $csproj = import-csproj $xml
    $refs = get-projectreferences -csproj $csproj
-   $projref = $refs[0]
    
    $w = New-Object IO.StringWriter
    $csproj.Save($w)
@@ -48,9 +49,14 @@ Describe "Reference conversion" {
    $packagesdir =  "$psscriptroot\input\packages"
  
    Context "converting reference to nuget and no packages dir specified" {
+        $projref = $refs | ? { $_.Node.Name -ieq "NowaEra.Core.Boundaries" }
         $projref | Should Not BeNullOrEmpty
-        $nugetref = convertto-nuget $projref -packagesRelPath $packagesdir
-        
+        It "Should Convert properly" {
+            $nugetref = convertto-nuget $projref -packagesRelPath $packagesdir
+            $nugetref | Should Not BeNullOrEmpty
+            $nugetref.HintPath | Should Not BeNullOrEmpty
+            $nugetref.Hintpath.Contains($packagesdir) | Should Be $true        
+        }
         #It "Should use global packages dir" {
         #    $nugetref | Should Not BeNullOrEmpty
         #}

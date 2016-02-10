@@ -79,7 +79,7 @@ Describe "Reference manipulation" {
     Context "When converting project reference to nuget" {
         $refs = get-projectreferences -csproj $csproj
         $projref = $refs[0]
-        $nuget = convertto-nuget -ref $projref 
+        $nuget = convertto-nuget -ref $projref "packages" 
 
 
         It "Project reference should become nuget reference" {

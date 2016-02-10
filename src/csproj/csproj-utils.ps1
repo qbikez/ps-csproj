@@ -54,6 +54,7 @@ function new-referenceNode([System.Xml.xmldocument]$document) {
     #$nugetref = [System.Xml.XmlElement]$document.CreateElement("Reference");
     $includeAttr = [System.Xml.XmlAttribute]$document.CreateAttribute("Include");
     $hint = [System.Xml.XmlElement]$document.CreateElement("HintPath");
+    $hint.InnerText = "hint"
     $null = $nugetref.Attributes.Append($includeAttr);
     $null = $nugetref.AppendChild($hint);
 
@@ -133,10 +134,14 @@ function convertto-nuget(
         throw "package '$projectName' not found in packages dir '$packagesRelPath'"
     }
 
-    $nugetref = create-referenceNode $ref.OwnerDocument
+    $nugetref = new-referenceNode $ref.OwnerDocument
     $nugetref.Include = $projectName  
 
-    $nugetref.hintpath = $path
+    $hintNode = $nugetref.ChildNodes | ? { $_.Name -eq "HintPath" }
+    $hintNode.InnerText = $path
+    #$nugetref.hintpath = $path
+
+    return $nugetref
 }
 
 function replace-reference ($csproj, $originalref, $newref) {

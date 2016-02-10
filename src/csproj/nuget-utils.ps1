@@ -36,6 +36,7 @@ end {
 
 function find-nugetPath([Parameter(Mandatory=$true)] $name, [Parameter(Mandatory=$true)] $packagesRelPath, [Parameter(Mandatory=$false)] $frameworkHint) {
     # get latest package version
+    # TODO: handle a case when project $name contains version
     $versions = Get-PackageFolderVersions -packageName $name -packagesDir $packagesRelPath
     if ($versions.count -eq 0) { return $null }
     $latest = Get-LatestPackageVersion -packageVersions $versions
