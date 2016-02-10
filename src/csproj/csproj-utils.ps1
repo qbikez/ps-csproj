@@ -21,16 +21,16 @@ function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $csproj, $nodeName)
     return Select-Xml -Xml $csproj.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName"     
 }
 
-function get-projectreferences([Parameter(ValueFromPipeline=$true)][xml] $csproj) {
+function get-projectreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
     return get-nodes $csproj "ProjectReference"
 }
 
-function get-externalreferences([Parameter(ValueFromPipeline=$true)][xml] $csproj) {
+function get-externalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
     return Select-Xml -Xml $csproj.Project -Namespace @{ d = $ns } -XPath "//d:Reference[d:HintPath]"     
 
 }
 
-function get-nugetreferences([Parameter(ValueFromPipeline=$true)][xml] $csproj) {
+function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
     $refs = get-externalreferences $csproj
     $refs = $refs | ? {
         $_.Node.HintPath -match "[""\\/]packages[/\\]"
@@ -39,9 +39,18 @@ function get-nugetreferences([Parameter(ValueFromPipeline=$true)][xml] $csproj) 
 }
 
 
-function get-systemreferences([Parameter(ValueFromPipeline=$true)][xml] $csproj) {
+function get-systemreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
     return Select-Xml -Xml $csproj.Project -Namespace @{ d = $ns } -XPath "//d:Reference[not(d:HintPath)]"     
+}
 
+
+function get-allreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
+    $refs = @()
+    $refs += get-systemreferences $csproj
+    $refs += get-nugetreferences $csproj
+    $refs += get-nugetreferences $csproj
+
+    return $refs
 }
 
 function remove-node([Parameter(ValueFromPipeline=$true)]$node) {    

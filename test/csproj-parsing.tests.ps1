@@ -96,28 +96,3 @@ Describe "Reference manipulation" {
     }
 }
 
-
-Describe "Basic file parsing" {
-    Context "When parsing csproj" {
-        
-        $dir = "$inputdir\Platform\src\sample.project1"
-        $csproj = import-csproj "$dir\sample.project1.csproj"
-        It "should return a valid object" {
-            $csproj | Should Not BeNullOrEmpty
-        }
-
-        It "should cointain xxx references" {
-            $refs = get-projectreferences $csproj
-        
-            log-info 
-            log-info "Project references:"
-
-            $refs | % {
-                log-info $_.Node.OuterXml
-            }      
-            
-            $refs.Count | Should Be 3   
-
-        }
-    }
-}
