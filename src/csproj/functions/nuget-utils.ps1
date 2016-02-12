@@ -1,5 +1,3 @@
-. "$PSScriptRoot\choco-utils.ps1"
-
 
 function find-nugetdll([Parameter(Mandatory=$true)] $name, [Parameter(Mandatory=$true)]  $path) {
     $dll = join-path $path "$name.dll"

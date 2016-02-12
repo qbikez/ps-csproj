@@ -2,10 +2,12 @@ $root = $psscriptroot
 if ([string]::isnullorempty($root)) {
     $root = "."
 }
-. "$root\..\src\csproj\csproj-utils.ps1"
-. "$root\..\src\csproj\sln-utils.ps1"
 
 import-module pester
+
+$env:PSModulePath ="$root\..\src;$env:PSModulePath"
+import-module "csproj"
+
 
 if ((get-module -listavailable logging) -ne $null) {
     import-module logging -DisableNameChecking

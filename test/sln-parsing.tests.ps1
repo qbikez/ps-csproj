@@ -1,4 +1,6 @@
 . $PSScriptRoot\includes.ps1
+import-module csproj
+
 
 Describe "parsing sln" {
     Context "when parsing sln projects" {

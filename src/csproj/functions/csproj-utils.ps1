@@ -1,7 +1,5 @@
 $ns = 'http://schemas.microsoft.com/developer/msbuild/2003'
 
-. "$PSScriptRoot\nuget-utils.ps1"
-
 function import-csproj([Parameter(ValueFromPipeline=$true)]$file) {
     if (test-path $file) { 
         $content = get-content $file
