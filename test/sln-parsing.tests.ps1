@@ -19,7 +19,7 @@ Describe "parsing sln" {
         It "sln Should not contain removed projects" {
             remove-slnproject $sln $oldprojects[0].Name
             $newprojects = get-slnprojects $sln
-            $newprojets.Count | Should Be $oldprojects.Count - 1
+            $newprojects.Count | Should Be ($oldprojects.Count - 1)
         }
      }
 }
