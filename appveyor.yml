@@ -1,6 +1,7 @@
 version: 1.0.{build}
-clone_script:
-- ps: 'write-host "event: cloning..."'
+#clone_script:
+#- ps: 'write-host "cloning... this replaces default clone method"'
+
 install:
 - ps: scripts/init.ps1
 - ps: scripts/restore.ps1
