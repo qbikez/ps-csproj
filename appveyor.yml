@@ -1,10 +1,28 @@
 version: 1.0.{build}
+clone_script:
+- ps: 'write-host "event: cloning..."'
 install:
 - ps: scripts/init.ps1
 - ps: scripts/restore.ps1
+
+#assembly_info:
+#  patch: true
+#  file: '**\AssemblyInfo.*'
+#  assembly_version: '{version}'
+#  assembly_file_version: '{version}'
+#  assembly_informational_version: '{version}'
+
 build_script:
 - ps: write-host "no need to build powershell"
 test_script:
 - ps: scripts/test.appveyor.ps1
+
+on_success:
+- ps: 'write-host "event: build success!"'
+on_failure:
+- ps: 'write-host "event: build error!"'
+on_finish:
+- ps: 'write-host "event: build finish!"'
+
 artifacts:
 - path: artifacts
