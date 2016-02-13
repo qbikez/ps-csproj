@@ -6,6 +6,7 @@ if ([string]::isnullorempty($root)) {
 import-module pester
 
 $env:PSModulePath ="$root\..\src;$env:PSModulePath"
+if (gmo csproj) { rmo csproj }
 import-module "csproj"
 
 

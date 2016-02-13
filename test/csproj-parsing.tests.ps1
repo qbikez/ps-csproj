@@ -24,13 +24,13 @@ $xml = invoke-command { @'
     <Folder Include="App_Data\" />
   </ItemGroup>  
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\NowaEra.Core.Boundaries.Client\NowaEra.Core.Boundaries.Client.csproj">
+    <ProjectReference Include="..\..\Core\Core.Client\Core.Client.csproj">
       <Project>{1ed821b1-89d1-4383-9e3a-ad7161b6640a}</Project>
-      <Name>NowaEra.Core.Boundaries.Client</Name>
+      <Name>Core.Client</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Core\NowaEra.Core.Boundaries\NowaEra.Core.Boundaries.csproj">
+    <ProjectReference Include="..\..\Core\Core.Interface\Core.Interface.csproj">
       <Project>{32ab2453-d53f-4739-8243-42fa29d9f093}</Project>
-      <Name>NowaEra.Core.Boundaries</Name>
+      <Name>Core.Interface</Name>
     </ProjectReference>  
   </ItemGroup>  
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />  
@@ -54,21 +54,24 @@ Describe "Basic reference parsing" {
         It "should have 2 project references" {
             $refs = get-projectreferences $csproj
             $refs.Count | Should Be 2
-            $refs | ? { $_.Node.Name -ieq "NowaEra.Core.Boundaries.Client" } | Should Not BeNullOrEmpty
-            $refs | ? { $_.Node.Name -ieq "NowaEra.Core.Boundaries" } | Should Not BeNullOrEmpty            
+            write-host $refs
+            $refs | ? { $_.Node.Name -ieq "Core.Client" } | Should Not BeNullOrEmpty
+            $refs | ? { $_.Node.Name -ieq "Core.Interface" } | Should Not BeNullOrEmpty            
         }
-        It "reference should contain generated meta" {
-            $refs = get-projectreferences $csproj
-            
-            $refs | % { $_.Name | Should Not BeNullOrEmpty }
-            $refs | % { $_.Version | Should Not BeNullOrEmpty }
-            
-            $refs = get-nugetreferences $csproj
-            
-            $refs | % { $_.Name | Should Not BeNullOrEmpty }
-            $refs | % { $_.Version | Should Not BeNullOrEmpty }
 
-            $refs | % { $_.Name | Should Be $_.Node.Name }
+        $refs = get-allreferences $csproj
+        $cases = $refs | % { @{ Name = $_.Name; Node = $_.Node; Ref = $_ }}
+        
+        It "reference should contain generated meta Name <Name>" -TestCases $cases {
+            param ($ref) 
+            $ref.Name | Should Not BeNullOrEmpty 
+            $ref.Name | Should Match "^[^.,\s]+(.[^.,\s]+)+$"
+            #$ref.Name | Should Be $ref.Node.Name 
+        }
+
+        $grouped = $refs | Group-Object "Name"
+        It "references should be distinct"  {
+           $grouped | % { $_.Count | Should Be 1 }
         }
    }
 }
@@ -78,9 +81,10 @@ Describe "Reference manipulation" {
     $csproj = import-csproj $xml
     Context "When converting project reference to nuget" {
         $refs = get-projectreferences -csproj $csproj
-        $projref = $refs[0]
-        $nuget = convertto-nuget -ref $projref "packages" 
-
+        It "Cannot convert when nuget is missing" {
+            $projref = $refs | ? { $_.Name -eq  "Core.Client" }
+            { convertto-nuget -ref $projref "$inputdir\packages" } | Should Throw 
+        }
 
         It "Project reference should become nuget reference" {
             
