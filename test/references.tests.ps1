@@ -22,20 +22,19 @@ $xml = invoke-command { @'
     <Folder Include="App_Data\" />
   </ItemGroup>  
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\NowaEra.Core.Boundaries.Client\NowaEra.Core.Boundaries.Client.csproj">
+    <ProjectReference Include="..\..\Core\Core.Client\Core.Client.csproj">
       <Project>{1ed821b1-89d1-4383-9e3a-ad7161b6640a}</Project>
-      <Name>NowaEra.Core.Boundaries.Client</Name>
+      <Name>Core.Client</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Core\NowaEra.Core.Boundaries\NowaEra.Core.Boundaries.csproj">
+    <ProjectReference Include="..\..\Core\Core.Interface\Core.Interface.csproj">
       <Project>{32ab2453-d53f-4739-8243-42fa29d9f093}</Project>
-      <Name>NowaEra.Core.Boundaries</Name>
+      <Name>Core.Interface</Name>
     </ProjectReference>  
   </ItemGroup>  
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />  
 </Project>
 '@
 }
-
 
 Describe "Reference conversion" {
    $csproj = import-csproj $xml
@@ -51,6 +50,7 @@ Describe "Reference conversion" {
    Context "converting reference to nuget and no packages dir specified" {
         $projref = $refs | ? { $_.Node.Name -ieq "NowaEra.Core.Boundaries" }
         $projref | Should Not BeNullOrEmpty
+
         It "Should Convert properly" {
             $nugetref = convertto-nuget $projref -packagesRelPath $packagesdir
             $nugetref | Should Not BeNullOrEmpty
@@ -60,6 +60,7 @@ Describe "Reference conversion" {
         #It "Should use global packages dir" {
         #    $nugetref | Should Not BeNullOrEmpty
         #}
+
         It "Should not modify csproj" {
             $w = New-Object IO.StringWriter
             $csproj.Save($w)
