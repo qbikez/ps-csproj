@@ -190,6 +190,7 @@ function convertto-nuget(
 function replace-reference ($csproj, $originalref, $newref) {
 
     $null = $originalref.parentNode.AppendChild($newref)
+    $originalref.parentNode.RemoveChild($originalref)
 }
 
 function get-project($name, [switch][bool]$all) {

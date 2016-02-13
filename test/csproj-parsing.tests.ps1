@@ -77,25 +77,30 @@ Describe "Basic reference parsing" {
 }
 
 
-Describe "Reference manipulation" {
+Describe "Reference node manipulation" {
     $csproj = import-csproj $xml
     Context "When converting project reference to nuget" {
         $refs = get-projectreferences -csproj $csproj
         It "Cannot convert when nuget is missing" {
             $projref = $refs | ? { $_.Name -eq  "Core.Client" }
+            if (test-path "$inputdir\packages\Core.Client.*") {
+                remove-item "$inputdir\packages\Core.Client.*" -Recurse
+            } 
             { convertto-nuget -ref $projref "$inputdir\packages" } | Should Throw 
         }
 
-        It "Project reference should become nuget reference" {
-            
+            $projref = $refs | ? { $_.Name -eq  "Core.Client" }
+            if (!(test-path "$inputdir\packages\Core.Client.*")) {
+                $null = new-item -type directory "$inputdir\packages\Core.Client.1.0.1\lib"
+                $null = new-item -type file "$inputdir\packages\Core.Client.1.0.1\lib\Core.Client.dll"
+            } 
+        It "Project reference should convert to nuget reference" {
+            $converted = convertto-nuget -ref $projref "$inputdir\packages" 
+            $converted.Name | Should Be "Reference"
         }
         It "Nuget reference shuld point to a valid file" {
-        }
-        It "packages.config should contain nuget reference" {
-        }
-        It "Should restore properly" {
-        }
-        It "Should Still Compile" {
+            $converted = convertto-nuget -ref $projref "$inputdir\packages" 
+            $converted.HintPath | Should Be "$inputdir\packages\Core.Client.1.0.1\lib\Core.Client.dll"
         }
     }
 }
