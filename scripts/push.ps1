@@ -12,7 +12,7 @@ $key = "$env:PS_PUBLISH_REPO_KEY"
 . $psscriptroot\imports\set-moduleversion.ps1
 . $psscriptroot\imports\nuspec-tools.ps1
 
-$modulepath = "$psscriptroot\..\src\publishmap"
+$modulepath = "$psscriptroot\..\src\csproj"
 
 $ver = get-moduleversion $modulepath
 if ($newversion) {
