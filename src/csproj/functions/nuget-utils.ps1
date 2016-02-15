@@ -58,3 +58,9 @@ function find-nugetPath([Parameter(Mandatory=$true)] $name, [Parameter(Mandatory
     # check lib\frameworkname\*
     return $path
 }
+
+
+function find-nugettools($packagesdir) {
+    $tools = Get-ChildItem $packagesdir -Recurse -Filter "tools"
+    return $tools | ? { $_.ispscontainer } | % { $_.FullName }
+}
