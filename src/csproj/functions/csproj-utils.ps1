@@ -15,21 +15,57 @@ function import-csproj([Parameter(ValueFromPipeline=$true)]$file) {
 
     return $csproj
 }
+
+function get-referenceName($node) {
+    if ($node.HasAttribute("Name")) {
+        return $node.GetAttribute("Name")
+    }
+    if ($node.GetElementsByTagName("Name") -ne $null) {
+        return $node.Name
+    }
+    
+    if ($node.Include -ne $null) {
+        return $node.Include
+    }
+}
+
+function add-metadata {
+param([parameter(ValueFromPipeline=$true)]$nodes) 
+    process {
+        return new-object -TypeName pscustomobject -Property @{ 
+            Node = $nodes.Node
+            Name = get-referenceName $nodes.Node
+        }
+    }
+}
+
 function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $csproj, $nodeName) {
-    return Select-Xml -Xml $csproj.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName"     
+    $xml = Select-Xml -Xml $csproj.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName" 
+    $meta = $xml | add-metadata
+    return $meta
 }
 
 function get-projectreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
     return get-nodes $csproj "ProjectReference"
 }
 
-function get-externalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
-    return Select-Xml -Xml $csproj.Project -Namespace @{ d = $ns } -XPath "//d:Reference[d:HintPath]"     
+function get-allexternalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
+    get-nodes $csproj "Reference[d:HintPath]"     
 
 }
 
+
+function get-externalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
+    $refs = get-allexternalreferences $csproj
+    $refs = $refs | ? {
+        $_.Node.HintPath -notmatch "[""\\/]packages[/\\]"
+    }
+    return $refs
+}
+
+
 function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
-    $refs = get-externalreferences $csproj
+    $refs = get-allexternalreferences $csproj
     $refs = $refs | ? {
         $_.Node.HintPath -match "[""\\/]packages[/\\]"
     }
@@ -38,7 +74,7 @@ function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true
 
 
 function get-systemreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
-    return Select-Xml -Xml $csproj.Project -Namespace @{ d = $ns } -XPath "//d:Reference[not(d:HintPath)]"     
+    get-nodes $csproj "Reference[not(d:HintPath)]"     
 }
 
 
@@ -46,7 +82,7 @@ function get-allreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)]
     $refs = @()
     $refs += get-systemreferences $csproj
     $refs += get-nugetreferences $csproj
-    $refs += get-nugetreferences $csproj
+    $refs += get-externalreferences $csproj
 
     return $refs
 }
@@ -154,6 +190,7 @@ function convertto-nuget(
 function replace-reference ($csproj, $originalref, $newref) {
 
     $null = $originalref.parentNode.AppendChild($newref)
+    $originalref.parentNode.RemoveChild($originalref)
 }
 
 function get-project($name, [switch][bool]$all) {
