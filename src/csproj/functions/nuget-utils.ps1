@@ -60,7 +60,7 @@ function find-nugetPath([Parameter(Mandatory=$true)] $name, [Parameter(Mandatory
 }
 
 
-function find-nugettools($packagesdir) {
+function get-nugettoolspath($packagesdir = "packages") {
     $tools = Get-ChildItem $packagesdir -Recurse -Filter "tools"
-    return $tools | ? { $_.ispscontainer } | % { $_.FullName }
+    return $tools | ? { $_.psiscontainer } | % { $_.FullName }
 }
