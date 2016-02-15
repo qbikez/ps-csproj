@@ -8,6 +8,7 @@
         "restore": "powershell scripts\\restore.ps1",
         "test": "powershell scripts\\test.ps1",
         "code": "powershell scripts\\start-code.ps1",
-        "push": "powershell scripts\\push.ps1 -newversion"
+        "push": "powershell scripts\\push.ps1 -newversion",
+        "install": "powershell scripts\\install.ps1"
     }
 }
