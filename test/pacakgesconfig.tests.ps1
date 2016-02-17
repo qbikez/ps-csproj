@@ -38,10 +38,14 @@ Describe "packages config manipulation" {
     Context "When adding new dependency" {
         $conf = get-packagesconfig $xml    
         $id = "Test.Dependency"
+        $version = "1.0"
         
         It "should contain added id" {
-            add-packagetoconfig $id $conf
-            $conf.packages | ? { $_.Id -eq $id } | Should Not BeNullOrEmpty            
+            $conf.packages | Should not BeNullOrEmpty
+            $oldcount = $conf.packages.count
+            add-packagetoconfig $conf $id $version 
+            $conf.packages.count | Should Be ($oldcount + 1)
+            $conf.packages | ? { $_.id -eq $id } | Should Not BeNullOrEmpty            
         }
     }
     
