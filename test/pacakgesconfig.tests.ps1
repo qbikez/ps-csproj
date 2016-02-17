@@ -38,16 +38,21 @@ Describe "packages config manipulation" {
     Context "When adding new dependency" {
         $conf = get-packagesconfig $xml    
         $id = "Test.Dependency"
+        $version = "1.0"
         
         It "should contain added id" {
-            add-packagetoconfig $id $conf
-            $conf.packages | ? { $_.Id -eq $id } | Should Not BeNullOrEmpty            
+            $conf.packages | Should not BeNullOrEmpty
+            $oldcount = $conf.packages.count
+            add-packagetoconfig $conf $id $version 
+            $conf.packages.count | Should Be ($oldcount + 1)
+            $conf.packages | ? { $_.id -eq $id } | Should Not BeNullOrEmpty            
         }
     }
     
     Context "When adding existing dependency" {
         $conf = get-packagesconfig $xml    
         $id = "Newtonsoft.Json"
+        $version = "1.0"
         
         It "Should throw by default" {
              { add-packagetoconfig $id $conf } | Should Throw 
@@ -57,8 +62,8 @@ Describe "packages config manipulation" {
              { add-packagetoconfig $id $conf -ifnotexists } | Should Not Throw
         }
         
-        It "should contain added id" {
-            add-packagetoconfig $id $conf -ifnotexists
+        It "should contain added existing id" {
+            add-packagetoconfig $conf $id $version  -ifnotexists
             $conf.packages | ? { $_.Id -eq $id } | Should Not BeNullOrEmpty            
         }
     }
