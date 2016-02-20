@@ -1,6 +1,16 @@
-$ns = 'http://schemas.microsoft.com/developer/msbuild/2003'
+$script:ns = 'http://schemas.microsoft.com/developer/msbuild/2003'
 
-function import-csproj([Parameter(ValueFromPipeline=$true)]$file) {
+$script:types = @"
+public class Csproj {
+}
+"@
+
+add-type -TypeDefinition $types
+
+
+function import-csproj {
+    [OutputType([xml])]
+    param([Parameter(ValueFromPipeline=$true)]$file) 
     if (test-path $file) { 
         $content = get-content $file
     }
@@ -187,7 +197,7 @@ function convertto-nuget(
     return $nugetref
 }
 
-function replace-reference ($csproj, $originalref, $newref) {
+function convert-reference ($csproj, $originalref, $newref) {
 
     $null = $originalref.parentNode.AppendChild($newref)
     $originalref.parentNode.RemoveChild($originalref)
@@ -210,3 +220,4 @@ function get-project($name, [switch][bool]$all) {
     return $projs
 }
 
+new-alias replace-reference convert-reference
