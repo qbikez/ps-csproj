@@ -2,6 +2,7 @@ function add-packagetoconfig {
 param(
     [Parameter(Mandatory=$true,ValueFromPipeline=$true)]$packagesconfig,
     [Parameter(Mandatory=$true)][string]$package, 
+<<<<<<< HEAD
     [Parameter(Mandatory=$true)][string]$version,
     [switch][bool] $ifnotexists
 ) 
@@ -12,6 +13,10 @@ param(
             throw "Packages.config already contains reference to package $package : $($existing | out-string)" 
         }
     } 
+=======
+    [Parameter(Mandatory=$true)][string]$version
+) 
+>>>>>>> 1dc1c60c9c4ddee2c774bb4ca33c79ecded806b3
     $node = new-packageNode -document $packagesconfig.xml
     $node.id = $package
     $node.version = $version
