@@ -4,11 +4,11 @@
         "grunt-shell": "^1.1.2"
     },
     "scripts": {
-        "init": "powershell scripts\\init.ps1", 
-        "restore": "powershell scripts\\restore.ps1",
-        "test": "powershell scripts\\test.ps1",
+        "init": "powershell scripts\\lib\\init.ps1", 
+        "restore": "powershell scripts\\lib\\restore.ps1",
+        "test": "powershell scripts\\lib\\test.ps1",
         "code": "powershell scripts\\start-code.ps1",
-        "push": "powershell scripts\\push.ps1 -newversion",
-        "install": "powershell scripts\\install.ps1"
+        "push": "powershell scripts\\lib\\push.ps1 -newversion",
+        "install": "powershell scripts\\lib\\install.ps1"
     }
 }

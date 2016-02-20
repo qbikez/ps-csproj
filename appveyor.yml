@@ -3,8 +3,8 @@ version: 1.0.{build}
 #- ps: 'write-host "cloning... this replaces default clone method"'
 
 install:
-- ps: scripts/init.ps1
-- ps: scripts/restore.ps1
+- ps: scripts/lib/init.ps1
+- ps: scripts/lib/restore.ps1
 
 #assembly_info:
 #  patch: true
@@ -16,7 +16,7 @@ install:
 build_script:
 - ps: write-host "no need to build powershell"
 test_script:
-- ps: scripts/test.appveyor.ps1
+- ps: scripts/lib/test.appveyor.ps1
 
 on_success:
 - ps: 'write-host "event: build success!"'

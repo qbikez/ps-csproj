@@ -1,0 +1,3 @@
+[submodule "scripts/lib"]
+	path = scripts/lib
+	url = https://github.com/qbikez/ps-scripts
