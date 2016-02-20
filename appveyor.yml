@@ -3,6 +3,7 @@ version: 1.0.{build}
 #- ps: 'write-host "cloning... this replaces default clone method"'
 
 install:
+- git submodule update --init --recursive
 - ps: scripts/lib/init.ps1
 - ps: scripts/lib/restore.ps1
 

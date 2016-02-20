@@ -5,9 +5,10 @@ if ([string]::isnullorempty($root)) {
 
 import-module pester
 
-$env:PSModulePath ="$root\..\src;$env:PSModulePath"
-if (gmo csproj) { rmo csproj }
-import-module "csproj" -DisableNameChecking
+$fp = (gi $root\..\src).fullpath
+$env:PSModulePath ="$fp;$env:PSModulePath"
+#if (gmo csproj) { rmo csproj }
+import-module csproj -DisableNameChecking
 
 
 if ((get-module -listavailable logging) -ne $null) {
