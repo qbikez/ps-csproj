@@ -16,9 +16,11 @@ $xml = @'
 Describe "packages config manipulation" {
     Context "When loaded from string" {
         $conf = get-packagesconfig $xml
+        
         It "Should load properly" {
            # $conf | Should Not Be $null # BeNullOrEmpty # why does it throw for a valid object? 
            $conf.xml | Should Not BeNullOrEmpty
+           $conf -isnot [Object[]] | Should Be True
         }
         
         It "Should List all packages" {
@@ -54,12 +56,17 @@ Describe "packages config manipulation" {
         $id = "Newtonsoft.Json"
         $version = "1.0"
         
+        It "Should already contain added dependency" {
+            $conf.packages | ? { $_.id -eq $id } | Should Not BeNullOrEmpty             
+        }
         It "Should throw by default" {
-             { add-packagetoconfig $id $conf } | Should Throw 
+             { 
+                 add-packagetoconfig $conf $id  $version
+                 } | Should Throw 
         }
         
         It "Should pass when using -ifnotexists" {
-             { add-packagetoconfig $id $conf -ifnotexists } | Should Not Throw
+             { add-packagetoconfig $conf $id $version -ifnotexists } | Should Not Throw
         }
         
         It "should contain added existing id" {
@@ -71,9 +78,10 @@ Describe "packages config manipulation" {
     Context "When removing dependency" {
         $conf = get-packagesconfig $xml    
         $id = "Newtonsoft.Json"
+        $version = "1.0"
   
         It "should not contain removed id" {
-            remove-packagefromconfig $id $conf
+            remove-packagefromconfig $conf $id
             $conf.packages | ? { $_.Id -eq $id } | Should BeNullOrEmpty            
         }
     }
@@ -83,7 +91,7 @@ Describe "packages config manipulation" {
         $id = "Test.Dependency"
          
         It "Should throw by default" {
-             { remove-packagefromconfig $id $conf } | Should Throw 
+             { remove-packagefromconfig $conf $id  } | Should Throw 
         }
     }
     

@@ -2,26 +2,43 @@ function add-packagetoconfig {
 param(
     [Parameter(Mandatory=$true,ValueFromPipeline=$true)]$packagesconfig,
     [Parameter(Mandatory=$true)][string]$package, 
-    [Parameter(Mandatory=$true)][string]$version
+    [Parameter(Mandatory=$true)][string]$version,
+    [switch][bool] $ifnotexists
 ) 
+    $existing = $packagesconfig.packages | ? { $_.Id -eq $package } 
+    if ($existing -ne $null) {
+        if ($ifnotexists) { return }
+        else { 
+            throw "Packages.config already contains reference to package $package : $($existing | out-string)" 
+        }
+    } 
     $node = new-packageNode -document $packagesconfig.xml
     $node.id = $package
     $node.version = $version
     $null = $packagesconfig.xml.packages.AppendChild($node) 
     
     $packagesconfig.packages = $packagesconfig.xml.packages.package
-
 }
 
 function remove-packagefromconfig {
-param([Parameter(Mandatory=$true)]$package, $packagesconfig) 
-    
+param(
+    [Parameter(Mandatory=$true,ValueFromPipeline=$true)]$packagesconfig,
+    [Parameter(Mandatory=$true)][string]$package
+    ) 
+    $existing = $packagesconfig.packages | ? { $_.Id -eq $package } 
+    if ($existing -ne $null) {
+        $packagesconfig.xml.packages
+        $xmlel = ([System.Xml.XmlElement]$packagesconfig.xml.packages)
+        $null = $xmlel.RemoveChild($existing)
+        $packagesconfig.packages = $packagesconfig.xml.packages.package
+    }
+    else {
+        throw "package $package not found in packages.config"
+    }
 }
 
 function get-packagesconfig {
 param($packagesconfig)
-
-    $xml
     if ($packagesconfig.startswith('<?xml')) {
         $xml = [xml]$packagesconfig
     }
