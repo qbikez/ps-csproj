@@ -1,18 +1,33 @@
 $script:ns = 'http://schemas.microsoft.com/developer/msbuild/2003'
 
 $script:types = @"
+using System.Xml;
 public class Csproj {
+    public System.Xml.XmlDocument Xml {get;set;}
+    public string Path {get;set;}
+    
+    public void Save() {
+        this.Xml.Save(this.Path);
+    }
+    public void Save(string path) {
+        this.Xml.Save(path);
+    }
+    public void Save(System.IO.TextWriter w) {
+        this.Xml.Save(w);
+    }
 }
 "@
 
-add-type -TypeDefinition $types
+add-type -TypeDefinition $types -ReferencedAssemblies "System.Xml"
 
 
 function import-csproj {
-    [OutputType([xml])]
+    [OutputType([Csproj])]
     param([Parameter(ValueFromPipeline=$true)]$file) 
+    $path = $null
     if (test-path $file) { 
         $content = get-content $file
+        $path = $file    
     }
     elseif ($file.Contains("<?xml") -or $file.Contains("<Project")) {
         $content = $file
@@ -21,7 +36,10 @@ function import-csproj {
         throw "file not found: '$file'"
     }
 
-    $csproj = [xml]$content
+    $csproj = new-object -type csproj -Property @{ 
+        xml = [xml]$content
+        path = $path
+    }
 
     return $csproj
 }
@@ -49,23 +67,22 @@ param([parameter(ValueFromPipeline=$true)]$nodes)
     }
 }
 
-function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $csproj, $nodeName) {
-    $xml = Select-Xml -Xml $csproj.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName" 
-    $meta = $xml | add-metadata
+function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName) {
+    $r = Select-Xml -Xml $xml.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName" 
+    $meta = $r | add-metadata
     return $meta
 }
 
-function get-projectreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
-    return get-nodes $csproj "ProjectReference"
+function get-projectreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
+    return get-nodes $csproj.xml "ProjectReference"
 }
 
-function get-allexternalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
-    get-nodes $csproj "Reference[d:HintPath]"     
-
+function get-allexternalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
+    get-nodes $csproj.xml "Reference[d:HintPath]"     
 }
 
 
-function get-externalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
+function get-externalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][Csproj] $csproj) {
     $refs = get-allexternalreferences $csproj
     $refs = $refs | ? {
         $_.Node.HintPath -notmatch "[""\\/]packages[/\\]"
@@ -74,7 +91,7 @@ function get-externalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$t
 }
 
 
-function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
+function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
     $refs = get-allexternalreferences $csproj
     $refs = $refs | ? {
         $_.Node.HintPath -match "[""\\/]packages[/\\]"
@@ -83,12 +100,12 @@ function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true
 }
 
 
-function get-systemreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
-    get-nodes $csproj "Reference[not(d:HintPath)]"     
+function get-systemreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
+    get-nodes $csproj.xml "Reference[not(d:HintPath)]"     
 }
 
 
-function get-allreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][xml] $csproj) {
+function get-allreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
     $refs = @()
     $refs += get-systemreferences $csproj
     $refs += get-nugetreferences $csproj
@@ -123,10 +140,10 @@ param ([Parameter(Mandatory=$true)] $csproj, [Parameter(Mandatory=$true)] $file)
 
     if ($csproj -is [string]) {
         $csprojPath = $csproj
-        $document = load-csproj $csprojPath
+        $document = (import-csproj $csprojPath).xml
     }
     else {
-        $document = $csproj
+        $document = $csproj.xml
     }
 
     if ($csprojPath -ne $null) {
@@ -151,7 +168,7 @@ param ([Parameter(Mandatory=$true)] $csproj, [Parameter(Mandatory=$true)] $file)
     
     write-verbose "adding item '$file': $($itemgroup.OuterXml)"
 
-    $other = get-nodes -csproj $document -nodeName "ItemGroup"
+    $other = get-nodes $document -nodeName "ItemGroup"
     if ($other.Count -gt 0) {
         $last = ([System.Xml.XmlNode]$other[$other.Count - 1].Node)
         $null = $last.ParentNode.InsertAfter($itemgroup, $last)

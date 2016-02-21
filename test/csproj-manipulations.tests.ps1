@@ -8,7 +8,7 @@ Describe "project file manipulation" {
     $null = new-item -ItemType Directory "testdrive:\input\"
     copy-item "$inputdir\test.csproj" "testdrive:\input\"
     copy-item "$inputdir\packages.config" "testdrive:\input\"
-    copy-item "$inputdir\packages" "testdrive:\packages" -Verbose -Recurse
+    copy-item "$inputdir\packages" "testdrive:\packages" -Recurse
     $testdir = "testdrive:\input" 
     push-location
     cd $testdir

@@ -65,7 +65,7 @@ Describe "Basic reference parsing" {
         It "reference should contain generated meta Name <Name>" -TestCases $cases {
             param ($ref) 
             $ref.Name | Should Not BeNullOrEmpty 
-            $ref.Name | Should Match "^[^.,\s]+(.[^.,\s]+)+$"
+            $ref.Name | Should Match "^[^.,\s]+(.[^.,\s]+)+($|,)"
             #$ref.Name | Should Be $ref.Node.Name 
         }
 
