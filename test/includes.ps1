@@ -4,8 +4,9 @@ if ([string]::isnullorempty($root)) {
 }
 
 import-module pester
-
-$fp = (gi $root\..\src).fullpath
+$i = (gi "$root\..\src")
+$fp = (gi "$root\..\src").fullname
+write-host "adding path of $i '$fp' to psmodulepath"
 $env:PSModulePath ="$fp;$env:PSModulePath"
 #if (gmo csproj) { rmo csproj }
 import-module csproj -DisableNameChecking
