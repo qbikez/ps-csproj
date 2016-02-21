@@ -26,7 +26,7 @@ function get-referencesTo {
         $n = $nugetrefs | ? { $_.Name -eq $projectname }
         if ($n -ne $null) { 
             write-verbose "$($p.name) => $projectname [nuget]"
-            $r += @{ project = $proj; ref = $pr; type = "nuget"; projectname = $p.name; name = $p.name; projectpath = $projpath }
+            $r += @{ project = $proj; ref = $n; type = "nuget"; projectname = $p.name; name = $p.name; projectpath = $projpath }
         }
         $projrefs = get-projectreferences $proj
         $pr = $projrefs | ? { $_.Name -eq $projectName }

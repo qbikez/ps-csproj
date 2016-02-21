@@ -57,8 +57,9 @@ Describe "Reference conversion" {
         It "Should Convert properly" {
             $nugetref = convertto-nuget $projref -packagesRelPath $packagesdir
             $nugetref | Should Not BeNullOrEmpty
-            $nugetref.HintPath | Should Not BeNullOrEmpty
-            $nugetref.Hintpath.Contains($packagesdir) | Should Be $true        
+            $nugetref.GetType() | Should Be "ReferenceMeta"
+            $nugetref.Node.HintPath | Should Not BeNullOrEmpty
+            $nugetref.Node.Hintpath.Contains($packagesdir) | Should Be $true        
         }
         #It "Should use global packages dir" {
         #    $nugetref | Should Not BeNullOrEmpty
@@ -84,9 +85,9 @@ Describe "Nuget path resolution" {
         It "Should resolve proper path for package '<pkgdir>' without version" -TestCases $cases {
             param ($pkgdir)
 
-            $nuget = find-nugetPath $pkgdir -packagesRelPath $packagesdir
+            $nuget,$version,$framework = find-nugetPath $pkgdir -packagesRelPath $packagesdir
             if ($nuget -eq $null) {
-                $nuget = find-nugetPath $pkgdir -packagesRelPath $packagesdir                
+                $nuget,$version,$framework = find-nugetPath $pkgdir -packagesRelPath $packagesdir                
             }
             $nuget | Should Not BeNullOrEmpty
         }

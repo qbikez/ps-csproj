@@ -96,11 +96,11 @@ Describe "Reference node manipulation" {
             } 
         It "Project reference should convert to nuget reference" {
             $converted = convertto-nuget -ref $projref "$inputdir\packages" 
-            $converted.Name | Should Be "Reference"
+            $converted.Node.Name | Should Be "Reference"
         }
         It "Nuget reference shuld point to a valid file" {
             $converted = convertto-nuget -ref $projref "$inputdir\packages" 
-            $converted.HintPath | Should Be "$inputdir\packages\Core.Client.1.0.1\lib\Core.Client.dll"
+            $converted.Node.HintPath | Should Be "$inputdir\packages\Core.Client.1.0.1\lib\Core.Client.dll"
         }
     }
 }

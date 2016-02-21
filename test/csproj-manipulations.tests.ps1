@@ -45,12 +45,12 @@ Describe "project file manipulation" {
             $conf = [xml]$content
             $conf | Should not BeNullOrEmpty
             $conf.packages | Should not BeNullOrEmpty
-            $entry = $conf.packages.package | ? { $_.id -eq $package }
+            $entry = $conf.packages.package | ? { $_.id -eq $packagename }
             $entry | Should Not BeNullOrEmpty
         }
         It "Should restore properly" {
             $error.Clear()
-            $r = & nuget restore -PackagesDirectory "packages"
+            & nuget restore -PackagesDirectory "..\packages" 
             $error.Count | Should Be 0
         }
         It "Should Still Compile" {

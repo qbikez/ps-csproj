@@ -16,7 +16,7 @@ param(
     $node = new-packageNode -document $packagesconfig.xml
     $node.id = $package
     $node.version = $version
-    $null = $packagesconfig.xml.packages.AppendChild($node) 
+    $null = $packagesconfig.xml.DocumentElement.AppendChild($node) 
     
     $packagesconfig.packages = $packagesconfig.xml.packages.package
 }
@@ -59,6 +59,10 @@ function get-packagesconfig {
             $c = get-content $packagesconfig | Out-String
             $xml = [xml]$c
         } 
+    }
+    
+    if ($xml.packages -is [string]) {
+        # weird, when <packages> are empty, .packages is a string!
     }
     
     $obj = new-object -type pscustomobject -Property @{ packages = $xml.packages.package; xml = $xml } 

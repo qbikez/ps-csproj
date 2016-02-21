@@ -57,17 +57,24 @@ function find-nugetPath {
     if (!(test-path $libpath)) { return $null }
 
     $dll = find-nugetdll $name $libpath
-    if ($dll -ne $null) { return $dll }
-
-    $frameworks = @(gci $libpath)
-    $frameworks = $frameworks | sort-frameworks -frameworkhint $frameworkHint 
-    foreach($f in $frameworks) {
-        $p = join-path $libpath $f.Name
-        $dll = find-nugetdll $name $p
-        if ($dll -ne $null) { return $dll }
+    $path = $null
+    if ($dll -ne $null) { 
+        $path = $dll
+    }
+    else {
+        $frameworks = @(gci $libpath)
+        $frameworks = $frameworks | sort-frameworks -frameworkhint $frameworkHint 
+        foreach($f in $frameworks) {
+            $p = join-path $libpath $f.Name
+            $dll = find-nugetdll $name $p
+            if ($dll -ne $null) { 
+                $path =  $dll
+                break
+            }
+        }
     }
     # check lib\frameworkname\*
-    return $path
+    return $path,$latest,$f
 }
 
 

@@ -72,7 +72,7 @@ Describe "Converting Project reference to nuget" {
                 $pkg = get-packagesconfig "$dir/packages.config"
                 $pkg | Should Not BeNullOrEmpty
                 $pkg.packages | Should Not BeNullOrEmpty
-                $pkg.packages | ? { $_.id -eq $n.name } | Should Not BeNullOrEmpty
+                $pkg.packages | ? { $_.id -eq $n.ref.name } | Should Not BeNullOrEmpty
             }
         }
         

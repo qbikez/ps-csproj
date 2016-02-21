@@ -16,6 +16,12 @@ public class Csproj {
         this.Xml.Save(w);
     }
 }
+
+public class ReferenceMeta {
+    public System.Xml.XmlElement Node {get;set;}
+    public string Name {get;set;}
+    public string Version {get;set;}
+}
 "@
 
 add-type -TypeDefinition $types -ReferencedAssemblies "System.Xml"
@@ -27,7 +33,7 @@ function import-csproj {
     $path = $null
     if (test-path $file) { 
         $content = get-content $file
-        $path = $file    
+        $path = (get-item $file).FullName    
     }
     elseif ($file.Contains("<?xml") -or $file.Contains("<Project")) {
         $content = $file
@@ -60,9 +66,11 @@ function get-referenceName($node) {
 function add-metadata {
 param([parameter(ValueFromPipeline=$true)]$nodes) 
     process {
-        return new-object -TypeName pscustomobject -Property @{ 
-            Node = $nodes.Node
-            Name = get-referenceName $nodes.Node
+        $n = $nodes
+        if ($nodes.Node) { $n = $nodes.Node }
+        return new-object -TypeName ReferenceMeta -Property @{ 
+            Node = $n
+            Name = get-referenceName $n
         }
     }
 }
@@ -184,48 +192,59 @@ param ([Parameter(Mandatory=$true)] $csproj, [Parameter(Mandatory=$true)] $file)
 
 
 
-function convertto-nuget(
-    [Parameter(Mandatory=$true)]
-    $ref, 
-    [Parameter(Mandatory=$true)]
-    $packagesRelPath
-) 
-{
-    if ($ref.Node -ne $null) {
-        $ref = $ref.Node
-    }
-    $projectPath = $ref.Include
-    $projectId = $ref.Project
-    $projectName = $ref.Name
+function convertto-nuget { 
 
-    $path = find-nugetPath $projectName $packagesRelPath
+[OutputType([ReferenceMeta])]    
+param(
+    [Parameter(Mandatory=$true)]
+    [ReferenceMeta] $ref, 
+    [Parameter(Mandatory=$true)]
+    [string ]$packagesRelPath
+) 
+    $node = get-asnode $ref
+    $projectPath = $node.Include
+    $projectId = $node.Project
+    $projectName = $node.Name
+
+    $path,$version,$framework = find-nugetPath $projectName $packagesRelPath
 
     if ($path -eq $null) {
         throw "package '$projectName' not found in packages dir '$packagesRelPath'"
     }
 
-    $nugetref = new-referenceNode $ref.OwnerDocument
+    $nugetref = new-referenceNode $node.OwnerDocument
     $nugetref.Include = $projectName  
 
     $hintNode = $nugetref.ChildNodes | ? { $_.Name -eq "HintPath" }
     $hintNode.InnerText = $path
     #$nugetref.hintpath = $path
 
-    return $nugetref
+    $meta = $nugetref | add-metadata
+    $meta.Version = $version
+    return $meta
 }
 
 function convert-reference { 
     [CmdletBinding()]
-    param([Parameter(Mandatory=$true,ValueFromPipeline=$true)] $csproj, 
-    [Parameter(Mandatory=$true)] $originalref, 
-    [Parameter(Mandatory=$true)] $newref
+    param(
+    [Parameter(Mandatory=$true,ValueFromPipeline=$true)][csproj] $csproj, 
+    [Parameter(Mandatory=$true)][referenceMeta] $originalref, 
+    [Parameter(Mandatory=$true)][referenceMeta] $newref
     ) 
-    $originalref = $originalref | get-asnode
-    $newref = $newref | get-asnode
-    $null = $originalref.parentNode.AppendChild($newref)
-    $null = $originalref.parentNode.RemoveChild($originalref)
+    #$originalref = $originalref | get-asnode
+    #$newref = $newref | get-asnode
+    $null = $originalref.Node.parentNode.AppendChild($newref.Node)
+    $null = $originalref.Node.parentNode.RemoveChild($originalref.Node)
     
-    
+    if ($csproj.path -ne $null) {
+        $dir = split-path -Parent $csproj.path      
+        $pkgs = get-packagesconfig (Join-Path $dir "packages.config") -createifnotexists
+        add-packagetoconfig -packagesconfig $pkgs -package $newref.Name -version $newref.Version -ifnotexists
+        $pkgs.xml.Save( (Join-Path $dir "packages.config") ) 
+    }
+    else {
+        write-warning "passed csproj path==null. Cannot edit packages.config"
+    }
 }
 
 function get-asnode {
