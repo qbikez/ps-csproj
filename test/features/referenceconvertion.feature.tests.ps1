@@ -4,14 +4,17 @@ Import-Module pester
 import-module csproj
 
 Describe "Converting Project reference to nuget" {
-    $slnfile = "$inputdir\test\sln\Sample.Solution\Sample.Solution.sln"
+    copy-item "$inputdir\test" "testdrive:\test" -recurse
+    copy-item "$inputdir\packages" "testdrive:\packages" -recurse
+        
+    $slnfile = "testdrive:\test\sln\Sample.Solution\Sample.Solution.sln"
     $slndir = split-path -parent $slnfile
-    $packagesdir = "$inputdir\packages"
+    $packagesdir = "testdrive:\packages"
     
     $sln = import-sln $slnfile
     
     Context "When loading sln file" {
-        $projectName = "Console1"
+        $projectName = "Core.Library1"
     
         It "Should resolve all sln projects" {
         $sln.gettype().Name | should Be "Sln"
@@ -27,19 +30,52 @@ Describe "Converting Project reference to nuget" {
         }
         }
         
-        It "reference to $projectName should be a project reference" {
+        It "sln should contain project $projectName" {
             $projects = $sln | get-slnprojects
             $p = $projects | ? { $_.Name -eq $projectName }
             $p | Should Not BeNullOrEmpty
-            $p.path | Should be "..\..\src\Console\Console1\Console1.csproj"
+            $p.path | Should be "..\..\src\Core\Core.Library1\Core.Library1.csproj"
+        }
+        
+        It "Should list all references to $projectname" {
+            $refs = get-referencesto $sln $projectname -verbose
+            $refs | Should Not BeNullOrEmpty
         }
     }
     
-    Context "When converting projects" {
-        $sln | convert-projectReferenceToNuget -projectName "Console1" -packagesdir $packagesdir
-    
-        It "should " {
+    Context "When converting project with matching nuget" {
+        $projectname = "Core.Library1"
+        $null = new-item "testdrive:\packages\$projectname.1.0.1\lib\" -type directory
+        $null = new-item "testdrive:\packages\$projectname.1.0.1\lib\$projectname.dll" -type file 
+        
+        $oldrefs = get-referencesto $sln $projectname -verbose
+        $r = $sln | convert-projectReferenceToNuget -project "$projectname" -verbose -packagesdir $packagesdir
+        
+        $r
+        
+        It "should not leave any project reference" {
+            $refs = get-referencesto $sln $projectname -verbose
+            $refs | ? { $_.type -eq "project" }  | Should BeNullOrEmpty
             
+            $refs | Should Not BeNullOrEmpty
+            
+            $nugetrefs = $refs | ? { $_.type -eq "nuget" }  
+            $nugetrefs | Should Not BeNullOrEmpty
+            
+            $refs.count | Should Be $oldrefs.Count
+            $nugetrefs.Count | Should Be $refs.Count
+        }
+        
+        It "converted references should exist in packages.config" {
+            $refs = get-referencesto $sln $projectname -verbose
+            $nugetrefs = $refs | ? { $_.type -eq "nuget" }  
+            foreach($n in $nugetrefs) {
+                $dir = split-path $n.projectpath
+                $pkg = get-packagesconfig "$dir/packages.config"
+                $pkg | Should Not BeNullOrEmpty
+                $pkg.packages | Should Not BeNullOrEmpty
+                $pkg.packages | ? { $_.id -eq $n.name } | Should Not BeNullOrEmpty
+            }
         }
         
     }

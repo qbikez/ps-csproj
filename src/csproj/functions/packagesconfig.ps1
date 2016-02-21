@@ -2,7 +2,6 @@ function add-packagetoconfig {
 param(
     [Parameter(Mandatory=$true,ValueFromPipeline=$true)]$packagesconfig,
     [Parameter(Mandatory=$true)][string]$package, 
-<<<<<<< HEAD
     [Parameter(Mandatory=$true)][string]$version,
     [switch][bool] $ifnotexists
 ) 
@@ -13,10 +12,7 @@ param(
             throw "Packages.config already contains reference to package $package : $($existing | out-string)" 
         }
     } 
-=======
-    [Parameter(Mandatory=$true)][string]$version
-) 
->>>>>>> 1dc1c60c9c4ddee2c774bb4ca33c79ecded806b3
+
     $node = new-packageNode -document $packagesconfig.xml
     $node.id = $package
     $node.version = $version
@@ -43,14 +39,27 @@ param(
 }
 
 function get-packagesconfig {
-param($packagesconfig)
+    param(
+    [Parameter(Mandatory=$true)]$packagesconfig,
+    [switch][bool] $createifnotexists
+    )
     if ($packagesconfig.startswith('<?xml')) {
         $xml = [xml]$packagesconfig
     }
-    elseif (test-path $packagesconfig) {
-        $c = get-content $packagesconfig | Out-String
-        $xml = [xml]$c
-    } 
+    else {
+        if ($createifnotexists) {
+            $content = @'
+<?xml version="1.0" encoding="utf-8"?>
+<packages>
+</packages>
+'@
+            $content | out-file $packagesconfig -encoding utf8
+        }
+        if (test-path $packagesconfig) {
+            $c = get-content $packagesconfig | Out-String
+            $xml = [xml]$c
+        } 
+    }
     
     $obj = new-object -type pscustomobject -Property @{ packages = $xml.packages.package; xml = $xml } 
     return $obj

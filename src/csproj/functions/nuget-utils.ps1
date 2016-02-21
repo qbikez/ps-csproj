@@ -1,5 +1,10 @@
 
-function find-nugetdll([Parameter(Mandatory=$true)] $name, [Parameter(Mandatory=$true)]  $path) {
+function find-nugetdll {
+    param (
+        [Parameter(Mandatory=$true)] $name, 
+        [Parameter(Mandatory=$true)] $path
+    )
+     
     $dll = join-path $path "$name.dll"
     if (test-path $dll) { return $dll } 
     $dlls = @(gci $path -Filter "*.dll")
@@ -32,7 +37,13 @@ end {
     }
 }
 
-function find-nugetPath([Parameter(Mandatory=$true)] $name, [Parameter(Mandatory=$true)] $packagesRelPath, [Parameter(Mandatory=$false)] $frameworkHint) {
+function find-nugetPath {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$true)] $name, 
+        [Parameter(Mandatory=$true)] $packagesRelPath, 
+        [Parameter(Mandatory=$false)] $frameworkHint
+    ) 
     # get latest package version
     # TODO: handle a case when project $name contains version
     $versions = Get-PackageFolderVersions -packageName $name -packagesDir $packagesRelPath

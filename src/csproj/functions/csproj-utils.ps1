@@ -103,13 +103,13 @@ function remove-node([Parameter(ValueFromPipeline=$true)]$node) {
 
 function new-referenceNode([System.Xml.xmldocument]$document) {
 
-    $nugetref = [System.Xml.XmlElement]$document.CreateNode([System.Xml.XmlNodeType]::Element, "", "Reference", $ns);
+    $nugetref = [System.Xml.XmlElement]$document.CreateNode([System.Xml.XmlNodeType]::Element, "", "Reference", $ns)
     #$nugetref = [System.Xml.XmlElement]$document.CreateElement("Reference");
-    $includeAttr = [System.Xml.XmlAttribute]$document.CreateAttribute("Include");
-    $hint = [System.Xml.XmlElement]$document.CreateElement("HintPath");
+    $includeAttr = [System.Xml.XmlAttribute]$document.CreateAttribute("Include")
+    $hint = [System.Xml.XmlElement]$document.CreateNode([System.Xml.XmlNodeType]::Element, "", "HintPath", $ns)
     $hint.InnerText = "hint"
-    $null = $nugetref.Attributes.Append($includeAttr);
-    $null = $nugetref.AppendChild($hint);
+    $null = $nugetref.Attributes.Append($includeAttr)
+    $null = $nugetref.AppendChild($hint)
 
     return $nugetref
 }
@@ -197,10 +197,24 @@ function convertto-nuget(
     return $nugetref
 }
 
-function convert-reference ($csproj, $originalref, $newref) {
-
+function convert-reference { 
+    [CmdletBinding()]
+    param([Parameter(Mandatory=$true,ValueFromPipeline=$true)] $csproj, 
+    [Parameter(Mandatory=$true)] $originalref, 
+    [Parameter(Mandatory=$true)] $newref
+    ) 
+    $originalref = $originalref | get-asnode
+    $newref = $newref | get-asnode
     $null = $originalref.parentNode.AppendChild($newref)
-    $originalref.parentNode.RemoveChild($originalref)
+    $null = $originalref.parentNode.RemoveChild($originalref)
+}
+
+function get-asnode {
+    param([Parameter(Mandatory=$true, ValueFromPipeline=$true)]$ref)
+    
+    if ($ref -is [System.Xml.XmlNode]) {return $ref }
+    elseif ($ref.Node -ne $null) { return $ref.Node }
+    else { throw "$ref is not a node and has no 'Node' property"}
 }
 
 function get-project($name, [switch][bool]$all) {

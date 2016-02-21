@@ -96,3 +96,15 @@ Describe "packages config manipulation" {
     }
     
 }
+
+Describe "packages config file" {
+    Context "When referencing non-existing file" {
+        test-path "testdrive:\packages.config" | Should be $false
+        It "should create if -createifnotexists is specified" {
+            $pkg = get-packagesconfig "testdrive:\packages.config" -createifnotexists
+            test-path "testdrive:\packages.config" | Should be $true
+            $pkg | Should Not BeNullOrEmpty
+            $pkg.xml | Should Not Be $null
+        }
+    }
+} 
