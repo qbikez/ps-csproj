@@ -17,17 +17,17 @@ Describe "Converting Project reference to nuget" {
         $projectName = "Core.Library1"
     
         It "Should resolve all sln projects" {
-        $sln.gettype().Name | should Be "Sln"
-        $projects = $sln | get-slnprojects
-        $projects | Should Not BeNullOrEmpty
-        $projects | % {
-            $_ | Should Not BeNullOrEmpty
-            $_.path | Should Not BeNullOrEmpty
-            if ($_.type -eq "csproj") {
-                $p = import-csproj (join-path $slndir $_.path)
-                $p | should not BeNullOrEmpty
+            $sln.gettype().Name | should Be "Sln"
+            $projects = $sln | get-slnprojects
+            $projects | Should Not BeNullOrEmpty
+            $projects | % {
+                $_ | Should Not BeNullOrEmpty
+                $_.path | Should Not BeNullOrEmpty
+                if ($_.type -eq "csproj") {
+                    $p = import-csproj (join-path $slndir $_.path)
+                    $p | should not BeNullOrEmpty
+                }
             }
-        }
         }
         
         It "sln should contain project $projectName" {
@@ -50,8 +50,6 @@ Describe "Converting Project reference to nuget" {
         
         $oldrefs = get-referencesto $sln $projectname -verbose
         $r = $sln | convert-projectReferenceToNuget -project "$projectname" -verbose -packagesdir $packagesdir
-        
-        $r
         
         It "should not leave any project reference" {
             $refs = get-referencesto $sln $projectname -verbose

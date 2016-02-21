@@ -18,13 +18,13 @@
     <Folder Include="App_Data\" />
   </ItemGroup>  
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\NowaEra.Core.Boundaries.Client\NowaEra.Core.Boundaries.Client.csproj">
+    <ProjectReference Include="..\..\Core\Core.Boundaries.Client\Core.Boundaries.Client.csproj">
       <Project>{1ed821b1-89d1-4383-9e3a-ad7161b6640a}</Project>
-      <Name>NowaEra.Core.Boundaries.Client</Name>
+      <Name>Core.Boundaries.Client</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Core\NowaEra.Core.Boundaries\NowaEra.Core.Boundaries.csproj">
+    <ProjectReference Include="..\..\Core\Core.Boundaries\Core.Boundaries.csproj">
       <Project>{32ab2453-d53f-4739-8243-42fa29d9f093}</Project>
-      <Name>NowaEra.Core.Boundaries</Name>
+      <Name>Core.Boundaries</Name>
     </ProjectReference>  
   </ItemGroup>  
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />  

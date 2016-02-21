@@ -207,6 +207,8 @@ function convert-reference {
     $newref = $newref | get-asnode
     $null = $originalref.parentNode.AppendChild($newref)
     $null = $originalref.parentNode.RemoveChild($originalref)
+    
+    
 }
 
 function get-asnode {

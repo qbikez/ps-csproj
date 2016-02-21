@@ -48,8 +48,11 @@ Describe "Reference conversion" {
    $packagesdir =  "$psscriptroot\input\packages"
  
    Context "converting reference to nuget and no packages dir specified" {
-        $projref = $refs | ? { $_.Node.Name -ieq "NowaEra.Core.Boundaries" }
-        $projref | Should Not BeNullOrEmpty
+       $projectname = "Core.Client"
+        $projref = $refs | ? { $_.Node.Name -ieq $projectname }
+        It "project references to $projectname should be valid" {
+            $projref | Should Not BeNullOrEmpty
+        }
 
         It "Should Convert properly" {
             $nugetref = convertto-nuget $projref -packagesRelPath $packagesdir
@@ -76,12 +79,15 @@ Describe "Nuget path resolution" {
     $packagesdir =  "$psscriptroot\input\packages"
     Context "When resolving nuget paths" {
         $packages = get-childitem $packagesdir
-        $cases = $packages | % { @{ pkgdir = $_.Name -replace "\.[0-9]+","" } }
+        $cases = $packages | % { @{ pkgdir = $_.Name -replace "\.([0-9]\.*)+(-.+)*$",""  } }
         
         It "Should resolve proper path for package '<pkgdir>' without version" -TestCases $cases {
             param ($pkgdir)
 
             $nuget = find-nugetPath $pkgdir -packagesRelPath $packagesdir
+            if ($nuget -eq $null) {
+                $nuget = find-nugetPath $pkgdir -packagesRelPath $packagesdir                
+            }
             $nuget | Should Not BeNullOrEmpty
         }
 

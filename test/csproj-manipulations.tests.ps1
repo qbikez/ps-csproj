@@ -8,12 +8,36 @@ Describe "project file manipulation" {
     $null = new-item -ItemType Directory "testdrive:\input\"
     copy-item "$inputdir\test.csproj" "testdrive:\input\"
     copy-item "$inputdir\packages.config" "testdrive:\input\"
+    copy-item "$inputdir\packages" "testdrive:\packages" -Verbose -Recurse
     $testdir = "testdrive:\input" 
     push-location
     cd $testdir
     Context "When replacing projectreference" {        
+        
         $csproj = import-csproj "test.csproj"
-        $packagename = "Common.Log.Interfaces"
+        $packagename = "Core.Boundaries"
+        It "csproj Should contain reference to project $packagename" {
+            $refs = get-projectreferences $csproj
+            $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
+            $ref | Should Not BeNullOrEmpty
+        }
+        It "Should convert properly to nuget" {
+            $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
+            $nugetref = convertto-nuget $ref "testdrive:\packages"
+            $nugetref | Should Not BeNullOrEmpty
+            replace-reference $csproj -originalref $ref -newref $nugetref
+        }
+        
+        It "result Project should contain nuget reference to $packagename" {
+            $ref = get-nugetreferences $csproj | ? { $_.Name -eq $packagename }
+            $ref | Should Not BeNullOrEmpty
+        } 
+
+        It "result Project should not contain project  reference to $packagename" {
+            $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
+            $ref | Should BeNullOrEmpty
+        } 
+        
         It "packages.config should contain nuget reference" {        
             $p = "packages.config"
             gi $p | Should Not BeNullOrEmpty
