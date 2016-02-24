@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Library1", "..\..\src\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console1", "..\..\src\Console\Console1\Console1.csproj", "{3DB72011-6C72-449B-9D9B-EE9A5A037B2A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Library2", "..\..\src\Core\Core.Library2\Core.Library2.csproj", "{65A97165-F248-412B-803C-0CEA8936311C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{3DB72011-6C72-449B-9D9B-EE9A5A037B2A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3DB72011-6C72-449B-9D9B-EE9A5A037B2A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3DB72011-6C72-449B-9D9B-EE9A5A037B2A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{65A97165-F248-412B-803C-0CEA8936311C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65A97165-F248-412B-803C-0CEA8936311C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65A97165-F248-412B-803C-0CEA8936311C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65A97165-F248-412B-803C-0CEA8936311C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
