@@ -304,6 +304,11 @@ function convert-reference {
     $null = $originalref.Node.parentNode.AppendChild($newref.Node)
     $null = $originalref.Node.parentNode.RemoveChild($originalref.Node)
     
+    write-verbose "replacing:"
+    write-verbose "`r`n$($originalref.Node.OuterXml)"
+    write-verbose "with:"
+    write-verbose "`r`n$($newref.Node.OuterXml)"
+        
     if ($csproj.path -ne $null -and $newref.Type -ne "project") {
         $dir = split-path -Parent $csproj.path      
         $pkgs = get-packagesconfig (Join-Path $dir "packages.config") -createifnotexists

@@ -23,14 +23,7 @@ Describe "Converting dll reference to project" {
     $projects = $projects | ? { $_.Name -eq $specificProject }       
     
     $projects | % {
-        $csproj = import-csproj $_.FullName
-        $refs = ($csproj | get-externalreferences) + ($csproj | get-nugetreferences) 
-        $r = $refs | ? { $_.shortname -eq $referencename }
-        $converted = convertto-projectreference $r $targetProject
-        
-        replace-reference $csproj $r $converted
-        
-        $csproj.Save()
+        convert-nugettoprojectreference $referencename $targetProject $_.FullName -confirm:$false
     }    
 }
 

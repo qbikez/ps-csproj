@@ -78,3 +78,42 @@ function  convert-projectReferenceToNuget {
     
     return $csprojs
 }
+
+function convert-nugetToProjectReference {
+    [CmdletBinding(SupportsShouldProcess=$true, ConfirmImpact="high")]
+    param([Parameter(Mandatory=$false)] $referencename, [Parameter(Mandatory=$false)] $targetProject, [Parameter(Mandatory=$false)] $csproj) 
+        $path = $csproj
+        
+        if ($path -eq $null) {
+            $items = @(get-childitem -filter "*.csproj")
+            if ($items -eq $null -or $items.length -eq 0) {
+                throw "no csproj given and no csproj found in current dir"
+            }
+            if ($items.length -ne $null -and $items.length -gt 1) {
+                throw "more than one csproj file found. please select one"
+            } 
+            $path = $items.fullname
+        }
+        
+        $csproj = import-csproj $path
+        $refs = ($csproj | get-externalreferences) + ($csproj | get-nugetreferences)
+        
+        if ($referenceName -eq $null){
+            write-host "Choose one reference:"
+            $refs | select -expand ShortName
+            return
+        }
+        
+        if ($targetproject -eq $null) {
+            write-host "please provide target project location"
+            return
+        } 
+        $r = $refs | ? { $_.shortname -eq $referencename }
+        $converted = convertto-projectreference $r $targetProject
+        
+        replace-reference $csproj $r $converted
+        
+        if ($pscmdlet.ShouldProcess("saving csproj $path")) {
+            $csproj.Save()
+        }
+}
