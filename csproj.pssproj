@@ -1,0 +1,186 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>6CAFC0C6-A428-4d30-A9F9-700E829FEA51</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>MyApplication</RootNamespace>
+    <AssemblyName>MyApplication</AssemblyName>
+    <Name>csproj</Name>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="src\" />
+    <Folder Include="src\csproj\" />
+    <Folder Include="src\csproj\functions\" />
+    <Folder Include="test\" />
+    <Folder Include="test\features\" />
+    <Folder Include="test\input\" />
+    <Folder Include="test\input\.hidden\" />
+    <Folder Include="test\input\.hidden\Platform\" />
+    <Folder Include="test\input\.hidden\Platform\sln\" />
+    <Folder Include="test\input\.hidden\Platform\sln\Legimi.Core\" />
+    <Folder Include="test\input\.hidden\Platform\sln\Legimi.Core\Legimi.Core.Utils\" />
+    <Folder Include="test\input\.hidden\Platform\src\" />
+    <Folder Include="test\input\.hidden\Platform\src\Core\" />
+    <Folder Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\" />
+    <Folder Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\DictionaryAdapter\" />
+    <Folder Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\IoC\" />
+    <Folder Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\Properties\" />
+    <Folder Include="test\input\packages\" />
+    <Folder Include="test\input\packages\Castle.Core.3.3.3\" />
+    <Folder Include="test\input\packages\Castle.Core.3.3.3\lib\" />
+    <Folder Include="test\input\packages\Castle.Core.3.3.3\lib\net45\" />
+    <Folder Include="test\input\packages\Common.Configuration.log4net.2.0.0-beta1\" />
+    <Folder Include="test\input\packages\Common.Configuration.log4net.2.0.0-beta1\lib\" />
+    <Folder Include="test\input\packages\Common.Configuration.log4net.2.0.0-beta1\lib\net451\" />
+    <Folder Include="test\input\packages\Core.Boundaries.1.0.1\" />
+    <Folder Include="test\input\packages\Core.Boundaries.1.0.1\lib\" />
+    <Folder Include="test\input\packages\Core.Client.1.0.1\" />
+    <Folder Include="test\input\packages\Core.Client.1.0.1\lib\" />
+    <Folder Include="test\input\packages\Core.Library.1.0.0.1\" />
+    <Folder Include="test\input\packages\Core.Library.1.0.0.1\lib\" />
+    <Folder Include="test\input\packages\Core.Library.1.0.0.1\lib\net452\" />
+    <Folder Include="test\input\Platform\" />
+    <Folder Include="test\input\Platform\sln\" />
+    <Folder Include="test\input\Platform\sln\Legimi.Core\" />
+    <Folder Include="test\input\Platform\sln\Legimi.Core\Legimi.Core.Utils\" />
+    <Folder Include="test\input\test\" />
+    <Folder Include="test\input\test\sln\" />
+    <Folder Include="test\input\test\sln\Sample.Solution\" />
+    <Folder Include="test\input\test\src\" />
+    <Folder Include="test\input\test\src\Console\" />
+    <Folder Include="test\input\test\src\Console\Console1\" />
+    <Folder Include="test\input\test\src\Console\Console1\bin\" />
+    <Folder Include="test\input\test\src\Console\Console1\bin\Debug\" />
+    <Folder Include="test\input\test\src\Console\Console1\obj\" />
+    <Folder Include="test\input\test\src\Console\Console1\obj\Debug\" />
+    <Folder Include="test\input\test\src\Console\Console1\obj\Debug\TempPE\" />
+    <Folder Include="test\input\test\src\Console\Console1\Properties\" />
+    <Folder Include="test\input\test\src\Core\" />
+    <Folder Include="test\input\test\src\Core\Core.Library1\" />
+    <Folder Include="test\input\test\src\Core\Core.Library1\bin\" />
+    <Folder Include="test\input\test\src\Core\Core.Library1\bin\Debug\" />
+    <Folder Include="test\input\test\src\Core\Core.Library1\obj\" />
+    <Folder Include="test\input\test\src\Core\Core.Library1\obj\Debug\" />
+    <Folder Include="test\input\test\src\Core\Core.Library1\obj\Debug\TempPE\" />
+    <Folder Include="test\input\test\src\Core\Core.Library1\Properties\" />
+    <Folder Include="test\input\test\src\Core\Core.Library2\" />
+    <Folder Include="test\input\test\src\Core\Core.Library2\bin\" />
+    <Folder Include="test\input\test\src\Core\Core.Library2\bin\Debug\" />
+    <Folder Include="test\input\test\src\Core\Core.Library2\bin\Release\" />
+    <Folder Include="test\input\test\src\Core\Core.Library2\obj\" />
+    <Folder Include="test\input\test\src\Core\Core.Library2\obj\Debug\" />
+    <Folder Include="test\input\test\src\Core\Core.Library2\obj\Debug\TempPE\" />
+    <Folder Include="test\input\test\src\Core\Core.Library2\Properties\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="src\csproj\csproj.psd1" />
+    <Compile Include="src\csproj\Csproj.psm1" />
+    <Compile Include="src\csproj\functions\assemblyinfo-utils.ps1" />
+    <Compile Include="src\csproj\functions\choco-utils.ps1" />
+    <Compile Include="src\csproj\functions\conversion.ps1" />
+    <Compile Include="src\csproj\functions\csproj-utils.ps1" />
+    <Compile Include="src\csproj\functions\nuget-utils.ps1" />
+    <Compile Include="src\csproj\functions\packagesconfig-utils.ps1" />
+    <Compile Include="src\csproj\functions\sln-utils.ps1" />
+    <Compile Include="test\csproj-manipulations.tests.ps1" />
+    <Compile Include="test\csproj-parsing.tests.ps1" />
+    <Compile Include="test\features\referenceconvertion.feature.tests.ps1" />
+    <Compile Include="test\includes.ps1" />
+    <Compile Include="test\input\.hidden\Platform\sln\Legimi.Core\Legimi.Core.Utils\Legimi.Core.Utils.sln" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\app.config" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\AppConfigUtils.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\ConcurrentLock.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\DictionaryAdapter\DatePropertyBehaviorAttribute.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\DictionaryAdapter\FloatPropertyBehaviorAttribute.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\ExceptionExt.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\Exceptions.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\GrayBmpConverter.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\Hash.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\HexEncoding.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\ImageFilter.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\IoC\CastleContainerExtensions.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\Legimi.Core.Utils.csproj" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\Legimi.Core.Utils.iphone.csproj" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\Legimi.Core.Utils.nuspec" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\NameValueCollectionExt.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\packages.config" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\ProcessRunner.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\Properties\AssemblyInfo.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\ServiceDisposalProxy.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\TaskExtensions.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\Utilities.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\XmlBindingReader.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\XmlUtils.cs" />
+    <Compile Include="test\input\.hidden\Platform\src\Core\Legimi.Core.Utils\XsdUtils.cs" />
+    <Compile Include="test\input\.hidden\test.csproj" />
+    <Compile Include="test\input\.hidden\tmp.csproj" />
+    <Compile Include="test\input\packages.config" />
+    <Compile Include="test\input\packages\Castle.Core.3.3.3\lib\net45\Castle.Core.dll" />
+    <Compile Include="test\input\packages\Common.Configuration.log4net.2.0.0-beta1\lib\net451\Common.Configuration.log4net.dll" />
+    <Compile Include="test\input\packages\Core.Boundaries.1.0.1\Core.Boundaries.1.0.1.nupkg" />
+    <Compile Include="test\input\packages\Core.Boundaries.1.0.1\lib\Core.Boundaries.dll" />
+    <Compile Include="test\input\packages\Core.Client.1.0.1\lib\Core.Client.dll" />
+    <Compile Include="test\input\packages\Core.Library.1.0.0.1\Core.Library2.1.0.0.0.nupkg" />
+    <Compile Include="test\input\packages\Core.Library.1.0.0.1\lib\net452\Core.Library2.dll" />
+    <Compile Include="test\input\Platform\sln\Legimi.Core\Legimi.Core.Utils\Legimi.Core.Utils.sln" />
+    <Compile Include="test\input\test.csproj" />
+    <Compile Include="test\input\test\sln\Sample.Solution\Sample.Solution.sln" />
+    <Compile Include="test\input\test\src\Console\Console1\App.config" />
+    <Compile Include="test\input\test\src\Console\Console1\Console1.csproj" />
+    <Compile Include="test\input\test\src\Console\Console1\obj\Debug\DesignTimeResolveAssemblyReferencesInput.cache" />
+    <Compile Include="test\input\test\src\Console\Console1\obj\Debug\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
+    <Compile Include="test\input\test\src\Console\Console1\obj\Debug\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
+    <Compile Include="test\input\test\src\Console\Console1\obj\Debug\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
+    <Compile Include="test\input\test\src\Console\Console1\Program.cs" />
+    <Compile Include="test\input\test\src\Console\Console1\Properties\AssemblyInfo.cs" />
+    <Compile Include="test\input\test\src\Core\Core.Library1\Class1.cs" />
+    <Compile Include="test\input\test\src\Core\Core.Library1\Core.Library1.csproj" />
+    <Compile Include="test\input\test\src\Core\Core.Library1\obj\Debug\DesignTimeResolveAssemblyReferencesInput.cache" />
+    <Compile Include="test\input\test\src\Core\Core.Library1\obj\Debug\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
+    <Compile Include="test\input\test\src\Core\Core.Library1\obj\Debug\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
+    <Compile Include="test\input\test\src\Core\Core.Library1\obj\Debug\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
+    <Compile Include="test\input\test\src\Core\Core.Library1\Properties\AssemblyInfo.cs" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\add-nugetspec.ps1" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\bin\Debug\Core.Library2.dll" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\bin\Debug\Core.Library2.pdb" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\Class2.cs" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\Core.Library2.csproj" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\Core.Library2.csproj.user" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\Core.Library2.nuspec" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\obj\Debug\Core.Library2.csproj.FileListAbsolute.txt" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\obj\Debug\Core.Library2.csprojResolveAssemblyReference.cache" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\obj\Debug\Core.Library2.dll" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\obj\Debug\Core.Library2.pdb" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\obj\Debug\DesignTimeResolveAssemblyReferencesInput.cache" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\obj\Debug\TemporaryGeneratedFile_036C0B5B-1481-4323-8D20-8F5ADCB23D92.cs" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\obj\Debug\TemporaryGeneratedFile_5937a670-0e60-4077-877b-f7221da3dda1.cs" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\obj\Debug\TemporaryGeneratedFile_E7A71F73-0F8D-4B9B-B56E-8E70B10BC5D3.cs" />
+    <Compile Include="test\input\test\src\Core\Core.Library2\Properties\AssemblyInfo.cs" />
+    <Compile Include="test\nuget.tests.ps1" />
+    <Compile Include="test\pacakgesconfig.tests.ps1" />
+    <Compile Include="test\references.tests.ps1" />
+    <Compile Include="test\sln-parsing.tests.ps1" />
+    <Compile Include="test\test.ps1" />
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
+  <Target Name="Build" />
+</Project>
