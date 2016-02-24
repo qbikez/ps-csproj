@@ -82,3 +82,8 @@ function get-nugettoolspath($packagesdir = "packages") {
     $tools = Get-ChildItem $packagesdir -Recurse -Filter "tools"
     return $tools | ? { $_.psiscontainer } | % { $_.FullName }
 }
+
+function get-shortName($package) {
+    $m = $package -match "(?<shortname>.*?)(,(?<specificversion>.+)){0,1}$"
+    return $Matches["shortname"]
+}

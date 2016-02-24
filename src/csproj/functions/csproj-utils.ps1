@@ -21,6 +21,8 @@ public class ReferenceMeta {
     public System.Xml.XmlElement Node {get;set;}
     public string Name {get;set;}
     public string Version {get;set;}
+    public string ShortName {get;set;}
+    public string Type {get;set;}
 }
 "@
 
@@ -68,16 +70,27 @@ param([parameter(ValueFromPipeline=$true)]$nodes)
     process {
         $n = $nodes
         if ($nodes.Node) { $n = $nodes.Node }
+        $name = get-referenceName $n
+        # $n.Name can be hidden by dynamic property from Name attribute/child
+        $type = switch($n.get_Name()) {
+            "ProjectReference" { "project" }
+            "Reference" { "dll" }
+            default { "?" }
+        }
         return new-object -TypeName ReferenceMeta -Property @{ 
             Node = $n
-            Name = get-referenceName $n
+            Name = $name
+            ShortName = get-shortname $name 
+            Type = $type
         }
     }
 }
 
-function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName) {
-    $r = Select-Xml -Xml $xml.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName" 
-    $meta = $r | add-metadata
+function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName, [switch][bool]$noMeta) {
+    $r = Select-Xml -Xml $xml.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName"
+    if (!$nometa) { 
+        $meta = $r | add-metadata
+    }
     return $meta
 }
 
@@ -124,6 +137,28 @@ function get-allreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)]
 
 function remove-node([Parameter(ValueFromPipeline=$true)]$node) {    
     $node.ParentNode.RemoveChild($node)
+}
+
+
+function new-projectReferenceNode([System.Xml.xmldocument]$document) {
+ <#
+    <ProjectReference Include="..\xxx\xxx.csproj">
+      <Project>{89c414d8-0258-4a94-8e45-88b338c15e7a}</Project>
+      <Name>xxx</Name>
+    </ProjectReference>
+ #>
+    $projectRef = [System.Xml.XmlElement]$document.CreateNode([System.Xml.XmlNodeType]::Element, "", "ProjectReference", $ns)
+    $includeAttr = [System.Xml.XmlAttribute]$document.CreateAttribute("Include")
+    
+    #$nugetref = [System.Xml.XmlElement]$document.CreateElement("Reference");
+    $projectGuid = [System.Xml.XmlElement]$document.CreateNode([System.Xml.XmlNodeType]::Element, "", "Project", $ns)
+    $projectName = [System.Xml.XmlElement]$document.CreateNode([System.Xml.XmlNodeType]::Element, "", "Name", $ns)
+        
+    $null = $projectRef.Attributes.Append($includeAttr)
+    $null = $projectRef.AppendChild($projectName)
+    $null = $projectRef.AppendChild($projectGuid)
+
+    return $projectRef
 }
 
 function new-referenceNode([System.Xml.xmldocument]$document) {
@@ -192,7 +227,7 @@ param ([Parameter(Mandatory=$true)] $csproj, [Parameter(Mandatory=$true)] $file)
 
 
 
-function convertto-nuget { 
+function convertto-nugetreference { 
 
 [OutputType([ReferenceMeta])]    
 param(
@@ -224,6 +259,39 @@ param(
     return $meta
 }
 
+
+function convertto-projectreference { 
+
+[OutputType([ReferenceMeta])]    
+param(
+    [Parameter(Mandatory=$true)]
+    [ReferenceMeta] $ref, 
+    [Parameter(Mandatory=$true)]
+    [string ]$targetProject
+) 
+    $node = get-asnode $ref
+ 
+ <#
+    <ProjectReference Include="..\xxx\xxx.csproj">
+      <Project>{89c414d8-0258-4a94-8e45-88b338c15e7a}</Project>
+      <Name>xxx</Name>
+    </ProjectReference>
+ #>
+ # TODO: handle relative path
+    $targetcsproj = import-csproj $targetProject
+    $guidNode = $targetcsproj.xml | get-nodes -nodeName "ProjectGuid"
+    $guid = $guidnode.Node.InnerText
+    $projectRef = new-projectReferenceNode $node.OwnerDocument
+    $projectRef.Include = $targetProject
+    $projectRef.Name = [System.IO.Path]::GetFilenameWithoutExtension($targetProject)
+    $projectRef.Project = $guid
+    
+     
+
+    $meta = $projectRef | add-metadata
+    return $meta
+}
+
 function convert-reference { 
     [CmdletBinding()]
     param(
@@ -236,7 +304,7 @@ function convert-reference {
     $null = $originalref.Node.parentNode.AppendChild($newref.Node)
     $null = $originalref.Node.parentNode.RemoveChild($originalref.Node)
     
-    if ($csproj.path -ne $null) {
+    if ($csproj.path -ne $null -and $newref.Type -ne "project") {
         $dir = split-path -Parent $csproj.path      
         $pkgs = get-packagesconfig (Join-Path $dir "packages.config") -createifnotexists
         add-packagetoconfig -packagesconfig $pkgs -package $newref.Name -version $newref.Version -ifnotexists
@@ -273,3 +341,4 @@ function get-project($name, [switch][bool]$all) {
 }
 
 new-alias replace-reference convert-reference
+new-alias convertto-nuget convertto-nugetreference

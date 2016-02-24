@@ -3,6 +3,37 @@
 Import-Module pester
 import-module csproj
 
+
+
+Describe "Converting dll reference to project" {    
+    copy-item "$inputdir\test" "testdrive:\test" -recurse
+    copy-item "$inputdir\packages" "testdrive:\packages" -recurse
+        
+    $slnfile = "testdrive:\test\sln\Sample.Solution\Sample.Solution.sln"
+    $slndir = split-path -parent $slnfile
+    $packagesdir = "testdrive:\packages"
+    
+    $referenceName = "Core.Library2"
+    $targetProject = "testdrive:\test\src\Core\Core.Library2\Core.Library2.csproj"
+    $specificProject = "Console1"
+    
+    $sln = import-sln $slnfile
+    
+    $projects = $sln | get-slnprojects | ? { $_.Type -eq "csproj" }
+    $projects = $projects | ? { $_.Name -eq $specificProject }       
+    
+    $projects | % {
+        $csproj = import-csproj $_.FullName
+        $refs = ($csproj | get-externalreferences) + ($csproj | get-nugetreferences) 
+        $r = $refs | ? { $_.shortname -eq $referencename }
+        $converted = convertto-projectreference $r $targetProject
+        
+        replace-reference $csproj $r $converted
+        
+        $csproj.Save()
+    }    
+}
+
 Describe "Converting Project reference to nuget" {
     copy-item "$inputdir\test" "testdrive:\test" -recurse
     copy-item "$inputdir\packages" "testdrive:\packages" -recurse

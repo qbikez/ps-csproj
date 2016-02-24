@@ -11,6 +11,7 @@ public class SlnProject {
     public string Guid {get;set;}
     public int Line {get;set;}
     public string Type { get;set;} 
+    public string FullName {get;set;}
 }
 "@
 
@@ -43,6 +44,7 @@ function get-slnprojects {
     # Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legimi.Core.Utils.Diag", "..\..\..\src\Core\Legimi.Core.Utils.Diag\Legimi.Core.Utils.Diag.csproj", "{678181A1-BF92-46F2-8D71-E3F5057042AB}"
     $regex = 'Project\((?<typeguid>.*?)\)\s*=\s*"(?<name>.*?)",\s*"(?<path>.*?)",\s*"(?<guid>.*?)"'
     $i = 0
+    $slndir = (get-item (split-path -parent $sln.path)).fullname
     foreach($line in $sln.content) {
         if ($line -match $regex) {
             $type = "?"
@@ -55,6 +57,7 @@ function get-slnprojects {
                 guid = $Matches["guid"] 
                 line = $i
                 type = $type
+                fullname = join-path $slndir $Matches["path"]
             } )
         } 
         $i++   
