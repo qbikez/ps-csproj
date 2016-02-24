@@ -5,7 +5,7 @@
     },
     "scripts": {
         "init": "powershell scripts\\lib\\init.ps1", 
-        "restore": "powershell scripts\\lib\\restore.ps1",
+        "restore": "git submodule update --init && powershell scripts\\lib\\restore.ps1",
         "test": "powershell scripts\\lib\\test.ps1",
         "code": "powershell scripts\\start-code.ps1",
         "push": "powershell scripts\\lib\\push.ps1 -newversion",

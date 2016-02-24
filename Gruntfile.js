@@ -5,10 +5,10 @@ module.exports = function (grunt) {
                 options: {
                     stdout: true
                 },
-                command: 'powershell scripts\\lib\\test.ps1'
+                command: 'powershell .\\scripts\\lib\\test.ps1'
             },
             push: {
-                command: "powershell scripts\\push.ps1 -newversion"
+                command: "powershell .\\scripts\\push.ps1 -newversion"
             },
             init: {
                 command: "npm run init"
