@@ -37,6 +37,16 @@ end {
     }
 }
 
+function get-nugetname {
+    param($name)
+    if ($name -match "(?<name>.*?)\.(?<version>[0-9]+(\.[0-9]+)*(-.*){0,1})") {
+        return $Matches["name"]    
+    }
+    else {
+        return $name
+    }
+}
+
 function find-nugetPath {
     [CmdletBinding()]
     param(
@@ -44,6 +54,7 @@ function find-nugetPath {
         [Parameter(Mandatory=$true)] $packagesRelPath, 
         [Parameter(Mandatory=$false)] $frameworkHint
     ) 
+    $name = get-nugetname $name
     # get latest package version
     # TODO: handle a case when project $name contains version
     $versions = Get-PackageFolderVersions -packageName $name -packagesDir $packagesRelPath
@@ -58,6 +69,7 @@ function find-nugetPath {
 
     $dll = find-nugetdll $name $libpath
     $path = $null
+    $framework = ""
     if ($dll -ne $null) { 
         $path = $dll
     }
@@ -69,12 +81,13 @@ function find-nugetPath {
             $dll = find-nugetdll $name $p
             if ($dll -ne $null) { 
                 $path =  $dll
+                $framework = $f
                 break
             }
         }
     }
     # check lib\frameworkname\*
-    return $path,$latest,$f
+    return $path,$latest,$framework 
 }
 
 

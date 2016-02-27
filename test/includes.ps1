@@ -8,8 +8,11 @@ $i = (gi "$root\..\src")
 $fp = (gi "$root\..\src").fullname
 write-verbose "adding path of $i '$fp' to psmodulepath"
 $env:PSModulePath ="$fp;$env:PSModulePath"
-#if (gmo csproj) { rmo csproj }
-import-module csproj -DisableNameChecking
+
+if ($host.name -eq "Windows PowerShell ISE Host") {
+    if (gmo csproj) { rmo csproj }
+    import-module csproj -DisableNameChecking
+}
 
 
 if ((get-module -listavailable logging) -ne $null) {
