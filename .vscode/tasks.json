@@ -124,10 +124,12 @@
             ],
             "isTestCommand": true,
             "suppressTaskName": true,
+            
             "problemMatcher": [
                 {
                     "owner": "pester",
                     "severity": "error",
+                    "fileLocation": "absolute",
                     "pattern": [
                         {
                             "regexp": "^\\s*\\[([-])\\]\\s+(.*)\\s+.*$",
@@ -148,6 +150,7 @@
                 {
                     "owner": "pester",
                     "severity": "error",
+                    "fileLocation": "absolute",
                     "pattern": [
                         {
                             "regexp": "^\\s*\\[([-])\\]\\s+(.*)\\s+.*$",
@@ -201,6 +204,7 @@
                 {
                     "owner": "pester",
                     "severity": "info",
+                    "fileLocation": "absolute",
                     "pattern": {
                         //match skipped tests
                         "regexp": "^\\s*\\[?\\]\\s+(.*)\\s+.*$",
