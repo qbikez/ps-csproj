@@ -1,11 +1,9 @@
 . "$PSScriptRoot\..\includes.ps1"
 
-Import-Module pester
-import-module csproj
-
-
+ipmo pester
 
 Describe "Converting dll reference to project" {    
+    $i = $MyInvocation 
     $targetdir = Get-outdir 
     copy-item "$inputdir\test" "$targetdir\test" -recurse -force
     copy-item "$inputdir\packages" "$targetdir\packages" -recurse -Force
@@ -26,6 +24,7 @@ Describe "Converting dll reference to project" {
     $projects | % {
         convert-nugettoprojectreference $referencename $targetProject $_.FullName -confirm:$false
     }    
+   
 }
 
 Describe "Converting Project reference to nuget" {
@@ -113,13 +112,23 @@ Describe "Converting Project reference to nuget" {
             }
         }
 
+        It "converted references should have relative paths" {
+            ipmo pathutils
+            $refs = get-referencesto $sln $projectname 
+            $nugetrefs = $refs | ? { $_.type -eq "nuget" }  
+            foreach($n in $nugetrefs) {
+                $n.ref.path | Should not benullorempty
+                test-isrelativepath $n.ref.path | should be $true 
+            }
+        }
+
         It "Should build on start" {
             cd $slndir
             Add-MsbuildPath
             $msbuildout = & msbuild 
             $lec = $lastexitcode              
             $errors = $msbuildout | ? { $_ -match ": error" } 
-            $errors 
+            $errors | write-warning 
             $lec | Should Be 0
         }
         

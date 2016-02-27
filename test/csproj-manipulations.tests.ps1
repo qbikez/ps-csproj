@@ -41,6 +41,18 @@ Describe "project file manipulation" {
             $ref = get-nugetreferences $csproj | ? { $_.Name -eq $packagename }
             $ref | Should Not BeNullOrEmpty
         } 
+        $ref = get-nugetreferences $csproj
+        
+        ipmo publishmap
+        ipmo pathutils
+        $cases = $ref | % { (publishmap\convertto-hashtable $_) }  
+        It "nuget reference <name> should have relative path" -TestCases $cases {
+            param($name,$path)
+                $name | Should Not BeNullOrEmpty
+                $path | Should Not BeNullOrEmpty
+                Test-IsRelativePath $path | Should Be True 
+            
+        }
 
         It "result Project should not contain project  reference to $packagename" {
             $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
@@ -62,6 +74,7 @@ Describe "project file manipulation" {
             & nuget restore -PackagesDirectory "..\packages" 
             $error.Count | Should Be 0
         }
+        
         <#
         It "Should Still Compile" {
             Set-TestInconclusive

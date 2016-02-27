@@ -57,6 +57,7 @@ function  convert-projectReferenceToNuget {
     $slndir = split-path $sln.path -parent
     $references = get-referencesto $sln $projectname
     
+    $packagesdir = Get-RelativePath $slndir $packagesDir
     $csprojs = @()
     
     foreach($r in $references) {
