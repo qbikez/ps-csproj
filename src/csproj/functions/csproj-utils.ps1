@@ -23,6 +23,7 @@ public class ReferenceMeta {
     public string Version {get;set;}
     public string ShortName {get;set;}
     public string Type {get;set;}
+    public string Path {get;set;}
 }
 "@
 
@@ -82,6 +83,7 @@ param([parameter(ValueFromPipeline=$true)]$nodes)
             Name = $name
             ShortName = get-shortname $name 
             Type = $type
+            Path = $n.HintPath
         }
     }
 }
