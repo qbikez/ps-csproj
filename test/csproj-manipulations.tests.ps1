@@ -10,8 +10,7 @@ Describe "project file manipulation" {
     copy-item "$inputdir\packages.config" "testdrive:\input\"
     copy-item "$inputdir\packages" "testdrive:\packages" -Recurse
     $testdir = "testdrive:\input" 
-    push-location
-    cd $testdir
+    In $testdir {
     Context "When replacing projectreference" {        
         
         $csproj = import-csproj "test.csproj"
@@ -81,5 +80,5 @@ Describe "project file manipulation" {
         }
         #>
     }
-    Pop-Location
+    }
 }

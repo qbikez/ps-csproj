@@ -14,7 +14,7 @@ if ((pwd).Drive.Name -eq "TestDrive") {
     cd c:\
 }
 
-if ($host.name -eq "Windows PowerShell ISE Host") {
+if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
     if (gmo csproj) { rmo csproj }
     import-module csproj -DisableNameChecking
 }
@@ -34,7 +34,7 @@ else {
 
 $inputdir = "$psscriptroot\input"
 
-function get-outdir() {
+function get-testoutputdir() {
     $targetdir = "testdrive:"
     if (get-command get-pesterstate) {
         $s = get-pesterstate
