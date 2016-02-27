@@ -1,48 +1,18 @@
-. "$psscriptroot\includes.ps1"
+param ($path = ".")
 
-Push-Location
-try {
+#$env:PSModulePath = [System.Environment]::GetEnvironmentVariable("PSModulePath", [System.EnvironmentVariableTarget]::User)
 
-cd $PSScriptRoot
+import-module pester -MinimumVersion 3.3.14
 
-$dir = ".\test\Platform\src\NowaEra.Model.Sync"
-$csproj = load-csproj "$dir\NowaEra.Model.Sync.csproj"
-$refs = get-projectreferences $csproj
+$artifacts = "$path\artifacts"
 
-log-info 
-log-info "Project references:"
+if (!(test-path $artifacts)) { $null = new-item -type directory $artifacts }
 
-$refs | % {
-    log-info $_.Node.OuterXml
+write-host "running tests. artifacts dir = $((gi $artifacts).FullName)"
+
+if (!(Test-Path $artifacts)) {
+    $null = new-item $artifacts -ItemType directory
 }
+$r = Invoke-Pester "$path" -OutputFile "$artifacts\test-result.xml" -OutputFormat NUnitXml 
 
-log-info 
-log-info "External references:"
-get-externalreferences $csproj | % { log-info $_.Node.OuterXml }
-
-log-info 
-log-info "Nuget references:"
-get-nugetreferences $csproj | % { log-info $_.Node.OuterXml }
-
-
-log-info 
-log-info "System references:"
-get-systemreferences $csproj | % { log-info $_.Node.OuterXml }
-
-Push-Location
-try {
-    cd $dir
-    $packages =  "..\..\..\packages"
-    find-nugetPath "AutoFac" $packages
-    find-nugetPath "nothing" $packages
-    find-nugetPath "Antlr" $packages
-   convertto-nuget $refs[0].Node -packagesRelPath $packages
-} finally {
-    Pop-Location
-}
-
-$csproj.Save("$((gi $dir).FullName)\out.csproj")
-} finally {
-    Pop-Location
-}
-
+return $r

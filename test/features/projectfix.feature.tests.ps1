@@ -1,3 +1,5 @@
+. "$psscriptroot\..\includes.ps1"
+
 Describe "fix a project with missing references" {
     Context "when initializing" {
         It "Should scan repo root for csproj files" {

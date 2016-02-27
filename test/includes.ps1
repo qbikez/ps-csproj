@@ -10,11 +10,14 @@ $fp = (gi "$root\..\src").fullname
 write-verbose "adding path of $i '$fp' to psmodulepath"
 $env:PSModulePath ="$fp;$env:PSModulePath"
 
+if ((pwd).Drive.Name -eq "TestDrive") {
+    cd c:\
+}
+
 if ($host.name -eq "Windows PowerShell ISE Host") {
     if (gmo csproj) { rmo csproj }
     import-module csproj -DisableNameChecking
 }
-
 
 if ((get-module -listavailable logging) -ne $null) {
     import-module logging -DisableNameChecking
@@ -32,9 +35,11 @@ else {
 $inputdir = "$psscriptroot\input"
 
 function get-outdir() {
-    #$targetdir = "testdrive:"
-   
-    $targetdir = "$psscriptroot\test-results\$(get-date -Format "yyyy-MM-dd HHmmss")"
+    $targetdir = "testdrive:"
+    if (get-command get-pesterstate) {
+        $s = get-pesterstate
+        $targetdir = "$psscriptroot\test-results\$(get-date -Format "yyyy-MM-dd HHmmss")-$($s.currentdescribe)"
+    }
     if (!(test-path $targetdir)) { $null = new-item -ItemType directory $targetdir }
     return $targetdir
 }
