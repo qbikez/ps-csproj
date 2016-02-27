@@ -1,12 +1,121 @@
 {
     "version": "0.1.0",
-    "command": "grunt",
+    "command": "powershell",
     "isShellCommand": true,
+    //	"args": ["Invoke-Pester ${file}"],
+    "showOutput": "always",
+    "fileLocation": "absolute",
     "tasks": [
         {
             "taskName": "test",
-            "args": [],
-            "isTestCommand": true
+            "args": [
+                //            "Invoke-Pester ${file}"
+                "Invoke-Pester test/features/projectfix.feature.tests.ps1"
+            ],
+            "isTestCommand": true,
+            "suppressTaskName": true,
+            "problemMatcher": [
+                {
+                    "owner": "pester",
+                    "severity": "error",
+                    "pattern": [
+                        {
+                            "regexp": "^\\s*\\[([-])\\]\\s+(.*)\\s+.*$",
+                            "message": 2
+                        },
+                        {
+                            "regexp": "(.*)",
+                            "message": 1
+                        },
+                        {
+                            "regexp": "^.*\\:\\s*(\\d+)\\s*in\\s*(.*)\\s*$",
+                            "line": 1,
+                            "file": 2,
+                            "loop": true
+                        }
+                    ]
+                },
+                {
+                    "owner": "pester",
+                    "severity": "error",
+                    "pattern": [
+                        {
+                            "regexp": "^\\s*\\[([-])\\]\\s+(.*)\\s+.*$",
+                            "message": 2
+                        },
+                        {
+                            "regexp": "(.*)",
+                            "message": 1
+                        },
+                        {
+                            "regexp": "(.*)",
+                            "message": 1
+                        },
+                        {
+                            "regexp": "^.*\\:\\s*(\\d+)\\s*in\\s*(.*)\\s*$",
+                            "line": 1,
+                            "file": 2,
+                            "loop": true
+                        }
+                    ]
+                },
+                {
+                    "owner": "pester",
+                    "severity": "error",
+                    "fileLocation": "absolute",
+                    "pattern": [
+                        {
+                            "regexp": "^\\s*\\[([-])\\]\\s+(.*)\\s+.*$",
+                            "message": 2
+                        },
+                        {
+                            "regexp": "(.*)",
+                            "message": 1
+                        },                      
+                        {
+                            "regexp": "(.*)",
+                            "message": 1
+                        },                      
+                        {
+                            "regexp": "(.*)",
+                            "message": 1
+                        },                      
+                        {
+                            "regexp": "^\\s*at.*,\\s*(.*):\\s*line\\s+([0-9]+)$",
+                            "line": 2,
+                            "file": 1,
+                            "loop": true
+                        }
+                    ]
+                },
+                {
+                    "owner": "pester",
+                    "severity": "info",
+                    "pattern": {
+                        //match skipped tests
+                        "regexp": "^\\s*\\[?\\]\\s+(.*)\\s+.*$",
+                        "message": 2
+                        //missing file so this does not work
+                    }
+                },
+                {
+                    "owner": "pester",
+                    "severity": "warning",
+                    "fileLocation": "absolute",
+                    "pattern": [
+                        {
+                            //match pending tests
+                            "regexp": "^\\s*\\[\\?\\]\\s+(.*)$",
+                            "message": 1
+                        },
+                        {
+                            "regexp": "^\\s*at line:\\s*([0-9]+)\\s+in\\s+(.*)$",
+                            "line": 1,
+                            "file": 2
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }
