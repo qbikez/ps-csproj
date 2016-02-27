@@ -3,8 +3,9 @@
 ipmo pester
 
 Describe "Converting dll reference to project" {    
+
     $i = $MyInvocation 
-    $targetdir = Get-outdir 
+    $targetdir = get-testoutputdir 
     copy-item "$inputdir\test" "$targetdir\test" -recurse -force
     copy-item "$inputdir\packages" "$targetdir\packages" -recurse -Force
         
@@ -28,7 +29,8 @@ Describe "Converting dll reference to project" {
 }
 
 Describe "Converting Project reference to nuget" {
-    $targetdir = Get-outdir 
+    
+    $targetdir = get-testoutputdir 
 
     copy-item "$inputdir\test" "$targetdir\test" -recurse 
     copy-item "$inputdir\packages" "$targetdir\packages" -recurse
@@ -40,14 +42,17 @@ Describe "Converting Project reference to nuget" {
     $sln = import-sln $slnfile
    
     Context "on start" { 
-        cd $slndir
+      
+      In $slndir {
         It "Should build on start" {
                 Add-MsbuildPath
                 $msbuildout = & msbuild 
                 $lec = $lastexitcode               
                 $lec | Should Be 0
         }
+      }
     }
+    
     
     Context "When loading sln file" {
         $projectName = "Core.Library1"
@@ -79,10 +84,13 @@ Describe "Converting Project reference to nuget" {
         }
     }
     
+    
+
     Context "When converting project with matching nuget" {
+        
         $projectname = "Core.Library1"
-        $null = new-item "$targetdir\packages\$projectname.1.0.1\lib\" -type directory
-        $null = new-item "$targetdir\packages\$projectname.1.0.1\lib\$projectname.dll" -type file 
+        #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\" -type directory
+        #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\$projectname.dll" -type file 
         
         $oldrefs = get-referencesto $sln $projectname
         $r = $sln | convert-projectReferenceToNuget -project "$projectname"  -packagesdir $packagesdir
@@ -102,7 +110,7 @@ Describe "Converting Project reference to nuget" {
         
         It "converted references should exist in packages.config" {
             $refs = get-referencesto $sln $projectname 
-            $nugetrefs = $refs | ? { $_.type -eq "nuget" }  
+            $nugetrefs = @($refs | ? { $_.type -eq "nuget" }) 
             foreach($n in $nugetrefs) {
                 $dir = split-path $n.projectpath
                 $pkg = get-packagesconfig "$dir/packages.config"
@@ -122,8 +130,9 @@ Describe "Converting Project reference to nuget" {
             }
         }
 
-        It "Should build on start" {
-            cd $slndir
+        in $slndir {
+        It "Should build after conversion" {
+            
             Add-MsbuildPath
             $msbuildout = & msbuild 
             $lec = $lastexitcode              
@@ -131,7 +140,7 @@ Describe "Converting Project reference to nuget" {
             $errors | write-warning 
             $lec | Should Be 0
         }
-        
+        }
     }
 
     

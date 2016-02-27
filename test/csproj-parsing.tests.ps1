@@ -54,7 +54,6 @@ Describe "Basic reference parsing" {
         It "should have 2 project references" {
             $refs = get-projectreferences $csproj
             $refs.Count | Should Be 2
-            write-host $refs
             $refs | ? { $_.Node.Name -ieq "Core.Client" } | Should Not BeNullOrEmpty
             $refs | ? { $_.Node.Name -ieq "Core.Interface" } | Should Not BeNullOrEmpty            
         }

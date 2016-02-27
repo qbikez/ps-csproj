@@ -12,7 +12,7 @@ function get-referencesTo {
         [Alias("project")][Parameter(Mandatory=$true)][string]$projectName
     )
 
-     $projects = $sln | get-slnprojects
+     $projects = $sln | get-slnprojects | ? { $_.type -eq "csproj" }
     #if ($project -is [string]) {
     #    $project = $sln | get-slnprojects | ? { $_.name -eq $project }
     #}
@@ -57,7 +57,6 @@ function  convert-projectReferenceToNuget {
     $slndir = split-path $sln.path -parent
     $references = get-referencesto $sln $projectname
     
-    $packagesdir = Get-RelativePath $slndir $packagesDir
     $csprojs = @()
     
     foreach($r in $references) {
@@ -67,7 +66,7 @@ function  convert-projectReferenceToNuget {
         if ($pr -eq $null) { throw "missing reference in $($r.projectname)" }
         write-verbose "found project reference to $projectname in $($r.projectname)"
         $result += $pr
-        $converted = convertto-nuget $pr $packagesDir
+        $converted = convertto-nugetreference $pr $packagesDir
         if ($converted -eq $null) { throw "failed to convert referece $pr in project $($r.projectname)" }
         replace-reference $proj $pr $converted
         

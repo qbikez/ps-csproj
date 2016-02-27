@@ -242,7 +242,7 @@ param(
     $projectPath = $node.Include
     $projectId = $node.Project
     $projectName = $node.Name
-
+    
     $path,$version,$framework = find-nugetPath $projectName $packagesRelPath
 
     if ($path -eq $null) {
@@ -315,6 +315,8 @@ function convert-reference {
         $dir = split-path -Parent $csproj.path      
         $pkgs = get-packagesconfig (Join-Path $dir "packages.config") -createifnotexists
         add-packagetoconfig -packagesconfig $pkgs -package $newref.Name -version $newref.Version -ifnotexists
+        #make sure paths are relative
+        $newref.Node.HintPath = (Get-RelativePath $dir $newref.Node.HintPath)
         $pkgs.xml.Save( (Join-Path $dir "packages.config") ) 
     }
     else {
