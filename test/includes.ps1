@@ -3,6 +3,7 @@ if ([string]::isnullorempty($root)) {
     $root = "."
 }
 
+#if ($host.name -eq "Windows PowerShell ISE Host" -and (gmo pester)) { rmo pester }
 import-module pester
 $i = (gi "$root\..\src")
 $fp = (gi "$root\..\src").fullname
@@ -29,3 +30,11 @@ else {
 }
 
 $inputdir = "$psscriptroot\input"
+
+function get-outdir() {
+    #$targetdir = "testdrive:"
+   
+    $targetdir = "$psscriptroot\test-results\$(get-date -Format "yyyy-MM-dd HHmmss")"
+    if (!(test-path $targetdir)) { $null = new-item -ItemType directory $targetdir }
+    return $targetdir
+}

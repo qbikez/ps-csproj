@@ -16,6 +16,15 @@ Describe "project file manipulation" {
         
         $csproj = import-csproj "test.csproj"
         $packagename = "Core.Boundaries"
+        <#
+        It "should build before replacing" {
+            Add-MsbuildPath
+            $msbuildout = & msbuild 
+            $lec = $lastexitcode
+            $lec | Should Be 0
+        }
+        #>
+        
         It "csproj Should contain reference to project $packagename" {
             $refs = get-projectreferences $csproj
             $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
@@ -53,8 +62,11 @@ Describe "project file manipulation" {
             & nuget restore -PackagesDirectory "..\packages" 
             $error.Count | Should Be 0
         }
+        <#
         It "Should Still Compile" {
+            Set-TestInconclusive
         }
+        #>
     }
     Pop-Location
 }

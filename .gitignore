@@ -10,3 +10,4 @@ tmp.csproj
 temp/
 obj/
 bin/
+test-results/

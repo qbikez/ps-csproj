@@ -6,15 +6,16 @@ import-module csproj
 
 
 Describe "Converting dll reference to project" {    
-    copy-item "$inputdir\test" "testdrive:\test" -recurse
-    copy-item "$inputdir\packages" "testdrive:\packages" -recurse
+    $targetdir = Get-outdir 
+    copy-item "$inputdir\test" "$targetdir\test" -recurse -force
+    copy-item "$inputdir\packages" "$targetdir\packages" -recurse -Force
         
-    $slnfile = "testdrive:\test\sln\Sample.Solution\Sample.Solution.sln"
+    $slnfile = "$targetdir\test\sln\Sample.Solution\Sample.Solution.sln"
     $slndir = split-path -parent $slnfile
-    $packagesdir = "testdrive:\packages"
+    $packagesdir = "$targetdir\packages"
     
     $referenceName = "Core.Library2"
-    $targetProject = "testdrive:\test\src\Core\Core.Library2\Core.Library2.csproj"
+    $targetProject = "$targetdir\test\src\Core\Core.Library2\Core.Library2.csproj"
     $specificProject = "Console1"
     
     $sln = import-sln $slnfile
@@ -28,14 +29,26 @@ Describe "Converting dll reference to project" {
 }
 
 Describe "Converting Project reference to nuget" {
-    copy-item "$inputdir\test" "testdrive:\test" -recurse
-    copy-item "$inputdir\packages" "testdrive:\packages" -recurse
+    $targetdir = Get-outdir 
+
+    copy-item "$inputdir\test" "$targetdir\test" -recurse 
+    copy-item "$inputdir\packages" "$targetdir\packages" -recurse
         
-    $slnfile = "testdrive:\test\sln\Sample.Solution\Sample.Solution.sln"
+    $slnfile = "$targetdir\test\sln\Sample.Solution\Sample.Solution.sln"
     $slndir = split-path -parent $slnfile
-    $packagesdir = "testdrive:\packages"
+    $packagesdir = "$targetdir\packages"
     
     $sln = import-sln $slnfile
+   
+    Context "on start" { 
+        cd $slndir
+        It "Should build on start" {
+                Add-MsbuildPath
+                $msbuildout = & msbuild 
+                $lec = $lastexitcode               
+                $lec | Should Be 0
+        }
+    }
     
     Context "When loading sln file" {
         $projectName = "Core.Library1"
@@ -69,8 +82,8 @@ Describe "Converting Project reference to nuget" {
     
     Context "When converting project with matching nuget" {
         $projectname = "Core.Library1"
-        $null = new-item "testdrive:\packages\$projectname.1.0.1\lib\" -type directory
-        $null = new-item "testdrive:\packages\$projectname.1.0.1\lib\$projectname.dll" -type file 
+        $null = new-item "$targetdir\packages\$projectname.1.0.1\lib\" -type directory
+        $null = new-item "$targetdir\packages\$projectname.1.0.1\lib\$projectname.dll" -type file 
         
         $oldrefs = get-referencesto $sln $projectname
         $r = $sln | convert-projectReferenceToNuget -project "$projectname"  -packagesdir $packagesdir
@@ -99,6 +112,18 @@ Describe "Converting Project reference to nuget" {
                 $pkg.packages | ? { $_.id -eq $n.ref.name } | Should Not BeNullOrEmpty
             }
         }
+
+        It "Should build on start" {
+            cd $slndir
+            Add-MsbuildPath
+            $msbuildout = & msbuild 
+            $lec = $lastexitcode              
+            $errors = $msbuildout | ? { $_ -match ": error" } 
+            $errors 
+            $lec | Should Be 0
+        }
         
     }
+
+    
 }
