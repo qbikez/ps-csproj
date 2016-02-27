@@ -20,6 +20,6 @@ Export-ModuleMember -function `
     find-nugetpath, get-nugettoolspath, `
     import-csproj, get-nodes, get-projectreferences, get-externalreferences, get-nugetreferences, get-systemreferences,  get-allreferences, add-projectItem, convertto-nuget, convert-reference, `
     get-packagesconfig, add-packagetoconfig, remove-packagefromconfig, `
-    convert-projectReferenceToNuget, get-referencesTo, convertto-projectreference, convert-nugetToProjectReference, `
+    convert-projectReferenceToNuget, get-referencesTo, convertto-projectreference, convertto-nugetreference, convert-nugetToProjectReference, `
     set-assemblymeta `
     -Alias *

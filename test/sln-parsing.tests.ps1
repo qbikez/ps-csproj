@@ -8,7 +8,7 @@ Describe "parsing sln" {
         $projects = get-slnprojects $sln
             
         It "Should return all projects" {
-            $projects | format-table | out-string | log-info
+            #$projects | format-table | out-string | log-info
             $projects | Should not benullorempty
         }
         It "Should contain Legimi.Core.Utils" {

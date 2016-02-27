@@ -62,7 +62,7 @@ Describe "Converting Project reference to nuget" {
         }
         
         It "Should list all references to $projectname" {
-            $refs = get-referencesto $sln $projectname -verbose
+            $refs = get-referencesto $sln $projectname 
             $refs | Should Not BeNullOrEmpty
         }
     }
@@ -72,11 +72,11 @@ Describe "Converting Project reference to nuget" {
         $null = new-item "testdrive:\packages\$projectname.1.0.1\lib\" -type directory
         $null = new-item "testdrive:\packages\$projectname.1.0.1\lib\$projectname.dll" -type file 
         
-        $oldrefs = get-referencesto $sln $projectname -verbose
-        $r = $sln | convert-projectReferenceToNuget -project "$projectname" -verbose -packagesdir $packagesdir
+        $oldrefs = get-referencesto $sln $projectname
+        $r = $sln | convert-projectReferenceToNuget -project "$projectname"  -packagesdir $packagesdir
         
         It "should not leave any project reference" {
-            $refs = get-referencesto $sln $projectname -verbose
+            $refs = get-referencesto $sln $projectname 
             $refs | ? { $_.type -eq "project" }  | Should BeNullOrEmpty
             
             $refs | Should Not BeNullOrEmpty
@@ -89,7 +89,7 @@ Describe "Converting Project reference to nuget" {
         }
         
         It "converted references should exist in packages.config" {
-            $refs = get-referencesto $sln $projectname -verbose
+            $refs = get-referencesto $sln $projectname 
             $nugetrefs = $refs | ? { $_.type -eq "nuget" }  
             foreach($n in $nugetrefs) {
                 $dir = split-path $n.projectpath
