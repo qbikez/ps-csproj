@@ -106,5 +106,17 @@ Describe "packages config file" {
             $pkg | Should Not BeNullOrEmpty
             $pkg.xml | Should Not Be $null
         }
+        It "should not overwrite if -createifnotexists is specified" {
+            if (test-path "testdrive:\packages.config") {
+                remove-item "testdrive:\packages.config"
+            }
+            $xml = '<?xml version="1.0" encoding="utf-8"?><packages><package id="a.test.1" /></packages>'
+            $xml | out-file "testdrive:\packages.config" -encoding utf8
+            
+            $pkg = get-packagesconfig "testdrive:\packages.config" -createifnotexists
+            $pkg | Should Not BeNullOrEmpty
+            $pkg.xml | Should Not Be $null
+            get-content "testdrive:\packages.config" | Should Be $xml
+        }
     }
 } 

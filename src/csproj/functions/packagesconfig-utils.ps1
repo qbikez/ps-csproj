@@ -62,6 +62,7 @@ function get-packagesconfig {
 </packages>
 '@
             $content | out-file $packagesconfig -encoding utf8
+            $xml = [xml]$content
         }
     }
     

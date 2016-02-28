@@ -47,7 +47,7 @@ Describe "Converting Project reference to nuget" {
       
       In $slndir {
         It "Should build on start" {
-                Add-MsbuildPath
+                #Add-MsbuildPath
                 $msbuildout = & msbuild 
                 $lec = $lastexitcode               
                 $lec | Should Be 0
@@ -150,7 +150,7 @@ Describe "Converting Project reference to nuget" {
         
         in $slndir {
         It "Should restore properly" {
-            remove-item -force -recurse $targetdir\packages
+            remove-item "$targetdir\packages" -force -Recurse
             $o = nuget restore
             if ($lastexitcode -ne 0) {
                 $o | % { write-warning $_ }
@@ -161,8 +161,7 @@ Describe "Converting Project reference to nuget" {
 
         in $slndir {
         It "Should build after conversion" {
-            
-            Add-MsbuildPath
+            #Add-MsbuildPath
             $msbuildout = & msbuild 
             $lec = $lastexitcode              
             $errors = $msbuildout | ? { $_ -match ": error" } 
