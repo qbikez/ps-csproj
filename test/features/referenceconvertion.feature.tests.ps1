@@ -104,7 +104,7 @@ Describe "Converting Project reference to nuget" {
          }
 
         $oldrefs = get-referencesto $sln $projectname
-        $r = $sln | convert-projectReferenceToNuget -project "$projectname"  -packagesdir $packagesdir
+        $r = $sln | convert-referencesToNuget -project "$projectname"  -packagesdir $packagesdir
         
         It "should not leave any project reference" {
             $refs = get-referencesto $sln $projectname 

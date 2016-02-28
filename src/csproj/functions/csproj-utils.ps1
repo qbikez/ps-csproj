@@ -5,6 +5,8 @@ using System.Xml;
 public class Csproj {
     public System.Xml.XmlDocument Xml {get;set;}
     public string Path {get;set;}
+    public string FullName { get { return Path; } }
+    public string Name {get;set;}
     
     public void Save() {
         this.Xml.Save(this.Path);
@@ -37,6 +39,7 @@ function import-csproj {
     if (test-path $file) { 
         $content = get-content $file
         $path = (get-item $file).FullName    
+        $name = [System.IO.Path]::GetFilenameWithoutExtension($file)
     }
     elseif ($file.Contains("<?xml") -or $file.Contains("<Project")) {
         $content = $file
@@ -48,6 +51,7 @@ function import-csproj {
     $csproj = new-object -type csproj -Property @{ 
         xml = [xml]$content
         path = $path
+        name = $name
     }
 
     return $csproj

@@ -1,9 +1,3 @@
-function convert-projectReferencesToNuget {
-    param([Parameter(Mandatory=$true, ValueFromPipeline=$true)][Sln] $sln)
-    
-    $projs = $sln.projects | ? { $_.type -eq "csproj" }
-    
-}
 
 function get-referencesTo {
         [CmdletBinding()]
@@ -42,41 +36,51 @@ function get-referencesTo {
     return $r
 }
 
-function  convert-projectReferenceToNuget {
-    [CmdletBinding()]
+function convert-projectReferenceToNuget {
+    [CmdletBinding(DefaultParameterSetName="referencename",PositionalBinding=$true)]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][Sln] $sln, 
+        [Parameter(Mandatory=$true)][Csproj] $proj,
+        [Parameter(Mandatory=$true, ParameterSetName="referenceObj")][ReferenceMeta] $pr,
+        [Parameter(Mandatory=$true, ParameterSetName="referencename")][string] $projectname    
+    )    
+        if ($pr -eq $null) { throw "missing reference in $($proj.name)" }
+        write-verbose "found project reference to $projectname in $($proj.name)"
+        $result += $pr
+        $converted = convertto-nugetreference $pr $packagesDir
+        if ($converted -eq $null) { throw "failed to convert referece $pr in project $($proj.name)" }
+        $null = replace-reference $proj $pr $converted
+        
+        write-verbose "saving modified projet $($proj.fullname)"
+        $null = $proj.save($proj.fullname)
+
+}
+
+function  convert-ReferencesToNuget {
+    [CmdletBinding(DefaultParameterSetName="slnobj")]
+    param(
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="slnobj")][Sln] $sln, 
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="slnfile")][string] $slnfile, 
         [Alias("project")][Parameter(Mandatory=$true)][string]$projectName, 
         $packagesDir
     )
-    
+    if (![string]::isnullorempty($slnfile)) {
+        $sln = import-sln $slnfile
+    }
     $projects = $sln | get-slnprojects
-    #if ($project -is [string]) {
-    #    $project = $sln | get-slnprojects | ? { $_.name -eq $project }
-    #}
     $slndir = split-path $sln.path -parent
+    
+    # find all projects that reference $projectName
     $references = get-referencesto $sln $projectname
     
     $csprojs = @()
     
     foreach($r in $references) {
         if ($r.type -ne "project") { continue }
-        $pr = $r.ref
-        $proj = $r.project
-        if ($pr -eq $null) { throw "missing reference in $($r.projectname)" }
-        write-verbose "found project reference to $projectname in $($r.projectname)"
-        $result += $pr
-        $converted = convertto-nugetreference $pr $packagesDir
-        if ($converted -eq $null) { throw "failed to convert referece $pr in project $($r.projectname)" }
-        replace-reference $proj $pr $converted
-        
-        write-verbose "saving modified projet $($r.projectpath)"
-        $proj.save($r.projectpath)
-        
+        $null = convert-projectReferenceToNuget -proj $r.project -pr $r.ref
         $csprojs += get-content $r.projectpath
     }
     
-    return $csprojs
+    #return $csprojs
 }
 
 function convert-nugetToProjectReference {
