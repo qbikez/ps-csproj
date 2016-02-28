@@ -169,19 +169,21 @@ Describe "Converting Project reference to nuget" {
         }
         }
 
-        in $slndir {
         It "Should build after conversion" {
             #Add-MsbuildPath
-            $msbuildout = & msbuild 2>&1
+            In $slndir {
+                $msbuildout = & msbuild 2>&1
+            }
             $lec = $lastexitcode              
             $errors = $msbuildout | ? { $_ -match ": error" } 
             $errors | write-warning 
             if ($lec -ne 0) {
+                write-warning "copying failed build files from $targetdir"
                 copy-item "$targetdir" "$artifacts/failed-build" -recurse -verbose
             }
             $lec | Should Be 0
         }
-        }
+        
     }
 
     
