@@ -1,6 +1,7 @@
 . "$PSScriptRoot\..\includes.ps1"
 
 ipmo pester
+ipmo csproj
 
 Describe "Converting dll reference to project" {    
 
@@ -34,7 +35,8 @@ Describe "Converting Project reference to nuget" {
 
     copy-item "$inputdir\test" "$targetdir\test" -recurse 
     copy-item "$inputdir\packages" "$targetdir\packages" -recurse
-        
+    copy-item "$inputdir\packages-repo" "$targetdir\packages-repo" -recurse -Force
+
     $slnfile = "$targetdir\test\sln\Sample.Solution\Sample.Solution.sln"
     $slndir = split-path -parent $slnfile
     $packagesdir = "$targetdir\packages"
@@ -90,8 +92,17 @@ Describe "Converting Project reference to nuget" {
         
         $projectname = "Core.Library1"
         #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\" -type directory
-        #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\$projectname.dll" -type file 
+        #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\$projectname.dll" -type file
         
+        $projects = $sln | get-slnprojects | ? { $_.type -eq "csproj" }
+        $oldpkgs = $projects | % { 
+            $dir = Split-Path -Parent $_.FullName
+            return @{
+                pkgs = get-packagesconfig "$dir/packages.config"
+                project = $_
+            }
+         }
+
         $oldrefs = get-referencesto $sln $projectname
         $r = $sln | convert-projectReferenceToNuget -project "$projectname"  -packagesdir $packagesdir
         
@@ -119,6 +130,13 @@ Describe "Converting Project reference to nuget" {
                 $pkg.packages | ? { $_.id -eq $n.ref.name } | Should Not BeNullOrEmpty
             }
         }
+        
+        $cases = $oldpkgs | % { @{ projectName = $_.project.Name; pkgs = $_.pkgs; project = $_.project } }
+        It "should not remove previous packages from packages.config in project <projectname>" -TestCases $cases {
+            param($projectname, $pkgs, $project)
+            $newpkgs = get-packagesconfig $project.fullname
+            $pkgs.packages.lenght -le $newpkgs.packages.length | should be $true 
+        }
 
         It "converted references should have relative paths" {
             ipmo pathutils
@@ -128,6 +146,17 @@ Describe "Converting Project reference to nuget" {
                 $n.ref.path | Should not benullorempty
                 test-isrelativepath $n.ref.path | should be $true 
             }
+        }
+        
+        in $slndir {
+        It "Should restore properly" {
+            remove-item -force -recurse $targetdir\packages
+            $o = nuget restore
+            if ($lastexitcode -ne 0) {
+                $o | % { write-warning $_ }
+            }
+            $lastexitcode | Should Be 0
+        }
         }
 
         in $slndir {
