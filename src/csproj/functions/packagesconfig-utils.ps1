@@ -47,7 +47,15 @@ function get-packagesconfig {
         $xml = [xml]$packagesconfig
     }
     else {
-        if ($createifnotexists) {
+        if ($packagesconfig.EndsWith('.csproj')) {
+            $dir = split-path -parent $packagesconfig
+            $packagesconfig = "$dir/packages.config"
+        }
+        if (test-path $packagesconfig) {
+            $c = get-content $packagesconfig | Out-String
+            $xml = [xml]$c
+        } 
+        elseif ($createifnotexists) {
             $content = @'
 <?xml version="1.0" encoding="utf-8"?>
 <packages>
@@ -55,10 +63,6 @@ function get-packagesconfig {
 '@
             $content | out-file $packagesconfig -encoding utf8
         }
-        if (test-path $packagesconfig) {
-            $c = get-content $packagesconfig | Out-String
-            $xml = [xml]$c
-        } 
     }
     
     if ($xml.packages -is [string]) {
