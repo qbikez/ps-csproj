@@ -70,8 +70,11 @@ Describe "project file manipulation" {
         }
         It "Should restore properly" {
             $error.Clear()
-            & nuget restore -PackagesDirectory "..\packages" 
-            $error.Count | Should Be 0
+            $nugetout = & nuget restore -NoCache -PackagesDirectory "..\packages" 2>&1
+            if ($lastexitcode -ne 0) {
+                $nugetout | % {Write-Warning $_}
+            }
+            $lastexitcode | Should be 0
         }
         
         <#

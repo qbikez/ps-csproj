@@ -19,12 +19,12 @@ build_script:
 test_script:
 - ps: scripts/lib/test.appveyor.ps1
 
+artifacts:
+- path: artifacts
+
 on_success:
 - ps: 'write-host "event: build success!"'
 on_failure:
 - ps: 'write-host "event: build error!"'
 on_finish:
 - ps: 'write-host "event: build finish!"'
-
-artifacts:
-- path: artifacts

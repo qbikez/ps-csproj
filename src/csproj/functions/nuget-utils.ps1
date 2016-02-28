@@ -100,3 +100,15 @@ function get-shortName($package) {
     $m = $package -match "(?<shortname>.*?)(,(?<specificversion>.+)){0,1}$"
     return $Matches["shortname"]
 }
+
+function new-nuspec($projectPath) {
+    pushd
+    try {
+        $dir = split-path $projectpath -parent
+        $csproj = split-path $projectpath -leaf
+        cd $dir
+        nuget spec $csproj
+    } finally {
+        popd
+    }
+}

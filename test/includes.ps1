@@ -36,7 +36,7 @@ $inputdir = "$psscriptroot\input"
 
 function get-testoutputdir() {
     $targetdir = "testdrive:"
-    if (get-command get-pesterstate -and $false) {
+    if (get-command get-pesterstate -ErrorAction Ignore -and $false) {
         $s = get-pesterstate
         $targetdir = "$psscriptroot\test-results\$(get-date -Format "yyyy-MM-dd HHmmss")-$($s.currentdescribe)"
     }

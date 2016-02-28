@@ -46,10 +46,20 @@ Describe "Converting Project reference to nuget" {
     Context "on start" { 
       
       In $slndir {
+        It "Should restore on start" {
+            $o = nuget restore -nocache
+            if ($lastexitcode -ne 0) {
+                $o | % { write-warning $_ }
+            }
+            $lastexitcode | Should Be 0
+        }
         It "Should build on start" {
                 #Add-MsbuildPath
-                $msbuildout = & msbuild 
-                $lec = $lastexitcode               
+                $msbuildout = & msbuild 2>&1
+                $lec = $lastexitcode 
+                if ($lec -ne 0) {
+                    $msbuildout | % { Write-Warning $_ }
+                }
                 $lec | Should Be 0
         }
       }
@@ -149,9 +159,9 @@ Describe "Converting Project reference to nuget" {
         }
         
         in $slndir {
-        It "Should restore properly" {
+        It "Should restore after conversion" {
             remove-item "$targetdir\packages" -force -Recurse
-            $o = nuget restore
+            $o = nuget restore -nocache
             if ($lastexitcode -ne 0) {
                 $o | % { write-warning $_ }
             }
@@ -162,10 +172,13 @@ Describe "Converting Project reference to nuget" {
         in $slndir {
         It "Should build after conversion" {
             #Add-MsbuildPath
-            $msbuildout = & msbuild 
+            $msbuildout = & msbuild 2>&1
             $lec = $lastexitcode              
             $errors = $msbuildout | ? { $_ -match ": error" } 
             $errors | write-warning 
+            if ($lec -ne 0) {
+                copy-item "$targetdir" "$artifacts/failed-build" -recurse -verbose
+            }
             $lec | Should Be 0
         }
         }
