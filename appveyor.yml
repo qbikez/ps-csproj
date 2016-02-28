@@ -27,4 +27,8 @@ on_success:
 on_failure:
 - ps: 'write-host "event: build error!"'
 on_finish:
-- ps: 'write-host "event: build finish!"'
+- ps: 'write-host "event: build finish! pushing artifacts."'
+#- ps: test-path "artifacts" 
+- 7z a artifacts.zip artifacts
+- ps: Push-AppveyorArtifact "artifacts.zip"
+#- appveyor PushArtifact "artifacts"

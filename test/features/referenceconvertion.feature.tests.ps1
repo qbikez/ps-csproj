@@ -160,7 +160,7 @@ Describe "Converting Project reference to nuget" {
         
         in $slndir {
         It "Should restore after conversion" {
-            remove-item "$targetdir\packages" -force -Recurse
+            remove-item "$targetdir/packages" -force -Recurse -Verbose
             $o = nuget restore -nocache
             if ($lastexitcode -ne 0) {
                 $o | % { write-warning $_ }
@@ -170,6 +170,7 @@ Describe "Converting Project reference to nuget" {
         }
 
         It "Should build after conversion" {
+            Get-ChildItem "$targetdir" -Verbose 
             #Add-MsbuildPath
             In $slndir {
                 $msbuildout = & msbuild 2>&1
