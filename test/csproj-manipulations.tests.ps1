@@ -49,7 +49,7 @@ Describe "project file manipulation" {
             param($name,$path)
                 $name | Should Not BeNullOrEmpty
                 $path | Should Not BeNullOrEmpty
-                Test-IsRelativePath $path | Should Be True 
+                Test-IsPathRelative $path | Should Be True 
             
         }
 

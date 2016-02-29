@@ -12,7 +12,7 @@ Describe "Converting dll reference to project" {
         
     $slnfile = "$targetdir\test\sln\Sample.Solution\Sample.Solution.sln"
     $slndir = split-path -parent $slnfile
-    $packagesdir = "$targetdir\packages"
+    $packagesdir = "$targetdir\test\packages"
     
     $referenceName = "Core.Library2"
     $targetProject = "$targetdir\test\src\Core\Core.Library2\Core.Library2.csproj"
@@ -34,12 +34,12 @@ Describe "Converting Project reference to nuget" {
     $targetdir = get-testoutputdir 
 
     copy-item "$inputdir\test" "$targetdir\test" -recurse 
-    copy-item "$inputdir\packages" "$targetdir\packages" -recurse
+    #copy-item "$inputdir\packages" "$targetdir\packages" -recurse
     copy-item "$inputdir\packages-repo" "$targetdir\packages-repo" -recurse -Force
 
     $slnfile = "$targetdir\test\sln\Sample.Solution\Sample.Solution.sln"
     $slndir = split-path -parent $slnfile
-    $packagesdir = "$targetdir\packages"
+    $packagesdir = "$targetdir\test\packages"
     
     $sln = import-sln $slnfile
    
@@ -114,7 +114,16 @@ Describe "Converting Project reference to nuget" {
          }
 
         $oldrefs = get-referencesto $sln $projectname
-        $r = $sln | convert-referencesToNuget -project "$projectname"  -packagesdir $packagesdir
+        
+        It "should convert without errors" {
+            In $slndir {
+                $outdir = (get-relativepath $slndir $packagesdir)
+                $o = nuget install "$projectname" -out $outdir
+                $o
+                $lastexitcode | should be 0
+            }
+            { $sln | convert-referencesToNuget -project "$projectname"  -packagesdir $packagesdir } | Should not throw
+        }
         
         It "should not leave any project reference" {
             $refs = get-referencesto $sln $projectname 
@@ -154,13 +163,13 @@ Describe "Converting Project reference to nuget" {
             $nugetrefs = $refs | ? { $_.type -eq "nuget" }  
             foreach($n in $nugetrefs) {
                 $n.ref.path | Should not benullorempty
-                test-isrelativepath $n.ref.path | should be $true 
+                test-ispathrelative $n.ref.path | should be $true 
             }
         }
         
         in $slndir {
         It "Should restore after conversion" {
-            remove-item "$targetdir/packages" -force -Recurse -Verbose
+            remove-item "$targetdir/test/packages" -force -Recurse
             $o = nuget restore -nocache
             if ($lastexitcode -ne 0) {
                 $o | % { write-warning $_ }
