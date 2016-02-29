@@ -170,7 +170,6 @@ Describe "Converting Project reference to nuget" {
         }
 
         It "Should build after conversion" {
-            Get-ChildItem "$targetdir" -Verbose 
             #Add-MsbuildPath
             In $slndir {
                 $msbuildout = & msbuild 2>&1
@@ -180,7 +179,9 @@ Describe "Converting Project reference to nuget" {
             $errors | write-warning 
             if ($lec -ne 0) {
                 write-warning "copying failed build files from $targetdir"
-                copy-item "$targetdir" "$artifacts/failed-build" -recurse -verbose
+                pwd | write-warning
+                Get-ChildItem "$targetdir" -Verbose            
+                copy-item "$targetdir/" "$artifacts/failed-build" -recurse -verbose
             }
             $lec | Should Be 0
         }
