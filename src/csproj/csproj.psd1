@@ -63,7 +63,7 @@ Description = 'tools for manipulationg csproj and sln files'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-# NestedModules = @()
+NestedModules = @("publishmap", "pathutils")
 
 # Functions to export from this module
 FunctionsToExport = '*'
