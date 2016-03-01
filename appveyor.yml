@@ -18,6 +18,10 @@ build_script:
 - ps: write-host "no need to build powershell"
 test_script:
 - ps: scripts/lib/test.appveyor.ps1
+- ps: Uninstall-Module pathutils -verbose
+- ps: Install-Module csproj -verbose
+- ps: Get-module csproj -listavailable | format-list
+- ps: Import-Module csproj -verbose
 
 artifacts:
 - path: artifacts
