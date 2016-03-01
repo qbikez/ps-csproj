@@ -19,7 +19,7 @@ build_script:
 test_script:
 - ps: scripts/lib/test.appveyor.ps1
 - ps: Uninstall-Module pathutils -verbose
-- ps: Install-Module csproj -verbose
+- ps: Install-Module -Name csproj -RequiredVersion 1.0.6 -Force -Verbose
 - ps: Get-module csproj -listavailable | format-list
 - ps: Import-Module csproj -verbose
 
