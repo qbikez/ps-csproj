@@ -1,7 +1,8 @@
 . "$PSScriptRoot\..\includes.ps1"
 
-ipmo pester
-ipmo csproj
+import-module pester
+import-module csproj
+import-module pathutils
 
 Describe "Converting dll reference to project" {    
 
