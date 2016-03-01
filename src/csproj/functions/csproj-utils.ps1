@@ -8,6 +8,10 @@ public class Csproj {
     public string FullName { get { return Path; } }
     public string Name {get;set;}
     
+    public override string ToString() {
+        return Name;
+    }
+    
     public void Save() {
         this.Xml.Save(this.Path);
     }
@@ -26,6 +30,11 @@ public class ReferenceMeta {
     public string ShortName {get;set;}
     public string Type {get;set;}
     public string Path {get;set;}
+    public bool? IsValid {get;set;}
+    
+    public override string ToString() {
+        return string.Format("-> {1}{0}", ShortName, IsValid != null ? ((IsValid.Value ? "[+]" : "[-]") + " ") : "");
+    }
 }
 "@
 
@@ -82,12 +91,15 @@ param([parameter(ValueFromPipeline=$true)]$nodes)
             "Reference" { "dll" }
             default { "?" }
         }
+        $path = $null
+        if ($n.HintPath) { $path = $n.HintPath }
+        elseif ($n.Include) { $path = $n.Include }
         return new-object -TypeName ReferenceMeta -Property @{ 
             Node = $n
             Name = $name
             ShortName = get-shortname $name 
             Type = $type
-            Path = $n.HintPath
+            Path = $path
         }
     }
 }

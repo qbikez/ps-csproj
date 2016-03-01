@@ -1,5 +1,28 @@
 . "$psscriptroot\..\includes.ps1"
 
+import-module pester
+import-module csproj
+
+Describe "verify solution project set" {
+    $slnfile = "$inputdir/test/sln/Sample.Solution/Sample.Solution.sln"
+    It "Should return a tree of all projects and their dependencies" {
+        $sln = import-sln $slnfile
+        $deps = get-slndependencies $sln
+        $deps | Should Not BeNullOrEmpty
+        $deps.Length | Should Be 3    
+    }
+    
+    $slnfile = "$inputdir/test/sln/Sample.Solution.Bad/Sample.Solution.Bad.sln"    
+    It "Should report missing projects" {
+        $sln = import-sln $slnfile
+        $valid,$missing = test-slndependencies $sln
+        $valid | Should Be $false
+        $missing | Should Not BeNullOrEmpty
+        $missing.Length | Should Be 1
+    }
+ }
+
+
 Describe "fix a project with missing references" {
     Context "when initializing" {
         It "Should scan repo root for csproj files" {

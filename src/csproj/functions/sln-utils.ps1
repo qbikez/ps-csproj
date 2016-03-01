@@ -2,6 +2,7 @@ $script:types = @"
 public class Sln {
     public string OriginalPath {get;set;}
     public string Path {get;set;}
+    public string Fullname { get { return Path; }}
     public string[] Content {get;set;}
     public SlnProject[] projects {get;set;} 
 }
@@ -12,6 +13,10 @@ public class SlnProject {
     public int Line {get;set;}
     public string Type { get;set;} 
     public string FullName {get;set;}
+    
+    public override string ToString() {
+        return Name;
+    }
 }
 "@
 

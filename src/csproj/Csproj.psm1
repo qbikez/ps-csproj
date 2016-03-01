@@ -21,5 +21,6 @@ Export-ModuleMember -function `
     import-csproj, get-nodes, get-projectreferences, get-externalreferences, get-nugetreferences, get-systemreferences,  get-allreferences, add-projectItem, convertto-nuget, convert-reference, `
     get-packagesconfig, add-packagetoconfig, remove-packagefromconfig, `
     convert-referencestonuget, get-referencesTo, convertto-projectreference, convertto-nugetreference, convert-nugetToProjectReference, `
-    set-assemblymeta `
+    set-assemblymeta, get-assemblymeta, `
+    get-slndependencies, test-slndependencies `
     -Alias *
