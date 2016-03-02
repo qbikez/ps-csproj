@@ -121,3 +121,6 @@ function convert-nugetToProjectReference {
             $csproj.Save()
         }
 }
+
+new-alias convert-ReferencesToNugets convert-ReferencesToNuget
+new-alias tonuget convert-ReferencesToNuget
