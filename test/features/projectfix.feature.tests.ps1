@@ -24,15 +24,25 @@ Describe "verify solution project set" {
 
 
 Describe "fix a project with missing references" {
+    $targetdir = "testdrive:/"
+    copy-item "$inputdir/test" $targetdir -Recurse
+    copy-item "$inputdir/packages" "$targetdir/test" -Recurse
+    copy-item "$inputdir/packages-repo" "$targetdir" -Recurse
+    $packagesDir = "$targetdir/test/packages"
+    $packagesRepo = "$targetdir/packages-repo"
+    
     Context "when initializing" {
         It "Should scan repo root for csproj files" {
-            Set-TestInconclusive
-        }
+            $csprojs = get-childitem "$targetdir/test" -Filter "*.csproj" -Recurse
+            $csprojs | Should Not BeNullOrEmpty    
+        }      
         It "Should scan packages dir for nuget packages" {
-            Set-TestInconclusive
+            $nugets = get-installedNugets $packagesDir
+            $nugets | Should Not BeNullOrEmpty
         }
         It "Should scan chosen packages source for nuget packages"{
-            Set-TestInconclusive
+            $list = get-availablenugets (gi $packagesRepo).FullName
+            $list | Should Not BeNullOrEmpty
         }
     }
     Context "When a matching csproj can be found in repo directory"{

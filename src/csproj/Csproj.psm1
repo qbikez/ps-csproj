@@ -17,7 +17,7 @@ Resolve-Path $helpersPath\functions\*.ps1 |
 #Export-ModuleMember -Function *
 Export-ModuleMember -function `
     import-sln, get-slnprojects, remove-slnproject, `
-    find-nugetpath, get-nugettoolspath, `
+    find-nugetpath, get-nugettoolspath, Get-InstalledNugets, Get-AvailableNugets, `
     import-csproj, get-nodes, get-projectreferences, get-externalreferences, get-nugetreferences, get-systemreferences,  get-allreferences, add-projectItem, convertto-nuget, convert-reference, `
     get-packagesconfig, add-packagetoconfig, remove-packagefromconfig, `
     convert-referencestonuget, get-referencesTo, convertto-projectreference, convertto-nugetreference, convert-nugetToProjectReference, `

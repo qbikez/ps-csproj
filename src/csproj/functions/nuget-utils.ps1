@@ -101,6 +101,17 @@ function get-shortName($package) {
     return $Matches["shortname"]
 }
 
+function get-packageName($package) {
+    $m = $package -match "(?<name>.*?)\.(?<fullversion>(?<version>[0-9]+(\.[0-9]+)*)+(?<suffix>-.*){0,1})$"
+    return $Matches["name"]
+}
+
+
+function get-packageversion($package) {
+    $m = $package -match "(?<name>.*?)\.(?<fullversion>(?<version>[0-9]+(\.[0-9]+)*)+(?<suffix>-.*){0,1})$"
+    return $Matches["fullversion"]
+}
+
 function new-nuspec($projectPath) {
     pushd
     try {
@@ -111,4 +122,32 @@ function new-nuspec($projectPath) {
     } finally {
         popd
     }
+}
+
+function Get-InstalledNugets($packagesdir) {
+    $subdirs = get-childitem $packagesdir -Directory
+    $result = @()
+    foreach($s in $subdirs) {
+        $name = get-packageName $s
+        $version = get-packageversion $s
+        
+        if ($name -ne $null -and $version -ne $null) {
+            $result += new-object -type pscustomobject -Property @{ 
+                Name = $name; Version = $version 
+            }
+        }
+    }
+    
+    return $result
+}
+
+function Get-AvailableNugets ($source) {
+    $l = nuget list -source $source
+    $l = $l | % {
+        $s = $_.split(" ")
+         new-object -type pscustomobject -Property @{ 
+                Name = $s[0]; Version = $s[1] 
+            }
+    }
+    return $l
 }
