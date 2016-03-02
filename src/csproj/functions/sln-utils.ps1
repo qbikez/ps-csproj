@@ -13,6 +13,7 @@ public class SlnProject {
     public int Line {get;set;}
     public string Type { get;set;} 
     public string FullName {get;set;}
+    public string TypeGuid {get;set;}
     
     public override string ToString() {
         return Name;
@@ -60,6 +61,7 @@ function get-slnprojects {
                 name = $Matches["name"]
                 path = $Matches["path"]
                 guid = $Matches["guid"] 
+                typeguid = $matches["typeguid"]
                 line = $i
                 type = $type
                 fullname = join-path $slndir $Matches["path"]
@@ -78,6 +80,18 @@ function find-slnproject {
     if ($sln.projects -eq $null) { $sln.projects = get-slnprojects $sln }
     $proj = $sln.projects | ? { $_.name -ieq $projectname }
     return $proj
+}
+
+function Update-SlnProject {
+[CmdletBinding()]
+param([Sln]$sln, [SlnProject] $project) 
+      # Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legimi.Core.Utils.Diag", "..\..\..\src\Core\Legimi.Core.Utils.Diag\Legimi.Core.Utils.Diag.csproj", "{678181A1-BF92-46F2-8D71-E3F5057042AB}"
+   $regex = 'Project\((?<typeguid>.*?)\)\s*=\s*"(?<name>.*?)",\s*"(?<path>.*?)",\s*"(?<guid>.*?)"'
+   $line = "Project($($project.typeguid)) = ""$($project.Name)"", ""$($project.Path)"", ""$($project.guid)"""
+   write-verbose "replacing line:"
+   write-verbose "$($sln.content[$project.line])"
+   write-verbose "=> $line"
+   $sln.content[$project.line] = $sln.content[$project.line] -replace $regex,$line 
 }
 
 function remove-slnproject ([Sln]$sln, $projectname) {

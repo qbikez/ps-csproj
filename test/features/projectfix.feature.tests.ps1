@@ -2,6 +2,8 @@
 
 import-module pester
 import-module csproj
+import-module publishmap
+import-module pathutils
 
 Describe "verify solution project set" {
     $slnfile = "$inputdir/test/sln/Sample.Solution/Sample.Solution.sln"
@@ -28,9 +30,13 @@ Describe "fix a project with missing references" {
     copy-item "$inputdir/test" $targetdir -Recurse
     copy-item "$inputdir/packages" "$targetdir/test" -Recurse
     copy-item "$inputdir/packages-repo" "$targetdir" -Recurse
+    #move-item "$targetdir/test/src/Core" "$targetdir/test/src/Core2" 
+    move-item "$targetdir/test/src" "$targetdir/test/src2" 
+    
+    $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"    
+   
     $packagesDir = "$targetdir/test/packages"
     $packagesRepo = "$targetdir/packages-repo"
-    
     Context "when initializing" {
         It "Should scan repo root for csproj files" {
             $csprojs = get-childitem "$targetdir/test" -Filter "*.csproj" -Recurse
@@ -47,7 +53,30 @@ Describe "fix a project with missing references" {
     }
     Context "When a matching csproj can be found in repo directory"{
         It "Should replace reference path with a valid csproj" {
-            Set-TestInconclusive
+            $sln = import-sln $slnfile
+            $valid,$missing = test-slndependencies $sln
+            $valid | Should Be $false
+            $missing.length | Should Be 3
+            $missing.In | Should Be $sln.Fullname
+            $csprojs = get-childitem "$targetdir/test" -Filter "*.csproj" -Recurse
+            $missing = $missing | % {
+                $m = $_
+                $matching = $csprojs | ? { [System.io.path]::GetFilenameWithoutExtension($_.Name) -eq $m.ref.Name }
+                $null = $m | add-property -name "matching" -value $matching
+                return $m
+            }
+            $missing.matching | Should Not BeNullOrEmpty
+         
+            
+            $missing | % {
+                $relpath = get-relativepath $sln.fullname $_.matching.fullname
+                $_.ref.Path = $relpath
+                update-slnproject $sln $_.ref
+            }
+            
+            $valid,$missing = test-slndependencies $sln
+            $valid | Should Be $true
+         
         }
     }
     Context "When a matching nuget can be found in one of the sources" {
