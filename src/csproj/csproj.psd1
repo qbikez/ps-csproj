@@ -12,7 +12,7 @@
 RootModule = '.\Csproj.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.6'
+ModuleVersion = '1.0.7'
 
 # ID used to uniquely identify this module
 GUID = '704af2c5-1174-4e07-bce4-5503cc9b930d'
@@ -48,7 +48,14 @@ Description = 'tools for manipulationg csproj and sln files'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+RequiredModules = @( 
+    @{ 
+        ModuleName="PublishMap"; ModuleVersion="1.2"
+    },
+    @{ 
+        ModuleName="PathUtils"; ModuleVersion="1.0.5"
+    }
+)
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
@@ -63,7 +70,7 @@ Description = 'tools for manipulationg csproj and sln files'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @("publishmap", "pathutils")
+NestedModules = @()
 
 # Functions to export from this module
 FunctionsToExport = '*'
@@ -117,6 +124,7 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+
 
 
 
