@@ -1,5 +1,7 @@
-import-module Pester
 . $PSScriptRoot\includes.ps1
+
+import-module Pester
+import-module pathutils
 
 $inputdir = "$psscriptroot\input"
 

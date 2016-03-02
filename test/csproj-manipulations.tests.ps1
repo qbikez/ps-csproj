@@ -2,6 +2,7 @@
 
 import-module pester
 import-module csproj -DisableNameChecking
+import-module pathutils
 
 #TODO: use https://github.com/pester/Pester/wiki/TestDrive 
 Describe "project file manipulation" {
