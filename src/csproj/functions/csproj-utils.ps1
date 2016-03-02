@@ -57,8 +57,13 @@ function import-csproj {
         throw "file not found: '$file'"
     }
 
+    try {
+        $xml =[xml]$content
+    } catch {
+        throw "failed to parse project '$file': $_"
+    }
     $csproj = new-object -type csproj -Property @{ 
-        xml = [xml]$content
+        xml = $xml
         path = $path
         name = $name
     }
