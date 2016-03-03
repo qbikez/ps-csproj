@@ -41,6 +41,7 @@ Describe "Converting Project reference to nuget" {
     $slnfile = "$targetdir\test\sln\Sample.Solution\Sample.Solution.sln"
     $slndir = split-path -parent $slnfile
     $packagesdir = "$targetdir\test\packages"
+    if (!(test-path $packagesdir)) { $null = new-item $packagesdir -type directory }
     
     $sln = import-sln $slnfile
    
@@ -115,7 +116,6 @@ Describe "Converting Project reference to nuget" {
          }
 
         $oldrefs = get-referencesto $sln $projectname
-        
         It "should convert without errors" {
             In $slndir {
                 $outdir = (get-relativepath $slndir $packagesdir -verbose)
