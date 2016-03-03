@@ -28,10 +28,10 @@ if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost
 
 import-module logging -DisableNameChecking
 
-if ((get-module logging) -eq $null) {
+if ((get-module logging) -eq  $null) {
     write-host "importing logging"
     import-module logging -DisableNameChecking    
-    if ((get-module logging) -eq $null) {
+    if ((get-module logging) -ne $null) {
         $Global:logpattern.Add("""(?<magenta>.*?)""", "quoted names")
         $Global:logpattern.Add("<(?<cyan>[a-zA-Z]+)", "xml node start")
         $Global:logpattern.Add("/(?<cyan>[a-zA-Z]+)>", "xml node end")
