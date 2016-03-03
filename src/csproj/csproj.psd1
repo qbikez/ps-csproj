@@ -53,7 +53,7 @@ Description = 'tools for manipulationg csproj and sln files'
 #RequiredModules = @(
 NestedModules = @( 
     @{ 
-        ModuleName="PublishMap"; ModuleVersion="1.2"
+        ModuleName="PublishMap"; ModuleVersion="1.2.0"
     },
     @{ 
         ModuleName="PathUtils"; ModuleVersion="1.0.5"
