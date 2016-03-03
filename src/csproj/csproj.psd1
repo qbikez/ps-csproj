@@ -30,7 +30,7 @@ Copyright = '(c) 2016 jakub.pawlowski. All rights reserved.'
 Description = 'tools for manipulationg csproj and sln files'
 
 # Minimum version of the Windows PowerShell engine required by this module
-# PowerShellVersion = ''
+# PowerShellVersion = '5.0'
 
 # Name of the Windows PowerShell host required by this module
 # PowerShellHostName = ''
@@ -53,10 +53,10 @@ Description = 'tools for manipulationg csproj and sln files'
 #RequiredModules = @(
 NestedModules = @( 
     @{ 
-        ModuleName="PublishMap"; ModuleVersion="1.2.0"
+        ModuleName="PublishMap"; ModuleVersion="1.2.1"
     },
     @{ 
-        ModuleName="PathUtils"; ModuleVersion="1.0.5"
+        ModuleName="PathUtils"; ModuleVersion="1.0.7"
     }
 )
 
