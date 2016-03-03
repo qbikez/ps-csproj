@@ -17,20 +17,29 @@ if ((pwd).Drive.Name -eq "TestDrive") {
 }
 
 if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
-    if (gmo csproj) { rmo csproj }
+    write-Verbose "reloading csproj"
+    if (gmo csproj) {
+        rmo csproj 
+    }
+    write-Verbose "importing csproj"
     import-module csproj -DisableNameChecking
+    write-Verbose "reloading csproj DONE"
 }
 
-if ((get-module -listavailable logging) -ne $null) {
-    import-module logging -DisableNameChecking
+import-module logging -DisableNameChecking
 
-    $Global:logpattern.Add("""(?<magenta>.*?)""", "quoted names")
-    $Global:logpattern.Add("<(?<cyan>[a-zA-Z]+)", "xml node start")
-    $Global:logpattern.Add("/(?<cyan>[a-zA-Z]+)>", "xml node end")
-}
-else {
-    function log-info($message = "") {
-        write-host -ForegroundColor Cyan $message
+if ((get-module logging) -eq $null) {
+    write-host "importing logging"
+    import-module logging -DisableNameChecking    
+    if ((get-module logging) -eq $null) {
+        $Global:logpattern.Add("""(?<magenta>.*?)""", "quoted names")
+        $Global:logpattern.Add("<(?<cyan>[a-zA-Z]+)", "xml node start")
+        $Global:logpattern.Add("/(?<cyan>[a-zA-Z]+)>", "xml node end")
+    }
+    else {
+        function log-info($message = "") {
+            write-host -ForegroundColor Cyan $message
+        }
     }
 }
 
@@ -45,3 +54,5 @@ function get-testoutputdir() {
     if (!(test-path $targetdir)) { $null = new-item -ItemType directory $targetdir }
     return $targetdir
 }
+
+write-host "== includes END =="

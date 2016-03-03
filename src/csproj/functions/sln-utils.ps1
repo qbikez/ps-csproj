@@ -100,7 +100,9 @@ param([Sln]$sln, [SlnProject] $project)
    $sln.content[$project.line] = $sln.content[$project.line] -replace $regex,$line 
 }
 
-function remove-slnproject ([Sln]$sln, $projectname) {
+function remove-slnproject {
+[CmdletBinding()]    
+param ([Sln]$sln, $projectname) 
     $proj = find-slnproject $sln $projectname
     if ($proj -eq $null) { throw "project '$projectname' not found in solution" }
 
@@ -116,11 +118,24 @@ function remove-slnproject ([Sln]$sln, $projectname) {
     
     if ($endi -eq -1) { throw "failed to find line matching /$regex/"}
     
-    $newcontent = @()
+    $newcontent = new-object -type "System.Collections.ArrayList"
     for($i = 0; $i -lt $sln.content.length; $i++) {
         if ($i -ge $proj.line -and $i -le $endi) { continue }
-        else { $newcontent += $sln.content[$i] }
+        else { $newcontent.Add($sln.content[$i]) }
     }
-    $sln.content = $newcontent
+    
+    $referencingLines = @()
+    for($i = 0; $i -lt $newcontent.Count; $i++) {
+        if ($newcontent[$i] -match "$($proj.Guid)") {
+            $referencingLines += @{ line = $i; text = $newcontent[$i] }
+        }
+    }
+    
+    for ($i = $referencingLines.length - 1; $i -ge 0; $i--) {
+        write-verbose "Removing referencing line $($referencingLines[$i].line): $($referencingLines[$i].text)"
+        $newcontent.RemoveAt($referencingLines[$i].line)
+    }
+        
+    $sln.content = @() + $newcontent
     $sln.projects = $sln.projects | ? { $_.name -ine $projectname }
 }

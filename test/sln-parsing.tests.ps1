@@ -5,6 +5,7 @@ import-module csproj
 Describe "parsing sln" {
     $targetdir = "testdrive:"
     copy-item -Recurse "$inputdir/test" "$targetdir"
+    copy-item -Recurse "$inputdir/packages-repo" "$targetdir"
     
     Context "when parsing sln projects" {
         $sln = import-sln "$inputdir\platform\sln\legimi.core\Legimi.Core.Utils\Legimi.Core.Utils.sln"
@@ -28,15 +29,17 @@ Describe "parsing sln" {
         $toremove = "Console1"
         It "Should build on start" {
             In (split-path -Parent $slnfile) {
+            $r = nuget restore
+            if ($LASTEXITCODE -ne 0) { $r | out-string | write-host }
+            $LASTEXITCODE | Should Be 0
+            
             $r = msbuild (split-path -Leaf $slnfile)
-            if ($LASTEXITCODE -ne 0) {
-                $r | out-string | write-host
-            }
+            if ($LASTEXITCODE -ne 0) { $r | out-string | write-host }
             $LASTEXITCODE | Should Be 0
             }
         }
         It "sln Should not contain removed projects" {
-            remove-slnproject $sln $toremove 
+            remove-slnproject $sln $toremove
             $newprojects = get-slnprojects $sln
             $newprojects.Count | Should Be ($oldprojects.Count - 1)
         }
@@ -66,3 +69,5 @@ Describe "parsing sln" {
         }        
      }
 }
+
+. $PSScriptRoot\teardown.ps1
