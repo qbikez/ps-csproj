@@ -55,4 +55,27 @@ function get-testoutputdir() {
     return $targetdir
 }
 
+function copy-samples() {
+    $targetdir = get-testoutputdir
+    copy-item "$inputdir/test" "$targetdir" -Recurse
+    copy-item "$inputdir/packages" "$targetdir/test" -Recurse
+    copy-item "$inputdir/packages-repo" "$targetdir" -Recurse
+
+    return $targetdir
+}
+
+function invoke($command, [string[]]$arguments, [switch][bool]$noassert, [switch][bool]$showoutput) {
+    if ($showoutput) {
+        $o = & $command $arguments | write-host
+    } else {
+        $o = & $command $arguments
+    }
+    if ($lastexitcode -ne 0) {
+        $o | out-string | write-host
+    }
+    if (!$noassert) {
+        $lastexitcode | should Be 0
+    }
+}
+
 write-host "== includes END =="
