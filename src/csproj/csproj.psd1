@@ -47,8 +47,11 @@ Description = 'tools for manipulationg csproj and sln files'
 # Processor architecture (None, X86, Amd64) required by this module
 # ProcessorArchitecture = ''
 
+#NestedModules = @("PathUtils", "PublishMap")
+
 # Modules that must be imported into the global environment prior to importing this module
-RequiredModules = @( 
+#RequiredModules = @(
+NestedModules = @( 
     @{ 
         ModuleName="PublishMap"; ModuleVersion="1.2"
     },
@@ -70,7 +73,6 @@ RequiredModules = @(
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @()
 
 # Functions to export from this module
 FunctionsToExport = '*'
