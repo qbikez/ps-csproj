@@ -118,7 +118,7 @@ Describe "Converting Project reference to nuget" {
         
         It "should convert without errors" {
             In $slndir {
-                $outdir = (get-relativepath $slndir $packagesdir)
+                $outdir = (get-relativepath $slndir $packagesdir -verbose)
                 $o = nuget install "$projectname" -out $outdir
                 $o
                 $lastexitcode | should be 0
@@ -128,7 +128,11 @@ Describe "Converting Project reference to nuget" {
         
         It "should not leave any project reference" {
             $refs = get-referencesto $sln $projectname 
-            $refs | ? { $_.type -eq "project" }  | Should BeNullOrEmpty
+            $projrefs = @($refs | ? { $_.type -eq "project" })
+            if ($projrefs -ne $null -or $projrefs.Length -gt 0) {
+                $projrefs | % { write-host $_ }
+            } 
+            $projrefs | Should BeNullOrEmpty
             
             $refs | Should Not BeNullOrEmpty
             
