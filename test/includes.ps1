@@ -3,6 +3,8 @@ if ([string]::isnullorempty($root)) {
     $root = "."
 }
 
+#write-host "64bit=$([Environment]::Is64BitProcess)"
+
 #if ($host.name -eq "Windows PowerShell ISE Host" -and (gmo pester)) { rmo pester }
 import-module pester
 $i = (gi "$root\..\src")
