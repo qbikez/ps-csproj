@@ -14,6 +14,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		..\..\nuget.config = ..\..\nuget.config
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "console", "console", "{9B1AA15F-DF81-4ADA-B227-442ADD6A5127}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{9310CDE8-9395-49EE-91BC-C45448DB9661}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,5 +39,10 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{8F1B55DD-15AB-4ACB-9206-84BA2122F60F} = {9310CDE8-9395-49EE-91BC-C45448DB9661}
+		{3DB72011-6C72-449B-9D9B-EE9A5A037B2A} = {9B1AA15F-DF81-4ADA-B227-442ADD6A5127}
+		{65A97165-F248-412B-803C-0CEA8936311C} = {9310CDE8-9395-49EE-91BC-C45448DB9661}
 	EndGlobalSection
 EndGlobal

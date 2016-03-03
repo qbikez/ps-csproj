@@ -5,6 +5,10 @@ public class Sln {
     public string Fullname { get { return Path; }}
     public string[] Content {get;set;}
     public SlnProject[] projects {get;set;} 
+    
+    public void Save() {
+        System.IO.File.WriteAllLines(Fullname, Content);
+    }
 }
 public class SlnProject {
     public string Name {get;set;}
@@ -18,6 +22,8 @@ public class SlnProject {
     public override string ToString() {
         return Name;
     }
+    
+  
 }
 "@
 

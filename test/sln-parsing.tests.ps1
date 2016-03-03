@@ -3,6 +3,9 @@ import-module csproj
 
 
 Describe "parsing sln" {
+    $targetdir = "testdrive:"
+    copy-item -Recurse "$inputdir/test" "$targetdir"
+    
     Context "when parsing sln projects" {
         $sln = import-sln "$inputdir\platform\sln\legimi.core\Legimi.Core.Utils\Legimi.Core.Utils.sln"
         $projects = get-slnprojects $sln
@@ -19,14 +22,36 @@ Describe "parsing sln" {
     }
 
      Context "when removing project from sln" {
-        $sln = import-sln "$inputdir\platform\sln\legimi.core\Legimi.Core.Utils\Legimi.Core.Utils.sln"
+        $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"
+        $sln = import-sln $slnfile
         $oldprojects = get-slnprojects $sln
-
+        $toremove = "Console1"
+        It "Should build on start" {
+            In (split-path -Parent $slnfile) {
+            $r = msbuild (split-path -Leaf $slnfile)
+            if ($LASTEXITCODE -ne 0) {
+                $r | out-string | write-host
+            }
+            $LASTEXITCODE | Should Be 0
+            }
+        }
         It "sln Should not contain removed projects" {
-            remove-slnproject $sln $oldprojects[0].Name
+            remove-slnproject $sln $toremove 
             $newprojects = get-slnprojects $sln
             $newprojects.Count | Should Be ($oldprojects.Count - 1)
         }
+        
+        It "Should build after removal" {
+            $sln.Save()
+            In (split-path -Parent $slnfile) {
+            $r = msbuild (split-path -Leaf $slnfile)
+            if ($LASTEXITCODE -ne 0) {
+                $r | out-string | write-host
+            }
+            $LASTEXITCODE | Should Be 0
+            }
+        }
+
      }
      
      Context "When updating project in sln" {
