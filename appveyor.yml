@@ -1,7 +1,7 @@
 version: 1.0.{build}
 
 os:
-- Windows Server 2012 R2
+#- Windows Server 2012 R2
 - WMF 5
 
 #clone_script:
@@ -40,4 +40,5 @@ on_finish:
 #- ps: test-path "artifacts" 
 - 7z a artifacts.zip artifacts
 - ps: Push-AppveyorArtifact "artifacts.zip"
-#- appveyor PushArtifact "artifacts"
+deploy_script:
+- ps: scripts/lib/push.ps1 . -buildno $env:APPVEYOR_BUILD_NUMBER
