@@ -2,15 +2,20 @@ import-module pathutils
 import-module publishmap 
 
 function get-slndependencies {
+    [CmdletBinding(DefaultParameterSetName = "sln")]
     param(
-        [Parameter(Mandatory=$true)][Sln]$sln
+        [Parameter(Mandatory=$true, ParameterSetName="sln",Position=0)][Sln]$sln,
+        [Parameter(Mandatory=$true, ParameterSetName="slnfile",Position=0)][string]$slnfile
     )
-    
+    if ($sln -eq $null) { $sln = import-sln $slnfile }
     $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
     $deps = $projects | % {
         if (test-path $_.fullname) {
             $p = import-csproj $_.fullname
-            $refs = @($p | get-projectreferences)
+            $refs = @()
+            $refs += @($p | get-projectreferences)
+            $refs += @($p | get-nugetreferences)
+            
         } else {
             $p = $null
             $refs = $null
@@ -30,14 +35,16 @@ function get-slndependencies {
                 $slnproj = $projects | ? { $_.path -eq $slnrel }
                 $existsInSln = $slnproj -ne $null 
                 #$null = $r | add-property -name "Valid" -value $existsInSln
-                $r.IsValid = $existsInSln
-                $props = [ordered]@{ project = $p.project; ref = $r; IsProjectValid = $true }
+                if ($r.type -eq "project") {
+                    $r.IsValid = $existsInSln
+                }
+                $props = [ordered]@{ project = $p.project; ref = $r; refType = $r.type; IsProjectValid = $true }
                 $result += new-object -type pscustomobject -property $props 
             }
         } else {
             $isvalid = $true
             if ($p.csproj -eq $null) { $isvalid = $false }
-            $props = [ordered]@{ project = $p.project; ref = $null; IsProjectValid = $isvalid }
+            $props = [ordered]@{ project = $p.project; ref = $null; refType = $null; IsProjectValid = $isvalid }
             $result += new-object -type pscustomobject -property $props 
         }
     }

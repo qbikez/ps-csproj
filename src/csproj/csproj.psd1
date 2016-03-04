@@ -12,7 +12,7 @@
 RootModule = '.\Csproj.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.7'
+ModuleVersion = '1.0.8'
 
 # ID used to uniquely identify this module
 GUID = '704af2c5-1174-4e07-bce4-5503cc9b930d'
@@ -126,6 +126,7 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+
 
 
 

@@ -52,19 +52,31 @@ function convert-projectReferenceToNuget {
         
         write-verbose "saving modified projet $($proj.fullname)"
         $null = $proj.save($proj.fullname)
-
+        return $converted 
 }
 
 function  convert-ReferencesToNuget {
     [CmdletBinding(DefaultParameterSetName="slnobj")]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="slnobj")][Sln] $sln, 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="slnfile")][string] $slnfile, 
-        [Alias("project")][Parameter(Mandatory=$true)][string]$projectName, 
-        $packagesDir
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="slnobj", Position=0)][Sln] $sln, 
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="slnfile", Position=0)][string] $slnfile, 
+        [Alias("project")][Parameter(Mandatory=$true, Position=1)][string]$projectName, 
+        [Parameter(Mandatory=$false, Position=2)] $packagesDir = $null
     )
     if (![string]::isnullorempty($slnfile)) {
         $sln = import-sln $slnfile
+    }
+    
+    if ($packagesdir -eq $null) {
+        $d = $sln.fullname
+        $d = split-path -parent $d
+        while (![string]::isnullorempty($d)) {            
+            if (test-path "$d/packages"){
+                $packagesdir = "$d/packages"
+                break
+            }
+            $d = split-path -parent $d
+        }
     }
     $projects = $sln | get-slnprojects
     $slndir = split-path $sln.path -parent
@@ -73,13 +85,22 @@ function  convert-ReferencesToNuget {
     $references = get-referencesto $sln $projectname
     
     $csprojs = @()
-    
+    $converted = @()
     foreach($r in $references) {
         if ($r.type -ne "project") { continue }
-        $null = convert-projectReferenceToNuget -proj $r.project -pr $r.ref
+        $converted = @(convert-projectReferenceToNuget -proj $r.project -pr $r.ref)
         $csprojs += get-content $r.projectpath
+        $converted += $converted
     }
     
+    remove-slnproject $sln $projectName
+    
+    $sln.Save()
+    
+    
+    write-verbose "converted $($converted.length) references"
+    
+    return $converted           
     #return $csprojs
 }
 

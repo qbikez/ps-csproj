@@ -140,6 +140,10 @@ function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true
     $refs = $refs | ? {
         $_.Node.HintPath -match "[""\\/]packages[/\\]"
     }
+    $refs = $refs | % {
+        $_.type = "nuget"
+        $_
+    }
     return $refs
 }
 

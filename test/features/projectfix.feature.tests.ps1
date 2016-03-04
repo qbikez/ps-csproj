@@ -11,7 +11,11 @@ Describe "verify solution project set" {
         $sln = import-sln $slnfile
         $deps = get-slndependencies $sln
         $deps | Should Not BeNullOrEmpty
-        $deps.Length | Should Be 3    
+        $deps.Length | Should Be 4
+        $deps | format-table | out-string | write-host 
+       @($deps | ? { $_.reftype -eq "nuget" }).Length | Should Be 1
+       @($deps | ? { $_.reftype -eq "project" }).Length | Should Be 1
+       @($deps | ? { $_.reftype -eq $null }).Length | Should Be 2 
     }
     
     $slnfile = "$inputdir/test/sln/Sample.Solution.Bad/Sample.Solution.Bad.sln"    
