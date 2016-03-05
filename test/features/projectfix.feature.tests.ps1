@@ -66,7 +66,7 @@ Describe "fix a solution with missing references" {
     copy-item "$inputdir/test" $targetdir -Recurse
     copy-item "$inputdir/packages" "$targetdir/test" -Recurse
     copy-item "$inputdir/packages-repo" "$targetdir" -Recurse
-    #move-item "$targetdir/test/src/Core" "$targetdir/test/src/Core2" 
+    move-item "$targetdir/test/src/Core" "$targetdir/test/src/Core2" 
     move-item "$targetdir/test/src" "$targetdir/test/src2" 
     
     $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"    
@@ -90,6 +90,7 @@ Describe "fix a solution with missing references" {
     Context "When a matching csproj can be found in repo directory" {
         It "Should replace reference path with a valid csproj" {
             $sln = import-sln $slnfile
+            $deps = get-slndependencies $sln
             $valid,$missing = test-slndependencies $sln
             $valid | Should Be $false
             $missing.length | Should Be 3
@@ -97,7 +98,9 @@ Describe "fix a solution with missing references" {
             
             fixsln $slnfile -reporoot "$targetdir/test" 
             
+            $deps = get-slndependencies $slnfile
             $valid,$missing = test-slndependencies $slnfile
+                
             $valid | Should Be $true         
         }
     }

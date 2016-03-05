@@ -80,6 +80,10 @@ function test-slndependencies {
     return $valid,$missing
 }
 
+function  find-packagesdir ($path) {
+    return "$path/packages"
+}
+
 function find-reporoot($path) {
         if (!(get-item $path).IsPsContainer) {
             $dir = split-path -Parent $path
@@ -103,13 +107,33 @@ function find-matchingprojects {
         [Parameter(Mandatory=$true)]$reporoot
         )
     $csprojs = get-childitem "$reporoot" -Filter "*.csproj" -Recurse
+    $packagesdir = find-packagesdir $reporoot
     $missing = $missing | % {
         $m = $_
-        $matching = @($csprojs | ? { [System.io.path]::GetFilenameWithoutExtension($_.Name) -eq $m.ref.Name })
-        $null = $m | add-property -name "matching" -value $matching
-        #write-verbose "missing: $_.Name matching: $matching"
+        if ($m.ref.type -eq "project" -or $m.ref.type -eq "csproj") {
+            $matching = @($csprojs | ? { [System.io.path]::GetFilenameWithoutExtension($_.Name) -eq $m.ref.Name })
+            $null = $m | add-property -name "matching" -value $matching
+            #write-verbose "missing: $_.Name matching: $matching"
+        }
+        if ($m.ref.type -eq "nuget") {
+            if ($m.ref.path -match "^(?<packages>.*packages[/\\])(?<pkg>.*)") {
+                $matchingpath = join-path $packagesdir $matches["pkg"]
+                if (test-path $matchingpath) {
+                    $matching = get-item $matchingpath
+                } else {
+                    $matching = new-object -type pscustomobject -property @{
+                        fullname = $matchingpath
+                    }
+                }
+                $null = $m | add-property -name "matching" -value $matching
+                #write-verbose "missing: $_.Name matching: $matching"
+            }
+        }
         return $m
     }
+    
+    
+    
     
     return $missing
 }
@@ -126,7 +150,7 @@ function repair-slnpaths {
   
     $valid,$missing = test-slndependencies $sln
      
-    write-verbose "found $($missing.length) missing projects"
+    write-verbose "SLN: found $($missing.length) missing projects"
     if ($reporoot -eq $null) {
         $reporoot = find-reporoot $sln.fullname
         if ($reporoot -ne $null) {
@@ -141,14 +165,30 @@ function repair-slnpaths {
     $missing = find-matchingprojects $missing $reporoot
     
     $missing | % {
-        $relpath = get-relativepath $sln.fullname $_.matching.fullname
-        write-verbose "fixing reference: $($_.ref.Path) => $relpath"
-        $_.ref.Path = $relpath
-        
-        update-slnproject $sln $_.ref
+        if ($_.matching -eq $null -or $_.matching.length -eq 0) {
+            write-warning "no matching project found for SLN item $($_.ref.Path)"
+        }
+        else {
+            if ($_.ref -is [slnproject]) {
+                $relpath = get-relativepath $sln.fullname $_.matching.fullname
+                write-verbose "fixing SLN reference: $($_.ref.Path) => $relpath"
+                $_.ref.Path = $relpath
+                
+                update-slnproject $sln $_.ref
+            }
+        }
     }
     
     $sln.Save()
+    
+    $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
+    $projects | % {
+        if (test-path $_.fullname) {
+            $p = import-csproj $_.fullname
+
+            repair-csprojpaths $p -reporoot $reporoot
+        }
+    }
     
 #    $valid,$missing = test-slndependencies $sln
 #    $valid | Should Be $true
@@ -191,7 +231,7 @@ function repair-csprojpaths {
     $deps = get-csprojdependencies $csproj
     $missing = @($deps | ? { $_.ref.IsValid -eq $false })
      
-    write-verbose "found $($missing.length) missing projects"
+    write-verbose "CSPROJ $($csproj.Name) found $($missing.length) missing projects"
     if ($reporoot -eq $null) {
         $reporoot = find-reporoot $csproj.fullname
         if ($reporoot -ne $null) {
@@ -206,12 +246,20 @@ function repair-csprojpaths {
     $missing = find-matchingprojects $missing $reporoot
     
     $missing | % {
-        $relpath = get-relativepath $csproj.fullname $_.matching.fullname
-        write-verbose "fixing reference: $($_.ref.Path) => $relpath"
-        $_.ref.Path = $relpath
-        if ($_.ref.Node.Include -ne $null) {
-            $_.ref.Node.Include = $relpath
-        } 
+        if ($_.matching -eq $null -or $_.matching.length -eq 0) {
+            write-warning "no matching project found for CSPROJ reference $($_.ref.Path)"
+        }
+        else {
+            $relpath = get-relativepath $csproj.fullname $_.matching.fullname
+            write-verbose "fixing CSPROJ reference in $($csproj.name): $($_.ref.Path) => $relpath"
+            $_.ref.Path = $relpath
+            if ($_.ref.type -eq "project" -and $_.ref.Node.Include -ne $null) {
+                $_.ref.Node.Include = $relpath
+            } 
+            if ($_.ref.type -eq "nuget" -and $_.ref.Node.HintPath -ne $null) {
+                $_.ref.Node.HintPath = $relpath                
+            }
+        }
 
         #TODO: update csproj with fixed references
     }
