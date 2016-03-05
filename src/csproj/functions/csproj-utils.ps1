@@ -105,7 +105,11 @@ param(
         
         $isvalid = $null
         $abspath = $path
-        if (test-ispathrelative $abspath -and $csproj -ne $null) {
+        if ($abspath -ne $null `
+        -and (test-ispathrelative $abspath) `
+        -and $csproj -ne $null `
+        -and ![string]::IsNullOrEmpty($csproj.fullname))
+        {
             $abspath = join-path (split-path -parent $csproj.fullname) $abspath
         }
         if (!(test-ispathrelative $abspath)) {
