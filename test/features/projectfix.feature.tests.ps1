@@ -62,23 +62,10 @@ Describe "fix a project with missing references" {
             $valid | Should Be $false
             $missing.length | Should Be 3
             $missing.In | Should Be $sln.Fullname
-            $csprojs = get-childitem "$targetdir/test" -Filter "*.csproj" -Recurse
-            $missing = $missing | % {
-                $m = $_
-                $matching = $csprojs | ? { [System.io.path]::GetFilenameWithoutExtension($_.Name) -eq $m.ref.Name }
-                $null = $m | add-property -name "matching" -value $matching
-                return $m
-            }
-            $missing.matching | Should Not BeNullOrEmpty
-         
             
-            $missing | % {
-                $relpath = get-relativepath $sln.fullname $_.matching.fullname
-                $_.ref.Path = $relpath
-                update-slnproject $sln $_.ref
-            }
+            fixsln $slnfile -reporoot "$targetdir/test" 
             
-            $valid,$missing = test-slndependencies $sln
+            $valid,$missing = test-slndependencies $slnfile
             $valid | Should Be $true
          
         }

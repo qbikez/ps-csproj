@@ -54,11 +54,14 @@ function get-slndependencies {
 }
 
 function test-slndependencies {
+     [CmdletBinding(DefaultParameterSetName = "sln")]
     param(
-        [Parameter(Mandatory=$true)][Sln]$sln
+        [Parameter(Mandatory=$true, ParameterSetName="sln",Position=0)][Sln]$sln,
+        [Parameter(Mandatory=$true, ParameterSetName="slnfile",Position=0)][string]$slnfile
     )
- 
-    $deps = get-slndependencies $sln
+    if ($sln -eq $null) { $sln = import-sln $slnfile }
+  
+   $deps = get-slndependencies $sln
     
     $valid = $true
     $missing = @()
@@ -76,3 +79,58 @@ function test-slndependencies {
     
     return $valid,$missing
 }
+
+function repair-slnpaths {
+    [CmdletBinding(DefaultParameterSetName = "sln")]
+    param(
+        [Parameter(Mandatory=$true, ParameterSetName="sln",Position=0)][Sln]$sln,
+        [Parameter(Mandatory=$true, ParameterSetName="slnfile",Position=0)][string]$slnfile,
+        [Parameter(Position=1)] $reporoot
+    )
+    if ($sln -eq $null) { $sln = import-sln $slnfile }
+  
+    $valid,$missing = test-slndependencies $sln
+     
+    write-verbose "found $($missing.length) missing projects"
+    if ($reporoot -eq $null) {
+        $dir = split-path -Parent $sln.Fullname
+        while(![string]::IsNullOrEmpty($dir)) {
+            if ((test-path "$dir/.hg") -or (Test-Path "$dir/.git")) {
+                $reporoot = $dir
+                write-verbose "auto-detected repo root at $reporoot"
+                break;
+            }
+            $dir = split-path -Parent $dir
+        }
+    }
+    
+    if ($reporoot -eq $null) {
+        throw "No repository root given and none could be detected"
+    }
+
+    $csprojs = get-childitem "$reporoot" -Filter "*.csproj" -Recurse
+    $missing = $missing | % {
+        $m = $_
+        $matching = @($csprojs | ? { [System.io.path]::GetFilenameWithoutExtension($_.Name) -eq $m.ref.Name })
+        $null = $m | add-property -name "matching" -value $matching
+        #write-verbose "missing: $_.Name matching: $matching"
+        return $m
+    }
+    
+    $missing | % {
+        $relpath = get-relativepath $sln.fullname $_.matching.fullname
+        write-verbose "fixing reference: $($_.ref.Path) => $relpath"
+        $_.ref.Path = $relpath
+        
+        update-slnproject $sln $_.ref
+    }
+    
+    $sln.Save()
+    
+#    $valid,$missing = test-slndependencies $sln
+#    $valid | Should Be $true
+    
+}
+
+new-alias fix-sln repair-slnpaths
+new-alias fixsln fix-sln
