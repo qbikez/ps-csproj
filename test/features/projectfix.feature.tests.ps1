@@ -6,7 +6,10 @@ import-module publishmap
 import-module pathutils
 
 Describe "verify solution project set" {
-    $slnfile = "$inputdir/test/sln/Sample.Solution/Sample.Solution.sln"
+    $targetdir = "testdrive:/"
+    copy-item "$inputdir/test" $targetdir -Recurse
+    $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"
+    
     It "Should return a tree of all projects and their dependencies" {
         $sln = import-sln $slnfile
         $deps = get-slndependencies $sln
@@ -24,12 +27,41 @@ Describe "verify solution project set" {
         $valid,$missing = test-slndependencies $sln
         $valid | Should Be $false
         $missing | Should Not BeNullOrEmpty
-        $missing.Length | Should Be 1
+        $missing.Length | Should Be 2
     }
  }
 
 
 Describe "fix a project with missing references" {
+    $targetdir = "testdrive:/"
+    copy-item "$inputdir/test" $targetdir -Recurse
+    copy-item "$inputdir/packages" "$targetdir/test" -Recurse
+    copy-item "$inputdir/packages-repo" "$targetdir" -Recurse
+    move-item "$targetdir/test/src/Core" "$targetdir/test/src/Core2" 
+    #move-item "$targetdir/test/src" "$targetdir/test/src2" 
+    
+    $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"    
+    $csproj = "$targetdir/test/src/Console/Console1/Console1.csproj"
+    $packagesDir = "$targetdir/test/packages"
+    $packagesRepo = "$targetdir/packages-repo"
+
+    It "should detect missing references" {
+        $deps = get-csprojdependencies $csproj
+        $missing = @($deps | ? { $_.ref.isvalid -eq $false })
+        $missing.length | Should Be 1
+    }
+    It "should fix references paths" {        
+        fixcsproj $csproj -reporoot "$targetdir/test"
+    
+        $deps = get-csprojdependencies $csproj
+        $missing = @($deps | ? { $_.ref.isvalid -eq $false })
+        $missing.length | Should Be 0
+       
+    }
+}
+
+
+Describe "fix a solution with missing references" {
     $targetdir = "testdrive:/"
     copy-item "$inputdir/test" $targetdir -Recurse
     copy-item "$inputdir/packages" "$targetdir/test" -Recurse
@@ -55,7 +87,7 @@ Describe "fix a project with missing references" {
             $list | Should Not BeNullOrEmpty
         }
     }
-    Context "When a matching csproj can be found in repo directory"{
+    Context "When a matching csproj can be found in repo directory" {
         It "Should replace reference path with a valid csproj" {
             $sln = import-sln $slnfile
             $valid,$missing = test-slndependencies $sln
@@ -66,8 +98,7 @@ Describe "fix a project with missing references" {
             fixsln $slnfile -reporoot "$targetdir/test" 
             
             $valid,$missing = test-slndependencies $slnfile
-            $valid | Should Be $true
-         
+            $valid | Should Be $true         
         }
     }
     Context "When a matching nuget can be found in one of the sources" {

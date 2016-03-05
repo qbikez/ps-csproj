@@ -85,7 +85,10 @@ function get-referenceName($node) {
 }
 
 function add-metadata {
-param([parameter(ValueFromPipeline=$true)]$nodes) 
+param(
+    [parameter(ValueFromPipeline=$true)]$nodes,
+    [Csproj]$csproj
+    ) 
     process {
         $n = $nodes
         if ($nodes.Node) { $n = $nodes.Node }
@@ -99,30 +102,41 @@ param([parameter(ValueFromPipeline=$true)]$nodes)
         $path = $null
         if ($n.HintPath) { $path = $n.HintPath }
         elseif ($n.Include) { $path = $n.Include }
+        
+        $isvalid = $null
+        $abspath = $path
+        if (test-ispathrelative $abspath -and $csproj -ne $null) {
+            $abspath = join-path (split-path -parent $csproj.fullname) $abspath
+        }
+        if (!(test-ispathrelative $abspath)) {
+            $isvalid = test-path $abspath
+        }
+        
         return new-object -TypeName ReferenceMeta -Property @{ 
             Node = $n
             Name = $name
             ShortName = get-shortname $name 
             Type = $type
             Path = $path
+            IsValid = $isvalid
         }
     }
 }
 
-function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName, [switch][bool]$noMeta) {
+function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName, [switch][bool]$noMeta, [Csproj] $csproj) {
     $r = Select-Xml -Xml $xml.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName"
     if (!$nometa) { 
-        $meta = $r | add-metadata
+        $meta = $r | add-metadata  -csproj $csproj
     }
     return $meta
 }
 
 function get-projectreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
-    return get-nodes $csproj.xml "ProjectReference"
+    return get-nodes $csproj.xml "ProjectReference"  -csproj $csproj
 }
 
 function get-allexternalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
-    get-nodes $csproj.xml "Reference[d:HintPath]"     
+    get-nodes $csproj.xml "Reference[d:HintPath]"  -csproj $csproj    
 }
 
 
@@ -149,7 +163,7 @@ function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true
 
 
 function get-systemreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
-    get-nodes $csproj.xml "Reference[not(d:HintPath)]"     
+    get-nodes $csproj.xml "Reference[not(d:HintPath)]" -csproj $csproj    
 }
 
 

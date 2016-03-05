@@ -30,13 +30,13 @@ function get-slndependencies {
             foreach($r in $p.refs) {
                 $path = $r.path
                 $path = join-path (split-path -parent $p.project.fullname) $r.path
-                $exists = test-path $path
                 $slnrel = get-relativepath (split-path -parent $sln.fullname) $path
                 $slnproj = $projects | ? { $_.path -eq $slnrel }
                 $existsInSln = $slnproj -ne $null 
+                $exists = test-path $path
                 #$null = $r | add-property -name "Valid" -value $existsInSln
                 if ($r.type -eq "project") {
-                    $r.IsValid = $existsInSln
+                    $r.IsValid = $r.IsValid -and $existsInSln 
                 }
                 $props = [ordered]@{ project = $p.project; ref = $r; refType = $r.type; IsProjectValid = $true }
                 $result += new-object -type pscustomobject -property $props 
@@ -80,6 +80,41 @@ function test-slndependencies {
     return $valid,$missing
 }
 
+function find-reporoot($path) {
+        if (!(get-item $path).IsPsContainer) {
+            $dir = split-path -Parent $path
+        }
+        else {
+            $dir = $path
+        }
+        while(![string]::IsNullOrEmpty($dir)) {
+            if ((test-path "$dir/.hg") -or (Test-Path "$dir/.git")) {
+                $reporoot = $dir
+                break;
+            }
+            $dir = split-path -Parent $dir
+        }
+        return $reporoot
+}
+
+function find-matchingprojects {
+    param (
+        [Parameter(Mandatory=$true)]$missing,
+        [Parameter(Mandatory=$true)]$reporoot
+        )
+    $csprojs = get-childitem "$reporoot" -Filter "*.csproj" -Recurse
+    $missing = $missing | % {
+        $m = $_
+        $matching = @($csprojs | ? { [System.io.path]::GetFilenameWithoutExtension($_.Name) -eq $m.ref.Name })
+        $null = $m | add-property -name "matching" -value $matching
+        #write-verbose "missing: $_.Name matching: $matching"
+        return $m
+    }
+    
+    return $missing
+}
+
+
 function repair-slnpaths {
     [CmdletBinding(DefaultParameterSetName = "sln")]
     param(
@@ -93,14 +128,9 @@ function repair-slnpaths {
      
     write-verbose "found $($missing.length) missing projects"
     if ($reporoot -eq $null) {
-        $dir = split-path -Parent $sln.Fullname
-        while(![string]::IsNullOrEmpty($dir)) {
-            if ((test-path "$dir/.hg") -or (Test-Path "$dir/.git")) {
-                $reporoot = $dir
-                write-verbose "auto-detected repo root at $reporoot"
-                break;
-            }
-            $dir = split-path -Parent $dir
+        $reporoot = find-reporoot $sln.fullname
+        if ($reporoot -ne $null) {
+            write-verbose "auto-detected repo root at $reporoot"
         }
     }
     
@@ -108,14 +138,7 @@ function repair-slnpaths {
         throw "No repository root given and none could be detected"
     }
 
-    $csprojs = get-childitem "$reporoot" -Filter "*.csproj" -Recurse
-    $missing = $missing | % {
-        $m = $_
-        $matching = @($csprojs | ? { [System.io.path]::GetFilenameWithoutExtension($_.Name) -eq $m.ref.Name })
-        $null = $m | add-property -name "matching" -value $matching
-        #write-verbose "missing: $_.Name matching: $matching"
-        return $m
-    }
+    $missing = find-matchingprojects $missing $reporoot
     
     $missing | % {
         $relpath = get-relativepath $sln.fullname $_.matching.fullname
@@ -132,5 +155,76 @@ function repair-slnpaths {
     
 }
 
+
+function get-csprojdependencies {
+     [CmdletBinding(DefaultParameterSetName = "csproj")]
+    param(
+        [Parameter(Mandatory=$true, ParameterSetName="csproj",Position=0)][Csproj]$csproj,
+        [Parameter(Mandatory=$true, ParameterSetName="csprojfile",Position=0)][string]$csprojfile
+    )
+
+    if ($csproj -eq $null) { $csproj = import-csproj $csprojfile }
+   
+    $refs = @()
+    $refs += get-projectreferences $csproj
+    $refs += get-nugetreferences $csproj
+    
+    $refs = $refs | % {
+        $r = $_
+        $props = [ordered]@{ ref = $r; refType = $r.type; path = $r.path }
+        return new-object -type pscustomobject -property $props 
+    }
+    
+    return $refs
+}
+
+
+function repair-csprojpaths {
+     [CmdletBinding(DefaultParameterSetName = "csproj")]
+    param(
+        [Parameter(Mandatory=$true, ParameterSetName="csproj",Position=0)][Csproj]$csproj,
+        [Parameter(Mandatory=$true, ParameterSetName="csprojfile",Position=0)][string]$csprojfile,
+        $reporoot = $null
+    )
+    if ($csproj -eq $null) { $csproj = import-csproj $csprojfile }
+  
+    $deps = get-csprojdependencies $csproj
+    $missing = @($deps | ? { $_.ref.IsValid -eq $false })
+     
+    write-verbose "found $($missing.length) missing projects"
+    if ($reporoot -eq $null) {
+        $reporoot = find-reporoot $csproj.fullname
+        if ($reporoot -ne $null) {
+            write-verbose "auto-detected repo root at $reporoot"
+        }
+    }
+    
+    if ($reporoot -eq $null) {
+        throw "No repository root given and none could be detected"
+    }
+
+    $missing = find-matchingprojects $missing $reporoot
+    
+    $missing | % {
+        $relpath = get-relativepath $csproj.fullname $_.matching.fullname
+        write-verbose "fixing reference: $($_.ref.Path) => $relpath"
+        $_.ref.Path = $relpath
+        if ($_.ref.Node.Include -ne $null) {
+            $_.ref.Node.Include = $relpath
+        } 
+
+        #TODO: update csproj with fixed references
+    }
+    
+    $csproj.Save()
+    
+#    $valid,$missing = test-slndependencies $sln
+#    $valid | Should Be $true
+    
+}
+
+
 new-alias fix-sln repair-slnpaths
 new-alias fixsln fix-sln
+new-alias fix-csproj repair-csprojpaths
+new-alias fixcsproj fix-csproj 
