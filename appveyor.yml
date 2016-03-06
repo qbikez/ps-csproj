@@ -1,45 +1,47 @@
-version: 1.0.{build}
+-
+    version: 1.0.{build}
 
-os:
-#- Windows Server 2012 R2
-- WMF 5
+    os:
+    #- Windows Server 2012 R2
+    - WMF 5
 
-#clone_script:
-#- ps: 'write-host "cloning... this replaces default clone method"'
+    #clone_script:
+    #- ps: 'write-host "cloning... this replaces default clone method"'
 
-install:
-- git submodule update --init --recursive
-- ps: scripts/lib/init.ps1
-- ps: scripts/restore.ps1
+    install:
+    - git submodule update --init --recursive
+    - ps: scripts/lib/init.ps1
+    - ps: scripts/restore.ps1
 
-#assembly_info:
-#  patch: true
-#  file: '**\AssemblyInfo.*'
-#  assembly_version: '{version}'
-#  assembly_file_version: '{version}'
-#  assembly_informational_version: '{version}'
+    #assembly_info:
+    #  patch: true
+    #  file: '**\AssemblyInfo.*'
+    #  assembly_version: '{version}'
+    #  assembly_file_version: '{version}'
+    #  assembly_informational_version: '{version}'
 
-build_script:
-- ps: write-host "no need to build powershell"
-test_script:
-- ps: scripts/lib/test.appveyor.ps1
-- ps: Uninstall-Module pathutils -verbose
-- ps: Install-Module -Name csproj -RequiredVersion 1.0.6 -Force -Verbose
-- ps: Get-module csproj -listavailable | format-list
-- ps: Import-Module csproj -verbose
+    build_script:
+    - ps: write-host "no need to build powershell"
 
-artifacts:
-- path: artifacts
+    test_script:
+    - ps: scripts/lib/test.appveyor.ps1
+    - ps: Uninstall-Module pathutils -verbose
+    - ps: Install-Module -Name csproj -RequiredVersion 1.0.6 -Force -Verbose
+    - ps: Get-module csproj -listavailable | format-list
+    - ps: Import-Module csproj -verbose
 
-on_success:
-- ps: 'write-host "event: build success!"'
-on_failure:
-- ps: 'write-host "event: build error!"'
-on_finish:
-- ps: 'write-host "event: build finish! pushing artifacts."'
-#- ps: test-path "artifacts" 
-- 7z a artifacts.zip artifacts
-- ps: Push-AppveyorArtifact "artifacts.zip"
+    artifacts:
+    - path: artifacts
+
+    on_success:
+    - ps: 'write-host "event: build success!"'
+    on_failure:
+    - ps: 'write-host "event: build error!"'
+    on_finish:
+    - ps: 'write-host "event: build finish! pushing artifacts."'
+    #- ps: test-path "artifacts" 
+    - 7z a artifacts.zip artifacts
+    - ps: Push-AppveyorArtifact "artifacts.zip"
 
 -
   branches:
