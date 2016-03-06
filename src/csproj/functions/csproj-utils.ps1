@@ -5,6 +5,12 @@ using System.Xml;
 public class Csproj {
     public System.Xml.XmlDocument Xml {get;set;}
     public string Path {get;set;}
+    public string FullName { get { return Path; } }
+    public string Name {get;set;}
+    
+    public override string ToString() {
+        return Name;
+    }
     
     public void Save() {
         this.Xml.Save(this.Path);
@@ -23,6 +29,12 @@ public class ReferenceMeta {
     public string Version {get;set;}
     public string ShortName {get;set;}
     public string Type {get;set;}
+    public string Path {get;set;}
+    public bool? IsValid {get;set;}
+    
+    public override string ToString() {
+        return string.Format("-> {1}{0}", ShortName, IsValid != null ? ((IsValid.Value ? "[+]" : "[-]") + " ") : "");
+    }
 }
 "@
 
@@ -36,6 +48,7 @@ function import-csproj {
     if (test-path $file) { 
         $content = get-content $file
         $path = (get-item $file).FullName    
+        $name = [System.IO.Path]::GetFilenameWithoutExtension($file)
     }
     elseif ($file.Contains("<?xml") -or $file.Contains("<Project")) {
         $content = $file
@@ -44,9 +57,15 @@ function import-csproj {
         throw "file not found: '$file'"
     }
 
+    try {
+        $xml =[xml]$content
+    } catch {
+        throw "failed to parse project '$file': $_"
+    }
     $csproj = new-object -type csproj -Property @{ 
-        xml = [xml]$content
+        xml = $xml
         path = $path
+        name = $name
     }
 
     return $csproj
@@ -66,7 +85,10 @@ function get-referenceName($node) {
 }
 
 function add-metadata {
-param([parameter(ValueFromPipeline=$true)]$nodes) 
+param(
+    [parameter(ValueFromPipeline=$true)]$nodes,
+    [Csproj]$csproj
+    ) 
     process {
         $n = $nodes
         if ($nodes.Node) { $n = $nodes.Node }
@@ -77,29 +99,48 @@ param([parameter(ValueFromPipeline=$true)]$nodes)
             "Reference" { "dll" }
             default { "?" }
         }
+        $path = $null
+        if ($n.HintPath) { $path = $n.HintPath }
+        elseif ($n.Include) { $path = $n.Include }
+        
+        $isvalid = $null
+        $abspath = $path
+        if ($abspath -ne $null `
+        -and (test-ispathrelative $abspath) `
+        -and $csproj -ne $null `
+        -and ![string]::IsNullOrEmpty($csproj.fullname))
+        {
+            $abspath = join-path (split-path -parent $csproj.fullname) $abspath
+        }
+        if (!(test-ispathrelative $abspath)) {
+            $isvalid = test-path $abspath
+        }
+        
         return new-object -TypeName ReferenceMeta -Property @{ 
             Node = $n
             Name = $name
             ShortName = get-shortname $name 
             Type = $type
+            Path = $path
+            IsValid = $isvalid
         }
     }
 }
 
-function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName, [switch][bool]$noMeta) {
+function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName, [switch][bool]$noMeta, [Csproj] $csproj) {
     $r = Select-Xml -Xml $xml.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName"
     if (!$nometa) { 
-        $meta = $r | add-metadata
+        $meta = $r | add-metadata  -csproj $csproj
     }
     return $meta
 }
 
 function get-projectreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
-    return get-nodes $csproj.xml "ProjectReference"
+    return get-nodes $csproj.xml "ProjectReference"  -csproj $csproj
 }
 
 function get-allexternalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
-    get-nodes $csproj.xml "Reference[d:HintPath]"     
+    get-nodes $csproj.xml "Reference[d:HintPath]"  -csproj $csproj    
 }
 
 
@@ -117,12 +158,16 @@ function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true
     $refs = $refs | ? {
         $_.Node.HintPath -match "[""\\/]packages[/\\]"
     }
+    $refs = $refs | % {
+        $_.type = "nuget"
+        $_
+    }
     return $refs
 }
 
 
 function get-systemreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
-    get-nodes $csproj.xml "Reference[not(d:HintPath)]"     
+    get-nodes $csproj.xml "Reference[not(d:HintPath)]" -csproj $csproj    
 }
 
 
@@ -240,7 +285,7 @@ param(
     $projectPath = $node.Include
     $projectId = $node.Project
     $projectName = $node.Name
-
+    
     $path,$version,$framework = find-nugetPath $projectName $packagesRelPath
 
     if ($path -eq $null) {
@@ -313,6 +358,8 @@ function convert-reference {
         $dir = split-path -Parent $csproj.path      
         $pkgs = get-packagesconfig (Join-Path $dir "packages.config") -createifnotexists
         add-packagetoconfig -packagesconfig $pkgs -package $newref.Name -version $newref.Version -ifnotexists
+        #make sure paths are relative
+        $newref.Node.HintPath = (Get-RelativePath $dir $newref.Node.HintPath)
         $pkgs.xml.Save( (Join-Path $dir "packages.config") ) 
     }
     else {

@@ -16,10 +16,12 @@ Resolve-Path $helpersPath\functions\*.ps1 |
 
 #Export-ModuleMember -Function *
 Export-ModuleMember -function `
-    import-sln, get-slnprojects, remove-slnproject, `
-    find-nugetpath, get-nugettoolspath, `
+    import-sln, get-slnprojects, remove-slnproject, Update-SlnProject, `
+    find-nugetpath, get-nugettoolspath, Get-InstalledNugets, Get-AvailableNugets, `
+    invoke-nugetpack, get-packageversion, get-packagename, update-nugetmeta, `
     import-csproj, get-nodes, get-projectreferences, get-externalreferences, get-nugetreferences, get-systemreferences,  get-allreferences, add-projectItem, convertto-nuget, convert-reference, `
     get-packagesconfig, add-packagetoconfig, remove-packagefromconfig, `
-    convert-projectReferenceToNuget, get-referencesTo, convertto-projectreference, convertto-nugetreference, convert-nugetToProjectReference, `
-    set-assemblymeta `
+    convert-referencestonuget, get-referencesTo, convertto-projectreference, convertto-nugetreference, convert-nugetToProjectReference, `
+    set-assemblymeta, get-assemblymeta, `
+    get-slndependencies, test-slndependencies, repair-slnpaths, get-csprojdependencies, repair-csprojpaths `
     -Alias *

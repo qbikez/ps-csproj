@@ -2,8 +2,13 @@ $script:types = @"
 public class Sln {
     public string OriginalPath {get;set;}
     public string Path {get;set;}
+    public string Fullname { get { return Path; }}
     public string[] Content {get;set;}
     public SlnProject[] projects {get;set;} 
+    
+    public void Save() {
+        System.IO.File.WriteAllLines(Fullname, Content);
+    }
 }
 public class SlnProject {
     public string Name {get;set;}
@@ -12,6 +17,13 @@ public class SlnProject {
     public int Line {get;set;}
     public string Type { get;set;} 
     public string FullName {get;set;}
+    public string TypeGuid {get;set;}
+    
+    public override string ToString() {
+        return Name;
+    }
+    
+  
 }
 "@
 
@@ -55,6 +67,7 @@ function get-slnprojects {
                 name = $Matches["name"]
                 path = $Matches["path"]
                 guid = $Matches["guid"] 
+                typeguid = $matches["typeguid"]
                 line = $i
                 type = $type
                 fullname = join-path $slndir $Matches["path"]
@@ -75,7 +88,21 @@ function find-slnproject {
     return $proj
 }
 
-function remove-slnproject ([Sln]$sln, $projectname) {
+function Update-SlnProject {
+[CmdletBinding()]
+param([Sln]$sln, [SlnProject] $project) 
+      # Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legimi.Core.Utils.Diag", "..\..\..\src\Core\Legimi.Core.Utils.Diag\Legimi.Core.Utils.Diag.csproj", "{678181A1-BF92-46F2-8D71-E3F5057042AB}"
+   $regex = 'Project\((?<typeguid>.*?)\)\s*=\s*"(?<name>.*?)",\s*"(?<path>.*?)",\s*"(?<guid>.*?)"'
+   $line = "Project($($project.typeguid)) = ""$($project.Name)"", ""$($project.Path)"", ""$($project.guid)"""
+   write-verbose "replacing line:"
+   write-verbose "$($sln.content[$project.line])"
+   write-verbose "=> $line"
+   $sln.content[$project.line] = $sln.content[$project.line] -replace $regex,$line 
+}
+
+function remove-slnproject {
+[CmdletBinding()]    
+param ([Sln]$sln, $projectname) 
     $proj = find-slnproject $sln $projectname
     if ($proj -eq $null) { throw "project '$projectname' not found in solution" }
 
@@ -91,11 +118,24 @@ function remove-slnproject ([Sln]$sln, $projectname) {
     
     if ($endi -eq -1) { throw "failed to find line matching /$regex/"}
     
-    $newcontent = @()
+    $newcontent = new-object -type "System.Collections.ArrayList"
     for($i = 0; $i -lt $sln.content.length; $i++) {
         if ($i -ge $proj.line -and $i -le $endi) { continue }
-        else { $newcontent += $sln.content[$i] }
+        else { $newcontent.Add($sln.content[$i]) }
     }
-    $sln.content = $newcontent
+    
+    $referencingLines = @()
+    for($i = 0; $i -lt $newcontent.Count; $i++) {
+        if ($newcontent[$i] -match "$($proj.Guid)") {
+            $referencingLines += @{ line = $i; text = $newcontent[$i] }
+        }
+    }
+    
+    for ($i = $referencingLines.length - 1; $i -ge 0; $i--) {
+        write-verbose "Removing referencing line $($referencingLines[$i].line): $($referencingLines[$i].text)"
+        $newcontent.RemoveAt($referencingLines[$i].line)
+    }
+        
+    $sln.content = @() + $newcontent
     $sln.projects = $sln.projects | ? { $_.name -ine $projectname }
 }

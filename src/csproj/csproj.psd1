@@ -12,7 +12,7 @@
 RootModule = '.\Csproj.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.4'
+ModuleVersion = '1.0.9'
 
 # ID used to uniquely identify this module
 GUID = '704af2c5-1174-4e07-bce4-5503cc9b930d'
@@ -30,7 +30,7 @@ Copyright = '(c) 2016 jakub.pawlowski. All rights reserved.'
 Description = 'tools for manipulationg csproj and sln files'
 
 # Minimum version of the Windows PowerShell engine required by this module
-# PowerShellVersion = ''
+# PowerShellVersion = '5.0'
 
 # Name of the Windows PowerShell host required by this module
 # PowerShellHostName = ''
@@ -47,8 +47,18 @@ Description = 'tools for manipulationg csproj and sln files'
 # Processor architecture (None, X86, Amd64) required by this module
 # ProcessorArchitecture = ''
 
+#NestedModules = @("PathUtils", "PublishMap")
+
 # Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+#RequiredModules = @(
+NestedModules = @( 
+    @{ 
+        ModuleName="PublishMap"; ModuleVersion="1.2.0"
+    },
+    @{ 
+        ModuleName="PathUtils"; ModuleVersion="1.0.6"
+    }
+)
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
@@ -63,7 +73,6 @@ Description = 'tools for manipulationg csproj and sln files'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-# NestedModules = @()
 
 # Functions to export from this module
 FunctionsToExport = '*'
@@ -117,6 +126,10 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+
+
+
+
 
 
 

@@ -37,6 +37,16 @@ end {
     }
 }
 
+function get-nugetname {
+    param($name)
+    if ($name -match "(?<name>.*?)\.(?<version>[0-9]+(\.[0-9]+)*(-.*){0,1})") {
+        return $Matches["name"]    
+    }
+    else {
+        return $name
+    }
+}
+
 function find-nugetPath {
     [CmdletBinding()]
     param(
@@ -44,6 +54,7 @@ function find-nugetPath {
         [Parameter(Mandatory=$true)] $packagesRelPath, 
         [Parameter(Mandatory=$false)] $frameworkHint
     ) 
+    $name = get-nugetname $name
     # get latest package version
     # TODO: handle a case when project $name contains version
     $versions = Get-PackageFolderVersions -packageName $name -packagesDir $packagesRelPath
@@ -58,6 +69,7 @@ function find-nugetPath {
 
     $dll = find-nugetdll $name $libpath
     $path = $null
+    $framework = ""
     if ($dll -ne $null) { 
         $path = $dll
     }
@@ -69,12 +81,13 @@ function find-nugetPath {
             $dll = find-nugetdll $name $p
             if ($dll -ne $null) { 
                 $path =  $dll
+                $framework = $f
                 break
             }
         }
     }
     # check lib\frameworkname\*
-    return $path,$latest,$f
+    return $path,$latest,$framework 
 }
 
 
@@ -87,3 +100,135 @@ function get-shortName($package) {
     $m = $package -match "(?<shortname>.*?)(,(?<specificversion>.+)){0,1}$"
     return $Matches["shortname"]
 }
+
+function split-packagename($package) {
+     if ($package -match "[\\/]" ) {
+        $package = split-path $package -leaf    
+    }
+    if ($package -match ".nupkg$" ) {
+        $package = $package -replace ".nupkg$",""
+    }
+    
+    $m = $package -match "(?<name>.*?)\.(?<fullversion>(?<version>[0-9]+(\.[0-9]+)*)+(?<suffix>-.*){0,1})$"
+    return $Matches
+}
+
+function split-packageVersion($version) {
+    $m = $version -match "(?<version>[0-9]+(\.[0-9]+)*)+(?<suffix>-.*){0,1}$"
+    return $matches
+}
+
+function get-packageName($package) {
+   $m = split-packagename $package
+   return $m["name"]
+}
+
+
+function get-packageversion($package) {
+   $m = split-packagename $package
+   return $m["fullversion"]
+}
+
+function new-nuspec($projectPath) {
+    pushd
+    try {
+        $dir = split-path $projectpath -parent
+        $csproj = split-path $projectpath -leaf
+        cd $dir
+        nuget spec $csproj
+    } finally {
+        popd
+    }
+}
+
+function Get-InstalledNugets($packagesdir) {
+    $subdirs = get-childitem $packagesdir -Directory
+    $result = @()
+    foreach($s in $subdirs) {
+        $name = get-packageName $s
+        $version = get-packageversion $s
+        
+        if ($name -ne $null -and $version -ne $null) {
+            $result += new-object -type pscustomobject -Property @{ 
+                Name = $name; Version = $version 
+            }
+        }
+    }
+    
+    return $result
+}
+
+function Get-AvailableNugets ($source) {
+    $l = nuget list -source $source
+    $l = $l | % {
+        $s = $_.split(" ")
+         new-object -type pscustomobject -Property @{ 
+                Name = $s[0]; Version = $s[1] 
+            }
+    }
+    return $l
+}
+
+function invoke-nugetpack {
+    [CmdletBinding()]
+    param($nuspecOrCsproj = $null) 
+    
+    if ($nuspecorcsproj -eq $null) {
+        $csprojs = @(gci . -filter "*.csproj")
+        if ($csprojs.length -eq 1) {
+            $nuspecorcsproj = $csprojs[0].Name
+        }
+        $csprojs = @(gci . -filter "*.nuspec")
+        if ($csprojs.length -eq 1) {
+            $nuspecorcsproj = $csprojs[0].Name
+        }
+    }
+    $o = nuget pack $nuspecorcsproj | % { write-verbose $_; $_ } 
+    if ($lastexitcode -ne 0) {
+        throw "nuget command failed! `r`n$($o | out-string)"
+    } else {
+        $success = $o | % {
+            if ($_ -match "Successfully created package '(.*)'") {
+                return $matches[1]
+            }
+        }
+        return $success
+    }
+    
+}
+
+function update-nugetmeta {
+    [CmdletBinding()]
+    param($path = ".", $description = $null, [Alias("company")]$author = $null, $version = $null)
+    
+    $v = get-assemblymeta "Description" $path
+    if ($v -ne $null -or $description -ne $null) {
+        if ($description -eq $null) { $description =  "No Description" }
+        set-assemblymeta "Description" $description
+    }
+    
+    $v = get-assemblymeta "Company" $path
+    if ($v -ne $null -or $company -ne $null) {
+        if ($company -eq $null) { $company =  "MyCompany" }
+        set-assemblymeta "Company" $company
+    }
+    
+    $defaultVersion = "1.0.0"
+    $ver = $version
+    if ($ver -eq $null) { $ver = $defaultVersion } 
+    $v = get-assemblymeta "Version" $path
+    if ($v -eq $null -or $v -eq "1.0.0.0" -or $version -ne $null) {
+        set-assemblymeta "Version" ((split-packageversion $ver)["version"])
+    }
+    $v = get-assemblymeta "FileVersion" $path
+    if ($v -eq $null -or $v -eq "1.0.0.0" -or $version -ne $null) {
+        set-assemblymeta "FileVersion" ((split-packageversion $ver)["version"])
+    }
+        $v = get-assemblymeta "InformationalVersion" $path
+    if ($v -eq $null -or $v -eq "1.0.0.0"  -or $version -ne $null) {
+        set-assemblymeta "InformationalVersion" $ver
+    }
+}
+
+new-alias pack-nuget invoke-nugetpack
+new-alias generate-nugetmeta update-nugetmeta

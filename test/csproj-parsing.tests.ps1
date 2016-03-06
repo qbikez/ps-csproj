@@ -1,5 +1,8 @@
-import-module Pester
 . $PSScriptRoot\includes.ps1
+
+import-module Pester
+import-module pathutils
+import-module csproj
 
 $inputdir = "$psscriptroot\input"
 
@@ -54,7 +57,6 @@ Describe "Basic reference parsing" {
         It "should have 2 project references" {
             $refs = get-projectreferences $csproj
             $refs.Count | Should Be 2
-            write-host $refs
             $refs | ? { $_.Node.Name -ieq "Core.Client" } | Should Not BeNullOrEmpty
             $refs | ? { $_.Node.Name -ieq "Core.Interface" } | Should Not BeNullOrEmpty            
         }

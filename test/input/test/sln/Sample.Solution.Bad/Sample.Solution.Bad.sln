@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Library1", "..\..\src\Core\Core.Library1\Core.Library1.csproj", "{8F1B55DD-15AB-4ACB-9206-84BA2122F60F}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Console1", "..\..\src\Console\Console1\Console1.csproj", "{3DB72011-6C72-449B-9D9B-EE9A5A037B2A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core.Library2", "..\..\src\Core\Core.Library2\Core.Library2.csproj", "{65A97165-F248-412B-803C-0CEA8936311C}"
@@ -13,10 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		..\..\nuget.config = ..\..\nuget.config
 	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "console", "console", "{9B1AA15F-DF81-4ADA-B227-442ADD6A5127}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "core", "core", "{9310CDE8-9395-49EE-91BC-C45448DB9661}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,10 +33,5 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
-	EndGlobalSection
-	GlobalSection(NestedProjects) = preSolution
-		{8F1B55DD-15AB-4ACB-9206-84BA2122F60F} = {9310CDE8-9395-49EE-91BC-C45448DB9661}
-		{3DB72011-6C72-449B-9D9B-EE9A5A037B2A} = {9B1AA15F-DF81-4ADA-B227-442ADD6A5127}
-		{65A97165-F248-412B-803C-0CEA8936311C} = {9310CDE8-9395-49EE-91BC-C45448DB9661}
 	EndGlobalSection
 EndGlobal

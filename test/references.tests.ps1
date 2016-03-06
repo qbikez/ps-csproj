@@ -95,9 +95,8 @@ Describe "Nuget path resolution" {
         $cases = $packages | % { @{ pkgdir = $_.Name  } }        
         It "Should resolve proper path for package '<pkgdir>' with version" -TestCases $cases {
             param ($pkgdir)
-            Set-TestInconclusive
-            #$nuget = find-nugetPath $pkgdir -packagesRelPath $packagesdir
-            #$nuget | Should Not BeNullOrEmpty
+            $nuget,$version,$framework  = find-nugetPath $pkgdir -packagesRelPath $packagesdir
+            $nuget | Should Not BeNullOrEmpty
         }
         
     }

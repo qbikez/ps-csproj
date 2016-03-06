@@ -2,6 +2,7 @@
 
 import-module pester
 import-module csproj -DisableNameChecking
+import-module pathutils
 
 #TODO: use https://github.com/pester/Pester/wiki/TestDrive 
 Describe "project file manipulation" {
@@ -10,12 +11,20 @@ Describe "project file manipulation" {
     copy-item "$inputdir\packages.config" "testdrive:\input\"
     copy-item "$inputdir\packages" "testdrive:\packages" -Recurse
     $testdir = "testdrive:\input" 
-    push-location
-    cd $testdir
+    In $testdir {
     Context "When replacing projectreference" {        
         
         $csproj = import-csproj "test.csproj"
         $packagename = "Core.Boundaries"
+        <#
+        It "should build before replacing" {
+            Add-MsbuildPath
+            $msbuildout = & msbuild 
+            $lec = $lastexitcode
+            $lec | Should Be 0
+        }
+        #>
+        
         It "csproj Should contain reference to project $packagename" {
             $refs = get-projectreferences $csproj
             $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
@@ -32,6 +41,18 @@ Describe "project file manipulation" {
             $ref = get-nugetreferences $csproj | ? { $_.Name -eq $packagename }
             $ref | Should Not BeNullOrEmpty
         } 
+        $ref = get-nugetreferences $csproj
+        
+        ipmo publishmap
+        ipmo pathutils
+        $cases = $ref | % { (publishmap\convertto-hashtable $_) }  
+        It "nuget reference <name> should have relative path" -TestCases $cases {
+            param($name,$path)
+                $name | Should Not BeNullOrEmpty
+                $path | Should Not BeNullOrEmpty
+                Test-IsPathRelative $path | Should Be True 
+            
+        }
 
         It "result Project should not contain project  reference to $packagename" {
             $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
@@ -50,11 +71,18 @@ Describe "project file manipulation" {
         }
         It "Should restore properly" {
             $error.Clear()
-            & nuget restore -PackagesDirectory "..\packages" 
-            $error.Count | Should Be 0
+            $nugetout = & nuget restore -NoCache -PackagesDirectory "..\packages" 2>&1
+            if ($lastexitcode -ne 0) {
+                $nugetout | % {Write-Warning $_}
+            }
+            $lastexitcode | Should be 0
         }
+        
+        <#
         It "Should Still Compile" {
+            Set-TestInconclusive
         }
+        #>
     }
-    Pop-Location
+    }
 }
