@@ -40,5 +40,10 @@ on_finish:
 #- ps: test-path "artifacts" 
 - 7z a artifacts.zip artifacts
 - ps: Push-AppveyorArtifact "artifacts.zip"
-deploy_script:
-- ps: scripts/lib/push.ps1 . -buildno $env:APPVEYOR_BUILD_NUMBER
+
+-
+  branches:
+    only:
+      - master
+  deploy_script:
+    - ps: scripts/lib/push.ps1 . -buildno $env:APPVEYOR_BUILD_NUMBER
