@@ -4,9 +4,11 @@
         "**/.git": true,
         "paket": true,
         "paket-files": true,
-        "node_modules": true,
-        "packages": true,
-        "test-results": true
+        "**/node_modules": true,
+        "**/packages": true,
+        "**/test-results": true,
+        "**/obj":true,
+        "**/bin": true
     },
     "powershell.scriptAnalysis.enable": false
 }
