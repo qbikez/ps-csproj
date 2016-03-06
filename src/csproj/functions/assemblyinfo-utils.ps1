@@ -1,4 +1,7 @@
 function Get-AssemblyMetaKey($key) {
+    if ($key -eq $null) {
+        return "Assembly.*"
+    }
     if ($key.StartsWith("Assembly")) {
         return $key
     }
@@ -34,16 +37,26 @@ function Get-AssemblyMetaFile($path = ".") {
 function Get-AssemblyMeta {
     [CmdletBinding()]
     param ($key, $assemblyinfo = ".")
+    if ($key -eq $null) { $table = $true }
     $key = get-assemblymetakey $key
     $assemblyinfo = get-assemblymetafile $assemblyinfo
     $content = get-content $assemblyinfo   
     $key = [System.Globalization.CultureInfo]::CurrentCulture.TextInfo.ToTitleCase($key)
-    $content | % {
-        $regex = "\[assembly: ($($key))\(""(?<value>.*)""\)\]"
+    $r = $content | % {
+        $regex = "\[assembly: (?<key>$($key))\(""(?<value>.*)""\)\]"
         if ($_ -match $regex -and !($_.trim().startswith("//"))) {
-            $matches["value"]            
+            if ($table) {
+                return new-object -type pscustomobject -property @{
+                    key = $matches["key"]; value = $matches["value"]
+                }
+            }
+            else {
+                return $matches["value"]
+            }            
         }          
     }
+    
+    return $r
 }
 
 function set-AssemblyMeta {
@@ -58,7 +71,7 @@ function set-AssemblyMeta {
         $regex = "\[assembly: ($($key))\(""(.*)""\)\]"
         $newval = $_
         if ($_ -match $regex) {            
-            $newval = $newval  -replace $regex,"[assembly: `${1}(""$($value)"")]"
+            $newval = $newval -replace $regex,"[assembly: `${1}(""$($value)"")]"
             write-verbose "replacing: $_ => $newval"
         } 
         $newval

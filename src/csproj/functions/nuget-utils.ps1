@@ -198,25 +198,32 @@ function invoke-nugetpack {
 }
 
 function update-nugetmeta {
-    [CmdletBinding()]
-    param($path = ".", $description = $null, [Alias("company")]$author = $null, $version = $null)
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param($path = ".", $description = $null, [Alias("company")]$author = $null, $version = $null, $suffix = $null)
     
     $v = get-assemblymeta "Description" $path
-    if ($v -ne $null -or $description -ne $null) {
+    if ($v -eq $null -or $description -ne $null) {
         if ($description -eq $null) { $description =  "No Description" }
         set-assemblymeta "Description" $description
     }
     
     $v = get-assemblymeta "Company" $path
-    if ($v -ne $null -or $company -ne $null) {
+    if ($v -eq $null -or $company -ne $null) {
         if ($company -eq $null) { $company =  "MyCompany" }
         set-assemblymeta "Company" $company
     }
     
+    $v = get-assemblymeta "Version" $path
+    if ($v -ne $null -and $suffix -ne $null) {
+        if ($version -eq $null) { $version = $v }
+        $version = "$version-$suffix"
+    }
+   
+    
     $defaultVersion = "1.0.0"
     $ver = $version
     if ($ver -eq $null) { $ver = $defaultVersion } 
-    $v = get-assemblymeta "Version" $path
+    
     if ($v -eq $null -or $v -eq "1.0.0.0" -or $version -ne $null) {
         set-assemblymeta "Version" ((split-packageversion $ver)["version"])
     }
@@ -227,6 +234,9 @@ function update-nugetmeta {
         $v = get-assemblymeta "InformationalVersion" $path
     if ($v -eq $null -or $v -eq "1.0.0.0"  -or $version -ne $null) {
         set-assemblymeta "InformationalVersion" $ver
+    }
+}
+
     }
 }
 
