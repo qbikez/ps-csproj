@@ -169,20 +169,61 @@ function Get-AvailableNugets ($source) {
     return $l
 }
 
+function invoke-nugetpush {
+    [CmdletBinding()]
+    param($file = $null, 
+    [Parameter(Mandatory=$false)]$source,
+    [Parameter(Mandatory=$false)]$apikey,
+    [switch][bool] $Build) 
+    
+    if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
+        $nupkg = invoke-nugetpack $file -Build:$build
+    } else {
+        $nupkg = $file
+    }
+    Write-Verbose "pushing package $nupkg to $source"
+    $p = @(
+        $nupkg
+    )
+    if ($source -ne $null) {
+        $p += "-source",$source
+    }
+    if ($apikey -ne $null) {
+        $p += "-apikey",$apikey
+    }
+    $o = nuget push $p | % { write-verbose $_; $_ } 
+    if ($lastexitcode -ne 0) {
+        throw "nuget command failed! `r`n$($o | out-string)"
+    } else {
+        $o | % { write-host $_; }
+    }
+}
+
 function invoke-nugetpack {
     [CmdletBinding()]
-    param($nuspecOrCsproj = $null) 
+    param($nuspecOrCsproj = $null,
+    [switch][bool] $Build) 
     
     if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.csproj")
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
         }
+    }
+    if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.nuspec")
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
         }
     }
+    
+    if ($Build) {
+        $o = msbuild $nuspecorcsproj | % { write-verbose $_; $_ }
+         if ($lastexitcode -ne 0) {
+           throw "build failed! `r`n$($o | out-string)"
+        }
+    }
+    
     $o = nuget pack $nuspecorcsproj | % { write-verbose $_; $_ } 
     if ($lastexitcode -ne 0) {
         throw "nuget command failed! `r`n$($o | out-string)"
@@ -197,26 +238,34 @@ function invoke-nugetpack {
     
 }
 
+
 function update-nugetmeta {
-    [CmdletBinding()]
-    param($path = ".", $description = $null, [Alias("company")]$author = $null, $version = $null)
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param($path = ".", $description = $null, [Alias("company")]$author = $null, $version = $null, $suffix = $null)
     
     $v = get-assemblymeta "Description" $path
-    if ($v -ne $null -or $description -ne $null) {
+    if ($v -eq $null -or $description -ne $null) {
         if ($description -eq $null) { $description =  "No Description" }
         set-assemblymeta "Description" $description
     }
     
     $v = get-assemblymeta "Company" $path
-    if ($v -ne $null -or $company -ne $null) {
+    if ($v -eq $null -or $company -ne $null) {
         if ($company -eq $null) { $company =  "MyCompany" }
         set-assemblymeta "Company" $company
     }
+   
+    $v = get-assemblymeta "Version" $path
+    if ($v -ne $null -and $suffix -ne $null) {
+        if ($version -eq $null) { $version = $v }
+        $version = "$version-$suffix"
+    }
+   
     
     $defaultVersion = "1.0.0"
     $ver = $version
     if ($ver -eq $null) { $ver = $defaultVersion } 
-    $v = get-assemblymeta "Version" $path
+    
     if ($v -eq $null -or $v -eq "1.0.0.0" -or $version -ne $null) {
         set-assemblymeta "Version" ((split-packageversion $ver)["version"])
     }
@@ -230,5 +279,113 @@ function update-nugetmeta {
     }
 }
 
+
+
+if (-not ([System.Management.Automation.PSTypeName]'VersionComponent').Type) {
+Add-Type -TypeDefinition @"
+   public enum VersionComponent
+   {
+      Major = 0,
+      Minor = 1,
+      Patch = 2,
+      Build = 3,
+      Suffix = 4,
+      SuffixBuild = 5,
+      SuffixRevision = 6
+   }
+"@
+}
+
+function Update-Version([Parameter(mandatory=$true)]$ver, [VersionComponent]$component = [VersionComponent]::Patch, $value) {
+    
+    $null = $ver -match "(?<version>[0-9]+(\.[0-9]+)*)(-(?<suffix>.*)){0,1}"
+    $version = $matches["version"]
+    $suffix = $matches["suffix"]
+    
+    $vernums = $version.Split(@('.'))
+    $lastNumIdx = $component
+    if ($component -lt [VersionComponent]::Suffix) {
+        $lastNum = [int]::Parse($vernums[$lastNumIdx])
+        
+        <# for($i = $vernums.Count-1; $i -ge 0; $i--) {
+            if ([int]::TryParse($vernums[$i], [ref] $lastNum)) {
+                $lastNumIdx = $i
+                break
+            }
+        }#>
+        if ($value -ne $null) {
+            $lastNum = $value
+        }
+        else {
+            $lastNum++
+        }
+        $vernums[$component] = $lastNum.ToString()
+        #each lesser component should be set to 0 
+        for($i = $component + 1; $i -lt $vernums.length; $i++) {
+            $vernums[$i] = 0
+        }
+    } else {
+        if ([string]::IsNullOrEmpty($suffix)) {
+            #throw "version '$ver' has no suffix"
+            $suffix = "build000"
+        }
+        
+        if ($component -eq [VersionComponent]::SuffixBuild) {
+            if ($suffix -match "build([0-9]+)") {
+                $num = [int]$matches[1]
+                if ($value -ne $null) {
+                    $num = $value
+                }
+                else {
+                    $num++
+                }
+                $suffix = $suffix -replace "build[0-9]+","build$($num.ToString("000"))"
+            }
+            else {
+                throw "suffix '$suffix' does not match build[0-9] pattern"
+            }
+        }
+        if ($component -eq [VersionComponent]::SuffixRevision) {
+            if ($suffix -match "build([0-9]+)-(?<rev>[a-fA-F0-9]+)(-|$)") {
+                $rev = $Matches["rev"]
+                $suffix = $suffix -replace "$rev",$value
+            }
+            else {
+                $suffix = $suffix + "-$value"
+            }
+        }
+    }
+    
+    $ver2 = [string]::Join(".", $vernums)
+    if (![string]::IsNullOrEmpty($suffix)) {
+        $ver2 += "-$suffix"
+    }
+
+    return $ver2
+}
+
+function update-buildversion {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param($path = ".") 
+    pushd
+    try {
+        cd $path
+        $ver = Get-AssemblyMeta InformationalVersion
+        if ($ver -eq $null) { $ver = Get-AssemblyMeta Version }
+        $newver = Update-Version $ver SuffixBuild
+        #Write-Verbose "updating version $ver to $newver"
+        $id = (hg id -i).substring(0,5)
+        $newver = Update-Version $newver SuffixRevision -value $id
+        Write-Verbose "updating version $ver to $newver"
+        if ($PSCmdlet.ShouldProcess("update version $ver to $newver")) {
+            update-nugetmeta -version $newver
+        }
+    } finally {
+        popd
+    }
+}
+
+new-alias push-nuget invoke-nugetpush
 new-alias pack-nuget invoke-nugetpack
 new-alias generate-nugetmeta update-nugetmeta
+new-alias increment-version update-version
