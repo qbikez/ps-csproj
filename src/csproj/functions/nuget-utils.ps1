@@ -169,8 +169,23 @@ function Get-AvailableNugets ($source) {
     return $l
 }
 
+#todo: move this to logging module
+function write-indented ($level, $msg, $mark = "> ", $maxlen) {
+    $pad = $mark.PadLeft($level)
+    if ($maxlen -eq $null) {
+        $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
+    }
+    $idx = 0
+    
+    while($idx -lt $msg.length) {
+        $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
+        write-host "$pad$($msg.substring($idx,$chunk))"
+        $idx += $chunk
+    }
+}
+
 function invoke-nugetpush {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$true)]
     param($file = $null, 
     [Parameter(Mandatory=$false)]$source,
     [Parameter(Mandatory=$false)]$apikey,
@@ -181,7 +196,7 @@ function invoke-nugetpush {
     } else {
         $nupkg = $file
     }
-    Write-Verbose "pushing package $nupkg to $source"
+    Write-Host "pushing package $nupkg to $source"
     $p = @(
         $nupkg
     )
@@ -191,11 +206,11 @@ function invoke-nugetpush {
     if ($apikey -ne $null) {
         $p += "-apikey",$apikey
     }
-    $o = nuget push $p | % { write-verbose $_; $_ } 
-    if ($lastexitcode -ne 0) {
-        throw "nuget command failed! `r`n$($o | out-string)"
-    } else {
-        $o | % { write-host $_; }
+    if ($PSCmdlet.ShouldProcess("pushing package $p")) {
+        $o = nuget push $p | % { write-indented 4 "$_"; $_ } 
+        if ($lastexitcode -ne 0) {
+            throw "nuget command failed! `r`n$($o | out-string)"
+        }
     }
 }
 
@@ -218,13 +233,16 @@ function invoke-nugetpack {
     }
     
     if ($Build) {
-        $o = msbuild $nuspecorcsproj | % { write-verbose $_; $_ }
+        update-buildversion (split-path -Parent $nuspecorcsproj)
+        write-host "building project"
+        $o = msbuild $nuspecorcsproj | % { write-indented 4 "$_"; $_ }
          if ($lastexitcode -ne 0) {
            throw "build failed! `r`n$($o | out-string)"
         }
     }
     
-    $o = nuget pack $nuspecorcsproj | % { write-verbose $_; $_ } 
+    write-host "packing nuget"
+    $o = nuget pack $nuspecorcsproj | % { write-indented 4 "$_"; $_ } 
     if ($lastexitcode -ne 0) {
         throw "nuget command failed! `r`n$($o | out-string)"
     } else {
@@ -376,7 +394,7 @@ function update-buildversion {
         #Write-Verbose "updating version $ver to $newver"
         $id = (hg id -i).substring(0,5)
         $newver = Update-Version $newver SuffixRevision -value $id
-        Write-Verbose "updating version $ver to $newver"
+        Write-host "updating version $ver to $newver"
         if ($PSCmdlet.ShouldProcess("update version $ver to $newver")) {
             update-nugetmeta -version $newver
         }
