@@ -253,7 +253,7 @@ Add-Type -TypeDefinition @"
 "@
 }
 
-function Increment-Version([Parameter(mandatory=$true)]$ver, [VersionComponent]$component = [VersionComponent]::Patch) {
+function Update-Version([Parameter(mandatory=$true)]$ver, [VersionComponent]$component = [VersionComponent]::Patch) {
     
     $null = $ver -match "(?<version>[0-9]+(\.[0-9]+)*)(-(?<suffix>.*)){0,1}"
     $version = $matches["version"]
@@ -304,3 +304,4 @@ function Increment-Version([Parameter(mandatory=$true)]$ver, [VersionComponent]$
 
 new-alias pack-nuget invoke-nugetpack
 new-alias generate-nugetmeta update-nugetmeta
+new-alias increment-version update-version
