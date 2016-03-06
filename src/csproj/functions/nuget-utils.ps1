@@ -178,6 +178,8 @@ function invoke-nugetpack {
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
         }
+    }
+    if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.nuspec")
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
@@ -279,14 +281,15 @@ function Update-Version([Parameter(mandatory=$true)]$ver, [VersionComponent]$com
         }
     } else {
         if ([string]::IsNullOrEmpty($suffix)) {
-            throw "version '$ver' has no suffix"
+            #throw "version '$ver' has no suffix"
+            $suffix = "build000"
         }
         
         if ($component -eq [VersionComponent]::SuffixBuild) {
             if ($suffix -match "build([0-9]+)") {
                 $num = [int]$matches[1]
                 $num++
-                $suffix = $suffix -replace "build[0-9]+","build$($num.ToString("###"))"
+                $suffix = $suffix -replace "build[0-9]+","build$($num.ToString("000"))"
             }
             else {
                 throw "suffix '$suffix' does not match build[0-9] pattern"
