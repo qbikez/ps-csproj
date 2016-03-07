@@ -12,7 +12,7 @@
 RootModule = '.\Csproj.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.8'
+ModuleVersion = '1.0.9.4'
 
 # ID used to uniquely identify this module
 GUID = '704af2c5-1174-4e07-bce4-5503cc9b930d'
@@ -107,7 +107,7 @@ PrivateData = @{
         # LicenseUri = ''
 
         # A URL to the main website for this project.
-        # ProjectUri = ''
+        ProjectUri = 'https://github.com/qbikez/ps-csproj'
 
         # A URL to an icon representing this module.
         # IconUri = ''
@@ -120,12 +120,18 @@ PrivateData = @{
 } # End of PrivateData hashtable
 
 # HelpInfo URI of this module
-# HelpInfoURI = ''
+ HelpInfoURI = 'https://github.com/qbikez/ps-csproj'
 
 # Default prefix for commands exported from this module. Override the default prefix using Import-Module -Prefix.
 # DefaultCommandPrefix = ''
 
 }
+
+
+
+
+
+
 
 
 
