@@ -2,6 +2,7 @@
 
 import-module pester
 import-module csproj
+import-module semver
 
 
 Describe "Version manipulation" {

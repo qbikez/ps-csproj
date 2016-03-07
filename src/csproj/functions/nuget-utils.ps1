@@ -169,8 +169,23 @@ function Get-AvailableNugets ($source) {
     return $l
 }
 
+#todo: move this to logging module
+function write-indented ($level, $msg, $mark = "> ", $maxlen) {
+    $pad = $mark.PadLeft($level)
+    if ($maxlen -eq $null) {
+        $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
+    }
+    $idx = 0
+    
+    while($idx -lt $msg.length) {
+        $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
+        write-host "$pad$($msg.substring($idx,$chunk))"
+        $idx += $chunk
+    }
+}
+
 function invoke-nugetpush {
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$true)]
     param($file = $null, 
     [Parameter(Mandatory=$false)]$source,
     [Parameter(Mandatory=$false)]$apikey,
@@ -181,7 +196,7 @@ function invoke-nugetpush {
     } else {
         $nupkg = $file
     }
-    Write-Verbose "pushing package $nupkg to $source"
+    Write-Host "pushing package $nupkg to $source"
     $p = @(
         $nupkg
     )
@@ -191,11 +206,11 @@ function invoke-nugetpush {
     if ($apikey -ne $null) {
         $p += "-apikey",$apikey
     }
-    $o = nuget push $p | % { write-verbose $_; $_ } 
-    if ($lastexitcode -ne 0) {
-        throw "nuget command failed! `r`n$($o | out-string)"
-    } else {
-        $o | % { write-host $_; }
+    if ($PSCmdlet.ShouldProcess("pushing package $p")) {
+        $o = nuget push $p | % { write-indented 4 "$_"; $_ } 
+        if ($lastexitcode -ne 0) {
+            throw "nuget command failed! `r`n$($o | out-string)"
+        }
     }
 }
 
@@ -218,13 +233,16 @@ function invoke-nugetpack {
     }
     
     if ($Build) {
-        $o = msbuild $nuspecorcsproj | % { write-verbose $_; $_ }
+        update-buildversion (split-path -Parent $nuspecorcsproj)
+        write-host "building project"
+        $o = msbuild $nuspecorcsproj | % { write-indented 4 "$_"; $_ }
          if ($lastexitcode -ne 0) {
            throw "build failed! `r`n$($o | out-string)"
         }
     }
     
-    $o = nuget pack $nuspecorcsproj | % { write-verbose $_; $_ } 
+    write-host "packing nuget"
+    $o = nuget pack $nuspecorcsproj | % { write-indented 4 "$_"; $_ } 
     if ($lastexitcode -ne 0) {
         throw "nuget command failed! `r`n$($o | out-string)"
     } else {
@@ -281,88 +299,6 @@ function update-nugetmeta {
 
 
 
-if (-not ([System.Management.Automation.PSTypeName]'VersionComponent').Type) {
-Add-Type -TypeDefinition @"
-   public enum VersionComponent
-   {
-      Major = 0,
-      Minor = 1,
-      Patch = 2,
-      Build = 3,
-      Suffix = 4,
-      SuffixBuild = 5,
-      SuffixRevision = 6
-   }
-"@
-}
-
-function Update-Version([Parameter(mandatory=$true)]$ver, [VersionComponent]$component = [VersionComponent]::Patch, $value) {
-    
-    $null = $ver -match "(?<version>[0-9]+(\.[0-9]+)*)(-(?<suffix>.*)){0,1}"
-    $version = $matches["version"]
-    $suffix = $matches["suffix"]
-    
-    $vernums = $version.Split(@('.'))
-    $lastNumIdx = $component
-    if ($component -lt [VersionComponent]::Suffix) {
-        $lastNum = [int]::Parse($vernums[$lastNumIdx])
-        
-        <# for($i = $vernums.Count-1; $i -ge 0; $i--) {
-            if ([int]::TryParse($vernums[$i], [ref] $lastNum)) {
-                $lastNumIdx = $i
-                break
-            }
-        }#>
-        if ($value -ne $null) {
-            $lastNum = $value
-        }
-        else {
-            $lastNum++
-        }
-        $vernums[$component] = $lastNum.ToString()
-        #each lesser component should be set to 0 
-        for($i = $component + 1; $i -lt $vernums.length; $i++) {
-            $vernums[$i] = 0
-        }
-    } else {
-        if ([string]::IsNullOrEmpty($suffix)) {
-            #throw "version '$ver' has no suffix"
-            $suffix = "build000"
-        }
-        
-        if ($component -eq [VersionComponent]::SuffixBuild) {
-            if ($suffix -match "build([0-9]+)") {
-                $num = [int]$matches[1]
-                if ($value -ne $null) {
-                    $num = $value
-                }
-                else {
-                    $num++
-                }
-                $suffix = $suffix -replace "build[0-9]+","build$($num.ToString("000"))"
-            }
-            else {
-                throw "suffix '$suffix' does not match build[0-9] pattern"
-            }
-        }
-        if ($component -eq [VersionComponent]::SuffixRevision) {
-            if ($suffix -match "build([0-9]+)-(?<rev>[a-fA-F0-9]+)(-|$)") {
-                $rev = $Matches["rev"]
-                $suffix = $suffix -replace "$rev",$value
-            }
-            else {
-                $suffix = $suffix + "-$value"
-            }
-        }
-    }
-    
-    $ver2 = [string]::Join(".", $vernums)
-    if (![string]::IsNullOrEmpty($suffix)) {
-        $ver2 += "-$suffix"
-    }
-
-    return $ver2
-}
 
 function update-buildversion {
     [CmdletBinding(SupportsShouldProcess=$true)]
@@ -376,7 +312,7 @@ function update-buildversion {
         #Write-Verbose "updating version $ver to $newver"
         $id = (hg id -i).substring(0,5)
         $newver = Update-Version $newver SuffixRevision -value $id
-        Write-Verbose "updating version $ver to $newver"
+        Write-host "updating version $ver to $newver"
         if ($PSCmdlet.ShouldProcess("update version $ver to $newver")) {
             update-nugetmeta -version $newver
         }
