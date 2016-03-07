@@ -80,6 +80,14 @@ function Update-Version {
         for($i = $component + 1; $i -lt $vernums.length; $i++) {
             $vernums[$i] = 0
         }
+        if ($suffix -ne $null -and $suffix -match "build([0-9]+)") {
+             $ver2 = [string]::Join(".", $vernums)
+             if (![string]::IsNullOrEmpty($suffix)) {
+                $ver2 += "-$suffix"
+             }
+             $ver2 = update-version $ver2 SuffixBuild -value 1
+             return $ver2 
+        } 
     } else {
         if ([string]::IsNullOrEmpty($suffix)) {
             #throw "version '$ver' has no suffix"
