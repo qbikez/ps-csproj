@@ -302,13 +302,21 @@ function update-nugetmeta {
 
 function update-buildversion {
     [CmdletBinding(SupportsShouldProcess=$true)]
-    param($path = ".") 
+    param(
+        $path = ".",
+        [VersionComponent]$component = [VersionComponent]::SuffixBuild
+    ) 
     pushd
     try {
         cd $path
         $ver = Get-AssemblyMeta InformationalVersion
         if ($ver -eq $null) { $ver = Get-AssemblyMeta Version }
-        $newver = Update-Version $ver SuffixBuild -nuget
+        $newver = $ver
+        if ($component -ne $null) {
+            $newver = Update-Version $newver $component -nuget    
+        } else {
+            $newver = Update-Version $newver SuffixBuild -nuget
+        }
         #Write-Verbose "updating version $ver to $newver"
         $id = (hg id -i).substring(0,5)
         $newver = Update-Version $newver SuffixRevision -value $id -nuget
