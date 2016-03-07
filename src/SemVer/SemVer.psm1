@@ -31,6 +31,9 @@ Update-Version "1.0.1" Patch
 Increment Patch component of version 1.0.1
 
 .NOTES
+
+.LINK
+
 #>
 function Update-Version {
     param(
@@ -87,12 +90,12 @@ function Update-Version {
             }
         }
         if ($component -eq [VersionComponent]::SuffixRevision) {
-            if ($suffix -match "build([0-9]+)-(?<rev>[a-fA-F0-9]+)(-|$)") {
+            if ($suffix -match "build([0-9]+)\+(?<rev>[a-fA-F0-9]+)(-|$)") {
                 $rev = $Matches["rev"]
                 $suffix = $suffix -replace "$rev",$value
             }
             else {
-                $suffix = $suffix + "-$value"
+                $suffix = $suffix + "+$value"
             }
         }
     }
@@ -104,5 +107,3 @@ function Update-Version {
 
     return $ver2
 }
-
-# Export-ModuleMember -Function * -Alias *
