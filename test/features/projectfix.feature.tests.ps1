@@ -5,6 +5,59 @@ import-module csproj
 import-module publishmap
 import-module pathutils
 
+Describe "fix api" {
+    It "should deprecate test-slndependencies" {
+        
+    }
+    It "should fix sln and csproj with one command" {
+        
+    }
+}
+
+Describe "fix csproj" {
+    It "should list csproj references" {
+        
+    }
+    It "should fix nuget paths" {
+        
+    }
+    It "should fix csproj paths" {
+        
+    }
+    It "should list nuget references that are not in packages.config" {
+        
+    }
+    It "should list nuget versions mismatch between csproj and packages.config" {
+        
+    }
+    It "should list nuget version mismatch between reference Include and HintPath" {
+        
+    }
+}
+Describe "fix solution" {
+    It "should fix missing csprojs in sln" {
+        # also -unique
+    }
+    It "should fix missing csproj refrences in csprojs" {
+        # also -unique
+    }
+    It "should fix missing nuget references in csprojs" {
+        # also -unique
+    }
+    It "Should remove unreferenced csprojs from sln" {
+        # also -unique
+    }
+    It "Should list missing csproj references in sln" {
+        # also -unique
+    }
+    It "should list missing csprojs in sln" {
+        # also -unique
+    }
+    It "should list missing nuget references in sln" {
+        # also -unique
+    }
+}
+
 Describe "verify solution project set" {
     $targetdir = "testdrive:/"
     copy-item "$inputdir/test" $targetdir -Recurse
