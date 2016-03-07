@@ -25,18 +25,33 @@ Updates given component of a SemVer string
 .PARAMETER ver 
 SemVer string 
 
+.PARAMETER component
+The version component you wish to update (Major, Minor, Patch)
+Also supports prerelease data with (SuffixBuild) and (SuffixRevision) 
+
+.PARAMETER value
+Value for the specified version component. If value is not provided, the function will increment current number
+
+.PARAMETER compatibilityMode
+Use compatibility mode (useful for working with nuget packages) 
+
 .EXAMPLE 
 Update-Version "1.0.1" Patch 
 1.0.2
 Increment Patch component of version 1.0.1
 
 .NOTES
+
+.LINK
+
 #>
 function Update-Version {
     param(
         [Parameter(mandatory=$true)]$ver, 
         [VersionComponent]$component = [VersionComponent]::Patch, 
-        $value = $null
+        $value = $null,
+        [Alias("nuget")]
+        [switch][bool] $compatibilityMode
         ) 
     
     $null = $ver -match "(?<version>[0-9]+(\.[0-9]+)*)(-(?<suffix>.*)){0,1}"
@@ -65,6 +80,14 @@ function Update-Version {
         for($i = $component + 1; $i -lt $vernums.length; $i++) {
             $vernums[$i] = 0
         }
+        if ($suffix -ne $null -and $suffix -match "build([0-9]+)") {
+             $ver2 = [string]::Join(".", $vernums)
+             if (![string]::IsNullOrEmpty($suffix)) {
+                $ver2 += "-$suffix"
+             }
+             $ver2 = update-version $ver2 SuffixBuild -value 1
+             return $ver2 
+        } 
     } else {
         if ([string]::IsNullOrEmpty($suffix)) {
             #throw "version '$ver' has no suffix"
@@ -87,12 +110,15 @@ function Update-Version {
             }
         }
         if ($component -eq [VersionComponent]::SuffixRevision) {
-            if ($suffix -match "build([0-9]+)-(?<rev>[a-fA-F0-9]+)(-|$)") {
+            $revSeparator = "+"
+            if ($compatibilityMode) { $revSeparator = "-" }
+        
+            if ($suffix -match "build([0-9]+)\$revSeparator(?<rev>[a-fA-F0-9]+)(-|$)") {
                 $rev = $Matches["rev"]
                 $suffix = $suffix -replace "$rev",$value
             }
             else {
-                $suffix = $suffix + "-$value"
+                $suffix = $suffix + "$revSeparator$value"
             }
         }
     }
@@ -104,5 +130,3 @@ function Update-Version {
 
     return $ver2
 }
-
-# Export-ModuleMember -Function * -Alias *

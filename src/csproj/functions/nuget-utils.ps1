@@ -241,7 +241,7 @@ function invoke-nugetpack {
         }
     }
     
-    write-host "packing nuget"
+    write-host "packing nuget $nuspecorcsproj"
     $o = nuget pack $nuspecorcsproj | % { write-indented 4 "$_"; $_ } 
     if ($lastexitcode -ne 0) {
         throw "nuget command failed! `r`n$($o | out-string)"
@@ -302,16 +302,24 @@ function update-nugetmeta {
 
 function update-buildversion {
     [CmdletBinding(SupportsShouldProcess=$true)]
-    param($path = ".") 
+    param(
+        $path = ".",
+        [VersionComponent]$component = [VersionComponent]::SuffixBuild
+    ) 
     pushd
     try {
         cd $path
         $ver = Get-AssemblyMeta InformationalVersion
         if ($ver -eq $null) { $ver = Get-AssemblyMeta Version }
-        $newver = Update-Version $ver SuffixBuild
+        $newver = $ver
+        if ($component -ne $null) {
+            $newver = Update-Version $newver $component -nuget    
+        } else {
+            $newver = Update-Version $newver SuffixBuild -nuget
+        }
         #Write-Verbose "updating version $ver to $newver"
         $id = (hg id -i).substring(0,5)
-        $newver = Update-Version $newver SuffixRevision -value $id
+        $newver = Update-Version $newver SuffixRevision -value $id -nuget
         Write-host "updating version $ver to $newver"
         if ($PSCmdlet.ShouldProcess("update version $ver to $newver")) {
             update-nugetmeta -version $newver
