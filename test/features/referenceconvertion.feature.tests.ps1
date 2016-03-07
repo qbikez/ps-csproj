@@ -118,7 +118,7 @@ Describe "Converting Project reference to nuget" {
         $oldrefs = get-referencesto $sln $projectname
         It "should convert without errors" {
             In $slndir {
-                $outdir = (get-relativepath $slndir $packagesdir -verbose)
+                $outdir = (get-relativepath $slndir $packagesdir)
                 $o = nuget install "$projectname" -out $outdir
                 $o
                 $lastexitcode | should be 0
@@ -194,8 +194,8 @@ Describe "Converting Project reference to nuget" {
             if ($lec -ne 0) {
                 write-warning "copying failed build files from $targetdir"
                 pwd | write-warning
-                Get-ChildItem "$targetdir" -Verbose            
-                copy-item "$targetdir/" "$artifacts/failed-build" -recurse -verbose
+                Get-ChildItem "$targetdir"            
+                copy-item "$targetdir/" "$artifacts/failed-build" -recurse
             }
             $lec | Should Be 0
         }

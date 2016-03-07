@@ -2,6 +2,7 @@
 
 import-module Pester
 import-module pathutils
+import-module csproj
 
 $inputdir = "$psscriptroot\input"
 

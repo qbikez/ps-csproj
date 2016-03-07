@@ -6,7 +6,10 @@ import-module publishmap
 import-module pathutils
 
 Describe "verify solution project set" {
-    $slnfile = "$inputdir/test/sln/Sample.Solution/Sample.Solution.sln"
+    $targetdir = "testdrive:/"
+    copy-item "$inputdir/test" $targetdir -Recurse
+    $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"
+    
     It "Should return a tree of all projects and their dependencies" {
         $sln = import-sln $slnfile
         $deps = get-slndependencies $sln
@@ -24,7 +27,7 @@ Describe "verify solution project set" {
         $valid,$missing = test-slndependencies $sln
         $valid | Should Be $false
         $missing | Should Not BeNullOrEmpty
-        $missing.Length | Should Be 1
+        $missing.Length | Should Be 2
     }
  }
 
@@ -34,7 +37,36 @@ Describe "fix a project with missing references" {
     copy-item "$inputdir/test" $targetdir -Recurse
     copy-item "$inputdir/packages" "$targetdir/test" -Recurse
     copy-item "$inputdir/packages-repo" "$targetdir" -Recurse
-    #move-item "$targetdir/test/src/Core" "$targetdir/test/src/Core2" 
+    move-item "$targetdir/test/src/Core" "$targetdir/test/src/Core2" 
+    #move-item "$targetdir/test/src" "$targetdir/test/src2" 
+    
+    $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"    
+    $csproj = "$targetdir/test/src/Console/Console1/Console1.csproj"
+    $packagesDir = "$targetdir/test/packages"
+    $packagesRepo = "$targetdir/packages-repo"
+
+    It "should detect missing references" {
+        $deps = get-csprojdependencies $csproj
+        $missing = @($deps | ? { $_.ref.isvalid -eq $false })
+        $missing.length | Should Be 1
+    }
+    It "should fix references paths" {        
+        fixcsproj $csproj -reporoot "$targetdir/test"
+    
+        $deps = get-csprojdependencies $csproj
+        $missing = @($deps | ? { $_.ref.isvalid -eq $false })
+        $missing.length | Should Be 0
+       
+    }
+}
+
+
+Describe "fix a solution with missing references" {
+    $targetdir = "testdrive:/"
+    copy-item "$inputdir/test" $targetdir -Recurse
+    copy-item "$inputdir/packages" "$targetdir/test" -Recurse
+    copy-item "$inputdir/packages-repo" "$targetdir" -Recurse
+    move-item "$targetdir/test/src/Core" "$targetdir/test/src/Core2" 
     move-item "$targetdir/test/src" "$targetdir/test/src2" 
     
     $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"    
@@ -55,32 +87,21 @@ Describe "fix a project with missing references" {
             $list | Should Not BeNullOrEmpty
         }
     }
-    Context "When a matching csproj can be found in repo directory"{
+    Context "When a matching csproj can be found in repo directory" {
         It "Should replace reference path with a valid csproj" {
             $sln = import-sln $slnfile
+            $deps = get-slndependencies $sln
             $valid,$missing = test-slndependencies $sln
             $valid | Should Be $false
             $missing.length | Should Be 3
             $missing.In | Should Be $sln.Fullname
-            $csprojs = get-childitem "$targetdir/test" -Filter "*.csproj" -Recurse
-            $missing = $missing | % {
-                $m = $_
-                $matching = $csprojs | ? { [System.io.path]::GetFilenameWithoutExtension($_.Name) -eq $m.ref.Name }
-                $null = $m | add-property -name "matching" -value $matching
-                return $m
-            }
-            $missing.matching | Should Not BeNullOrEmpty
-         
             
-            $missing | % {
-                $relpath = get-relativepath $sln.fullname $_.matching.fullname
-                $_.ref.Path = $relpath
-                update-slnproject $sln $_.ref
-            }
+            fixsln $slnfile -reporoot "$targetdir/test" 
             
-            $valid,$missing = test-slndependencies $sln
-            $valid | Should Be $true
-         
+            $deps = get-slndependencies $slnfile
+            $valid,$missing = test-slndependencies $slnfile
+                
+            $valid | Should Be $true         
         }
     }
     Context "When a matching nuget can be found in one of the sources" {

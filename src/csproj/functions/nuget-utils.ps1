@@ -169,21 +169,80 @@ function Get-AvailableNugets ($source) {
     return $l
 }
 
+#todo: move this to logging module
+function write-indented ($level, $msg, $mark = "> ", $maxlen) {
+    $pad = $mark.PadLeft($level)
+    if ($maxlen -eq $null) {
+        $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
+    }
+    $idx = 0
+    
+    while($idx -lt $msg.length) {
+        $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
+        write-host "$pad$($msg.substring($idx,$chunk))"
+        $idx += $chunk
+    }
+}
+
+function invoke-nugetpush {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param($file = $null, 
+    [Parameter(Mandatory=$false)]$source,
+    [Parameter(Mandatory=$false)]$apikey,
+    [switch][bool] $Build) 
+    
+    if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
+        $nupkg = invoke-nugetpack $file -Build:$build
+    } else {
+        $nupkg = $file
+    }
+    Write-Host "pushing package $nupkg to $source"
+    $p = @(
+        $nupkg
+    )
+    if ($source -ne $null) {
+        $p += "-source",$source
+    }
+    if ($apikey -ne $null) {
+        $p += "-apikey",$apikey
+    }
+    if ($PSCmdlet.ShouldProcess("pushing package $p")) {
+        $o = nuget push $p | % { write-indented 4 "$_"; $_ } 
+        if ($lastexitcode -ne 0) {
+            throw "nuget command failed! `r`n$($o | out-string)"
+        }
+    }
+}
+
 function invoke-nugetpack {
     [CmdletBinding()]
-    param($nuspecOrCsproj = $null) 
+    param($nuspecOrCsproj = $null,
+    [switch][bool] $Build) 
     
     if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.csproj")
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
         }
+    }
+    if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.nuspec")
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
         }
     }
-    $o = nuget pack $nuspecorcsproj | % { write-verbose $_; $_ } 
+    
+    if ($Build) {
+        update-buildversion (split-path -Parent $nuspecorcsproj)
+        write-host "building project"
+        $o = msbuild $nuspecorcsproj | % { write-indented 4 "$_"; $_ }
+         if ($lastexitcode -ne 0) {
+           throw "build failed! `r`n$($o | out-string)"
+        }
+    }
+    
+    write-host "packing nuget"
+    $o = nuget pack $nuspecorcsproj | % { write-indented 4 "$_"; $_ } 
     if ($lastexitcode -ne 0) {
         throw "nuget command failed! `r`n$($o | out-string)"
     } else {
@@ -197,26 +256,34 @@ function invoke-nugetpack {
     
 }
 
+
 function update-nugetmeta {
-    [CmdletBinding()]
-    param($path = ".", $description = $null, [Alias("company")]$author = $null, $version = $null)
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param($path = ".", $description = $null, [Alias("company")]$author = $null, $version = $null, $suffix = $null)
     
     $v = get-assemblymeta "Description" $path
-    if ($v -ne $null -or $description -ne $null) {
+    if ($v -eq $null -or $description -ne $null) {
         if ($description -eq $null) { $description =  "No Description" }
         set-assemblymeta "Description" $description
     }
     
     $v = get-assemblymeta "Company" $path
-    if ($v -ne $null -or $company -ne $null) {
+    if ($v -eq $null -or $company -ne $null) {
         if ($company -eq $null) { $company =  "MyCompany" }
         set-assemblymeta "Company" $company
     }
+   
+    $v = get-assemblymeta "Version" $path
+    if ($v -ne $null -and $suffix -ne $null) {
+        if ($version -eq $null) { $version = $v }
+        $version = "$version-$suffix"
+    }
+   
     
     $defaultVersion = "1.0.0"
     $ver = $version
     if ($ver -eq $null) { $ver = $defaultVersion } 
-    $v = get-assemblymeta "Version" $path
+    
     if ($v -eq $null -or $v -eq "1.0.0.0" -or $version -ne $null) {
         set-assemblymeta "Version" ((split-packageversion $ver)["version"])
     }
@@ -230,5 +297,31 @@ function update-nugetmeta {
     }
 }
 
+
+
+
+function update-buildversion {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param($path = ".") 
+    pushd
+    try {
+        cd $path
+        $ver = Get-AssemblyMeta InformationalVersion
+        if ($ver -eq $null) { $ver = Get-AssemblyMeta Version }
+        $newver = Update-Version $ver SuffixBuild
+        #Write-Verbose "updating version $ver to $newver"
+        $id = (hg id -i).substring(0,5)
+        $newver = Update-Version $newver SuffixRevision -value $id
+        Write-host "updating version $ver to $newver"
+        if ($PSCmdlet.ShouldProcess("update version $ver to $newver")) {
+            update-nugetmeta -version $newver
+        }
+    } finally {
+        popd
+    }
+}
+
+new-alias push-nuget invoke-nugetpush
 new-alias pack-nuget invoke-nugetpack
 new-alias generate-nugetmeta update-nugetmeta
+new-alias increment-version update-version
