@@ -173,12 +173,18 @@ function Get-AvailableNugets ($source) {
 function write-indented ($level, $msg, $mark = "> ", $maxlen) {
     $pad = $mark.PadLeft($level)
     if ($maxlen -eq $null) {
-        $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
+        if ($host.UI.RawUI.WindowSize.Width -gt 0) {
+            $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
+        }
+        else {
+            $maxlen = 512
+        }
     }
     $idx = 0
     
     while($idx -lt $msg.length) {
         $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
+        $chunk = [System.Math]::Max($chunk, 0)
         write-host "$pad$($msg.substring($idx,$chunk))"
         $idx += $chunk
     }
@@ -291,7 +297,8 @@ function update-nugetmeta {
     if ($v -eq $null -or $v -eq "1.0.0.0" -or $version -ne $null) {
         set-assemblymeta "FileVersion" ((split-packageversion $ver)["version"])
     }
-        $v = get-assemblymeta "InformationalVersion" $path
+    
+    $v = get-assemblymeta "InformationalVersion" $path
     if ($v -eq $null -or $v -eq "1.0.0.0"  -or $version -ne $null) {
         set-assemblymeta "InformationalVersion" $ver
     }
@@ -304,29 +311,67 @@ function update-buildversion {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param(
         $path = ".",
+        $version = $null,
         [VersionComponent]$component = [VersionComponent]::SuffixBuild
     ) 
     pushd
     try {
-        cd $path
-        $ver = Get-AssemblyMeta InformationalVersion
-        if ($ver -eq $null) { $ver = Get-AssemblyMeta Version }
+        if ($version -eq $null) {
+            
+        }
+        if ($version -eq $null -and $path -ne $null) {
+            $ver = Get-AssemblyMeta InformationalVersion 
+            if ($ver -eq $null) { $ver = Get-AssemblyMeta Version }
+        }
+        else {
+            $ver = $version
+        }
+        
         $newver = $ver
+        if ($newver -eq "1.0.0.0") {
+            $newver = "1.0.0"
+            $newver = Update-Version $newver Patch -nuget   
+        }
+        if ($newver -match "\.\*") {
+            $newver = $newver.trim(".*")
+            $splits = $newver.Split(".")
+            $c= $splits.Length - 1
+            if ($component -eq $null -or $component -gt $c) {
+                $newver = Update-Version $newver $c -nuget    
+            }
+        }
+        
+        if ($newver.split(".").length -lt 3) {
+            1..(3-$newver.split(".").Length) | % {
+                $newver += ".0"
+            }
+        }
+        
+
         if ($component -ne $null) {
             $newver = Update-Version $newver $component -nuget    
         } else {
             $newver = Update-Version $newver SuffixBuild -nuget
         }
         #Write-Verbose "updating version $ver to $newver"
-        $id = (hg id -i).substring(0,5)
-        $newver = Update-Version $newver SuffixRevision -value $id -nuget
+        try {
+        $id = (hg id -i)
+        } catch {
+            write-warning "failed to execute 'hg id'"
+        }
+        if ($id -ne $null) {
+            $id = $id.substring(0,5)
+            $newver = Update-Version $newver SuffixRevision -value $id -nuget
+        }
         Write-host "updating version $ver to $newver"
-        if ($PSCmdlet.ShouldProcess("update version $ver to $newver")) {
+        if ($path -ne $null -and $version -eq $null -and $PSCmdlet.ShouldProcess("update version $ver to $newver")) {
             update-nugetmeta -version $newver
         }
+        return $newver
     } finally {
         popd
     }
+    
 }
 
 new-alias push-nuget invoke-nugetpush

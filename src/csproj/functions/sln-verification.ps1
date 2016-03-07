@@ -53,6 +53,41 @@ function get-slndependencies {
     
 }
 
+function test-sln {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory=$false, Position=0)]$sln,
+        [switch][bool] $missing,
+        [switch][bool] $validate
+    )
+    
+    if ($sln -eq $null) {
+        $slns = @(get-childitem "." -Filter "*.sln")
+        if ($slns.Length -eq 1) {
+            $sln = $slns[0].fullname
+        }
+        else {
+            if ($slns.Length -eq 0) {
+                throw "no sln file given and no *.sln found in current directory"
+            }
+            else {
+                throw "no sln file given and more than one *.sln file found in current directory"
+            }
+        }
+    }
+    
+    $deps = get-slndependencies $sln
+    $missingdeps = @($deps | ? { $_.IsProjectValid -eq $false -or ($_.ref -ne $null -and $_.ref.IsValid -eq $false) })
+    if ($missing) {        
+        return $missingdeps
+    }
+    if ($validate) {
+        return $missingdeps.length -eq 0
+    }
+    
+    return $deps
+}
+
 function test-slndependencies {
      [CmdletBinding(DefaultParameterSetName = "sln")]
     param(
@@ -144,7 +179,8 @@ function repair-slnpaths {
     param(
         [Parameter(Mandatory=$true, ParameterSetName="sln",Position=0)][Sln]$sln,
         [Parameter(Mandatory=$true, ParameterSetName="slnfile",Position=0)][string]$slnfile,
-        [Parameter(Position=1)] $reporoot
+        [Parameter(Position=1)] $reporoot,
+        [switch][bool] $nuget
     )
     if ($sln -eq $null) { $sln = import-sln $slnfile }
   
@@ -184,11 +220,39 @@ function repair-slnpaths {
     $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
     $projects | % {
         if (test-path $_.fullname) {
-            $p = import-csproj $_.fullname
-
-            repair-csprojpaths $p -reporoot $reporoot
+            $csproj = import-csproj $_.fullname
+            
+            if (!$nuget) {
+                repair-csprojpaths $csproj -reporoot $reporoot
+            }
+            
+            if ($nuget) {
+                $pkgdir =(find-packagesdir $reporoot)
+                if (!(test-path $pkgdir)) {
+                    $null = new-item -type Directory $pkgdir
+                }
+                $deps = get-csprojdependencies $csproj
+                $missing = @($deps | ? { $_.ref.IsValid -eq $false -and $_.ref.type -eq "project"})
+                $missing = $missing | % { $_.ref.name } | sort -Unique
+                
+                $missing | % {
+                    try {
+                        write-host "replacing $_ with nuget"
+                        $found = find-nugetPath $_ $pkgdir 
+                        if ($found -eq $null) {
+                            write-host "installing package $_"
+                        nuget install $_ -out $pkgdir -pre
+                        }                    
+                        tonuget $sln -projectName $_ -packagesDir $pkgdir 
+                    } catch {
+                        write-error $_
+                    }
+                }
+            }
+            
         }
     }
+    
     
 #    $valid,$missing = test-slndependencies $sln
 #    $valid | Should Be $true

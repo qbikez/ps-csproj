@@ -2,6 +2,8 @@ function Get-AssemblyMetaKey($key) {
     if ($key -eq $null) {
         return "Assembly.*"
     }
+    $key = "$("$($key[0])".ToUpper()[0])" + $key.Substring(1)
+    
     if ($key.StartsWith("Assembly")) {
         return $key
     }
@@ -41,7 +43,6 @@ function Get-AssemblyMeta {
     $key = get-assemblymetakey $key
     $assemblyinfo = get-assemblymetafile $assemblyinfo
     $content = get-content $assemblyinfo   
-    $key = [System.Globalization.CultureInfo]::CurrentCulture.TextInfo.ToTitleCase($key)
     $r = $content | % {
         $regex = "\[assembly: (?<key>$($key))\(""(?<value>.*)""\)\]"
         if ($_ -match $regex -and !($_.trim().startswith("//"))) {
@@ -66,16 +67,21 @@ function set-AssemblyMeta {
     $assemblyinfo = get-assemblymetafile $assemblyinfo
     # [assembly: AssemblyCompany("")]
     $content = get-content $assemblyinfo   
-    $key = [System.Globalization.CultureInfo]::CurrentCulture.TextInfo.ToTitleCase($key)
+    
+    $found = $false
     $content = $content | % {
         $regex = "\[assembly: ($($key))\(""(.*)""\)\]"
         $newval = $_
         if ($_ -match $regex) {            
             $newval = $newval -replace $regex,"[assembly: `${1}(""$($value)"")]"
+            $found = $true
             write-verbose "replacing: $_ => $newval"
         } 
         $newval
     } 
+    if (!$found) {
+        $content += "[assembly: $key(""$($value)"")]"
+    }
     if ($PSCmdlet.ShouldProcess("save output file '$assemblyinfo'")) {
         $content | out-file $assemblyinfo -Encoding utf8
     }
