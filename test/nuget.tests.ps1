@@ -5,6 +5,26 @@ import-module csproj
 import-module semver
 
 
+
+Describe "Nuget Version manipulation" {
+    $cases = @(
+        @{ version = "1.0.1"; expected = "1.0.1-build001" }
+        @{ version = "1.0.0.0"; expected = "1.0.1-build001" }
+        @{ version = "1.0.0.*"; expected = "1.0.1-build001" }
+        @{ version = "1.2.3.*"; expected = "1.2.4-build001" }
+        @{ version = "1.2.*"; expected = "1.3.0-build001" }
+        @{ version = "1.*"; expected = "2.0.0-build001" }
+    )
+    
+    It "incrementing part <component> of '<version>' should yield '<expected>'" -testcases $cases {
+        param($version, $component, $value, $expected) 
+        $r = update-buildversion -version $version
+        $r | Should Be $expected 
+    }
+    
+}
+
+
 Describe "Generate nuget for csproj" {
     $targetdir = copy-samples
     

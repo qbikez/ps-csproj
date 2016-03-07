@@ -14,7 +14,12 @@ function get-referencesTo {
     $r = @()
     
     foreach($p in $projects) {
-        $projpath = (gi (join-path $slndir $p.path)).fullname
+        $projpath = join-path $slndir $p.path
+        if(!(test-path $projpath)) {
+            #write-warning "SLN project $($p.name) not found"
+            continue
+        }
+        $projpath = (gi ($projpath)).fullname
         $proj = import-csproj $projpath
         $nugetrefs = get-nugetreferences $proj
         $n = $nugetrefs | ? { $_.Name -eq $projectname }
@@ -45,7 +50,9 @@ function convert-projectReferenceToNuget {
     )    
         if ($pr -eq $null) { throw "missing reference in $($proj.name)" }
         write-verbose "found project reference to $projectname in $($proj.name)"
+        
         $result += $pr
+       
         $converted = convertto-nugetreference $pr $packagesDir
         if ($converted -eq $null) { throw "failed to convert referece $pr in project $($proj.name)" }
         $null = replace-reference $proj $pr $converted
