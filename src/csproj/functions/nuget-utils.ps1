@@ -7,11 +7,18 @@ function find-nugetdll {
      
     $dll = join-path $path "$name.dll"
     if (test-path $dll) { return $dll } 
+    $exe = join-path $path "$name.exe"
+    if (test-path $exe) { return $exe }
+    
     $dlls = @(gci $path -Filter "*.dll")
     if ($dlls.Length -eq 1) {
         return join-path $path $dlls[0].Name
     }
 
+    $execs = @(gci $path -Filter "*.exe")
+    if ($execs.Length -eq 1) {
+        return join-path $path $execs[0].Name
+    }
     return $null
 }
 
