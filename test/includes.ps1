@@ -7,10 +7,11 @@ write-host "64bit=$([Environment]::Is64BitProcess)"
 
 #if ($host.name -eq "Windows PowerShell ISE Host" -and (gmo pester)) { rmo pester }
 import-module pester
+import-module pathutils
 $i = (gi "$root\..\src")
 $fp = (gi "$root\..\src").fullname
 write-verbose "adding path of $i '$fp' to psmodulepath"
-$env:PSModulePath ="$fp;$env:PSModulePath"
+pathutils\add-toenvvar "PsModulePath" "$fp" -first
 
 if ((pwd).Drive.Name -eq "TestDrive") {
     cd c:\
