@@ -54,27 +54,31 @@ function get-slndependencies {
 }
 
 function test-sln {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = "sln")]
     param(
-        [Parameter(Mandatory=$false, Position=0)]$sln,
+        [Parameter(Mandatory=$false, ParameterSetName="sln",Position=0)][Sln]$sln,
+        [Parameter(Mandatory=$false, ParameterSetName="slnfile",Position=0)][string]$slnfile,
         [switch][bool] $missing,
         [switch][bool] $validate
-    )
-    
+    )    
     if ($sln -eq $null) {
-        $slns = @(get-childitem "." -Filter "*.sln")
-        if ($slns.Length -eq 1) {
-            $sln = $slns[0].fullname
-        }
-        else {
-            if ($slns.Length -eq 0) {
-                throw "no sln file given and no *.sln found in current directory"
+        if ($slnfile -eq $null) {
+            $slns = @(get-childitem "." -Filter "*.sln")
+            if ($slns.Length -eq 1) {
+                $slnfile = $slns[0].fullname
             }
             else {
-                throw "no sln file given and more than one *.sln file found in current directory"
+                if ($slns.Length -eq 0) {
+                    throw "no sln file given and no *.sln found in current directory"
+                }
+                else {
+                    throw "no sln file given and more than one *.sln file found in current directory"
+                }
             }
         }
+        $sln = import-sln $slnfile
     }
+    
     
     $deps = get-slndependencies $sln
     $missingdeps = @($deps | ? { $_.IsProjectValid -eq $false -or ($_.ref -ne $null -and $_.ref.IsValid -eq $false) })
@@ -180,76 +184,84 @@ function repair-slnpaths {
         [Parameter(Mandatory=$true, ParameterSetName="sln",Position=0)][Sln]$sln,
         [Parameter(Mandatory=$true, ParameterSetName="slnfile",Position=0)][string]$slnfile,
         [Parameter(Position=1)] $reporoot,
-        [switch][bool] $nuget
+        [switch][bool] $nuget,
+        [switch][bool] $insln,
+        [switch][bool] $incsproj
     )
     if ($sln -eq $null) { $sln = import-sln $slnfile }
   
-    $valid,$missing = test-slndependencies $sln
-     
-    write-verbose "SLN: found $($missing.length) missing projects"
-    if ($reporoot -eq $null) {
-        $reporoot = find-reporoot $sln.fullname
-        if ($reporoot -ne $null) {
-            write-verbose "auto-detected repo root at $reporoot"
+    if ($insln -or !$insln.IsPresent) {
+        $valid,$missing = test-slndependencies $sln
+        
+        write-verbose "SLN: found $($missing.length) missing projects"
+        if ($reporoot -eq $null) {
+            $reporoot = find-reporoot $sln.fullname
+            if ($reporoot -ne $null) {
+                write-verbose "auto-detected repo root at $reporoot"
+            }
         }
-    }
-    
-    if ($reporoot -eq $null) {
-        throw "No repository root given and none could be detected"
-    }
+        
+        if ($reporoot -eq $null) {
+            throw "No repository root given and none could be detected"
+        }
 
-    $missing = find-matchingprojects $missing $reporoot
-    
-    $missing | % {
-        if ($_.matching -eq $null -or $_.matching.length -eq 0) {
-            write-warning "no matching project found for SLN item $($_.ref.Path)"
+        $missing = find-matchingprojects $missing $reporoot
+        
+        $missing | % {
+            if ($_.matching -eq $null -or $_.matching.length -eq 0) {
+                write-warning "no matching project found for SLN item $($_.ref.Path)"
+            }
+            else {
+                if ($_.ref -is [slnproject]) {
+                    $relpath = get-relativepath $sln.fullname $_.matching.fullname
+                    write-verbose "fixing SLN reference: $($_.ref.Path) => $relpath"
+                    $_.ref.Path = $relpath
+                    
+                    update-slnproject $sln $_.ref
+                }
+            }
         }
-        else {
-            if ($_.ref -is [slnproject]) {
-                $relpath = get-relativepath $sln.fullname $_.matching.fullname
-                write-verbose "fixing SLN reference: $($_.ref.Path) => $relpath"
-                $_.ref.Path = $relpath
-                
-                update-slnproject $sln $_.ref
+        
+        $sln.Save()
+    }
+    if ($insln) {
+        return 
+    }
+    
+    $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
+    
+    
+     if ($nuget) {
+        $pkgdir =(find-packagesdir $reporoot)
+        if (!(test-path $pkgdir)) {
+            $null = new-item -type Directory $pkgdir
+        }
+        $missing = test-sln $sln -missing 
+        $missing = @($missing | ? { $_.ref.type -eq "project"})
+        $missing = $missing | % { $_.ref.name } | sort -Unique
+        
+        $missing | % {
+            try {
+                write-host "replacing $_ with nuget"
+                $found = find-nugetPath $_ $pkgdir 
+                if ($found -eq $null) {
+                    write-host "installing package $_"
+                nuget install $_ -out $pkgdir -pre
+                }                    
+                tonuget $sln -projectName $_ -packagesDir $pkgdir 
+            } catch {
+                write-error $_
             }
         }
     }
     
-    $sln.Save()
-    
-    $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
-    $projects | % {
+    $null = $projects | % {
         if (test-path $_.fullname) {
             $csproj = import-csproj $_.fullname
             
             if (!$nuget) {
-                repair-csprojpaths $csproj -reporoot $reporoot
-            }
-            
-            if ($nuget) {
-                $pkgdir =(find-packagesdir $reporoot)
-                if (!(test-path $pkgdir)) {
-                    $null = new-item -type Directory $pkgdir
-                }
-                $deps = get-csprojdependencies $csproj
-                $missing = @($deps | ? { $_.ref.IsValid -eq $false -and $_.ref.type -eq "project"})
-                $missing = $missing | % { $_.ref.name } | sort -Unique
-                
-                $missing | % {
-                    try {
-                        write-host "replacing $_ with nuget"
-                        $found = find-nugetPath $_ $pkgdir 
-                        if ($found -eq $null) {
-                            write-host "installing package $_"
-                        nuget install $_ -out $pkgdir -pre
-                        }                    
-                        tonuget $sln -projectName $_ -packagesDir $pkgdir 
-                    } catch {
-                        write-error $_
-                    }
-                }
-            }
-            
+                $null = repair-csprojpaths $csproj -reporoot $reporoot
+            }            
         }
     }
     
@@ -315,12 +327,14 @@ function repair-csprojpaths {
         }
         else {
             $relpath = get-relativepath $csproj.fullname $_.matching.fullname
-            write-verbose "fixing CSPROJ reference in $($csproj.name): $($_.ref.Path) => $relpath"
+            
             $_.ref.Path = $relpath
             if ($_.ref.type -eq "project" -and $_.ref.Node.Include -ne $null) {
+                write-verbose "fixing CSPROJ reference in $($csproj.name): $($_.ref.Path) => $relpath"
                 $_.ref.Node.Include = $relpath
             } 
             if ($_.ref.type -eq "nuget" -and $_.ref.Node.HintPath -ne $null) {
+                write-verbose "fixing NUGET reference in $($csproj.name): $($_.ref.Path) => $relpath"
                 $_.ref.Node.HintPath = $relpath                
             }
         }
