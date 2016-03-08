@@ -120,7 +120,20 @@ function test-slndependencies {
 }
 
 function  find-packagesdir ($path) {
-    return "$path/packages"
+    if (!(get-item $path).IsPsContainer) {
+            $dir = split-path -Parent $path
+        }
+        else {
+            $dir = $path
+        }
+        while(![string]::IsNullOrEmpty($dir)) {
+            if ((test-path "$dir/packages") -or (Test-Path "$dir/packages")) {
+                $reporoot = $dir
+                break;
+            }
+            $dir = split-path -Parent $dir
+        }
+        return "$reporoot/packages"
 }
 
 function find-reporoot($path) {
@@ -184,9 +197,10 @@ function repair-slnpaths {
         [Parameter(Mandatory=$true, ParameterSetName="sln",Position=0)][Sln]$sln,
         [Parameter(Mandatory=$true, ParameterSetName="slnfile",Position=0)][string]$slnfile,
         [Parameter(Position=1)] $reporoot,
-        [switch][bool] $nuget,
+        [switch][bool] $tonuget,
         [switch][bool] $insln,
-        [switch][bool] $incsproj
+        [switch][bool] $incsproj,
+        [switch][bool] $removemissing
     )
     if ($sln -eq $null) { $sln = import-sln $slnfile }
   
@@ -210,6 +224,11 @@ function repair-slnpaths {
         $missing | % {
             if ($_.matching -eq $null -or $_.matching.length -eq 0) {
                 write-warning "no matching project found for SLN item $($_.ref.Path)"
+                if ($removemissing) {
+                    write-warning "removing $($_.ref.Path)"
+                    remove-slnproject $sln $($_.ref.Name) -ifexists
+                    $sln.Save()
+                }
             }
             else {
                 if ($_.ref -is [slnproject]) {
@@ -222,6 +241,8 @@ function repair-slnpaths {
             }
         }
         
+       
+        write-host "saving sln"
         $sln.Save()
     }
     if ($insln) {
@@ -231,7 +252,7 @@ function repair-slnpaths {
     $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
     
     
-     if ($nuget) {
+     if ($tonuget) {
         $pkgdir =(find-packagesdir $reporoot)
         if (!(test-path $pkgdir)) {
             $null = new-item -type Directory $pkgdir
@@ -259,7 +280,7 @@ function repair-slnpaths {
         if (test-path $_.fullname) {
             $csproj = import-csproj $_.fullname
             
-            if (!$nuget) {
+            if (!tonuget) {
                 $null = repair-csprojpaths $csproj -reporoot $reporoot
             }            
         }

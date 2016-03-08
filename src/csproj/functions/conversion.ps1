@@ -1,26 +1,19 @@
 
 function get-referencesTo {
-        [CmdletBinding()]
+        [CmdletBinding(DefaultParameterSetName="sln")]
     param(
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true)][Sln] $sln, 
-        [Alias("project")][Parameter(Mandatory=$true)][string]$projectName
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, Position=0, ParameterSetName="sln")][Sln] $sln,
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, Position=0, ParameterSetName="csproj")][Csproj] $csproj,  
+        [Alias("project")][Parameter(Mandatory=$true, Position=1)][string]$projectName
     )
-
-     $projects = $sln | get-slnprojects | ? { $_.type -eq "csproj" }
-    #if ($project -is [string]) {
-    #    $project = $sln | get-slnprojects | ? { $_.name -eq $project }
-    #}
-    $slndir = split-path $sln.path -parent
-    $r = @()
     
-    foreach($p in $projects) {
-        $projpath = join-path $slndir $p.path
-        if(!(test-path $projpath)) {
-            #write-warning "SLN project $($p.name) not found"
-            continue
-        }
-        $projpath = (gi ($projpath)).fullname
-        $proj = import-csproj $projpath
+    $r = @()
+    if ($csproj -ne $null) {
+        $proj = $csproj
+        $p = $csproj
+        $projpath = $proj.fullname        
+        #$projpath = (gi ($projpath)).fullname
+        
         $nugetrefs = get-nugetreferences $proj
         $n = $nugetrefs | ? { $_.Name -eq $projectname }
         if ($n -ne $null) { 
@@ -31,13 +24,32 @@ function get-referencesTo {
         $pr = $projrefs | ? { $_.Name -eq $projectName }
         if ($pr -ne $null) {
             write-verbose "$($p.name) => $projectname [project]"
-            $r += @{ project = $proj; ref = $pr; type = "project"; projectname = $p.name; name = $p.name;projectpath = $projpath }
+            $r += @{ project = $proj; ref = $pr; type = "project"; projectname = $p.name; name = $p.name; projectpath = $projpath }
         }
         if ($n -eq $null -and $pr -eq $null) {
             write-verbose "$($p.name) => (none)"
         }
-        
+    } elseif ($sln -ne $null) {
+        $projects = $sln | get-slnprojects | ? { $_.type -eq "csproj" }
+        $slndir = split-path $sln.path -parent
+        foreach($p in $projects) {
+            $projpath = join-path $slndir $p.path
+            if(!(test-path $projpath)) {
+                #write-warning "SLN project $($p.name) not found"
+                continue
+            }
+            $projpath = (gi ($projpath)).fullname
+            $proj = import-csproj $projpath
+            $r += get-referencesTo $proj $projectname       
+        }
     }
+    #if ($project -is [string]) {
+    #    $project = $sln | get-slnprojects | ? { $_.name -eq $project }
+    #}
+    
+    
+    
+    
     return $r
 }
 
@@ -66,7 +78,8 @@ function  convert-ReferencesToNuget {
     [CmdletBinding(DefaultParameterSetName="slnobj")]
     param(
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="slnobj", Position=0)][Sln] $sln, 
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="slnfile", Position=0)][string] $slnfile, 
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="slnfile", Position=0)][string] $slnfile,
+        [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="csprojobj", Position=0)][csproj] $csproj, 
         [Alias("project")][Parameter(Mandatory=$true, Position=1)][string]$projectName, 
         [Parameter(Mandatory=$false, Position=2)] $packagesDir = $null
     )
@@ -75,36 +88,39 @@ function  convert-ReferencesToNuget {
     }
     
     if ($packagesdir -eq $null) {
-        $d = $sln.fullname
-        $d = split-path -parent $d
-        while (![string]::isnullorempty($d)) {            
-            if (test-path "$d/packages"){
-                $packagesdir = "$d/packages"
-                break
-            }
-            $d = split-path -parent $d
-        }
+        if ($sln -ne $null) { $d = $sln.fullname }
+        if ($csproj -ne $null) { $d = $csproj.fullname }
+        $packagesdir = find-packagesdir (split-path -parent $d)
     }
-    $projects = $sln | get-slnprojects
-    $slndir = split-path $sln.path -parent
+    
+    $converted = @()
+    $csprojs = @()
+    
+    if ($sln -ne $null)
+    {
+        $projects = $sln | get-slnprojects
+        $slndir = split-path $sln.path -parent
     
     # find all projects that reference $projectName
-    $references = get-referencesto $sln $projectname
-    
-    $csprojs = @()
-    $converted = @()
+        $references = get-referencesto $sln $projectname
+    }
+    elseif ($csproj -ne $null) {
+        $references = get-referencesto $csproj $projectname
+    }        
+        
     foreach($r in $references) {
         if ($r.type -ne "project") { continue }
         $converted = @(convert-projectReferenceToNuget -proj $r.project -pr $r.ref)
         $csprojs += get-content $r.projectpath
         $converted += $converted
     }
-    
-    remove-slnproject $sln $projectName
-    
-    $sln.Save()
-    
-    
+        
+        
+    if ($sln -ne $null) {
+        $sln.Save()
+        remove-slnproject $sln $projectName -ifexists
+    }    
+        
     write-verbose "converted $($converted.length) references"
     
     return $converted           

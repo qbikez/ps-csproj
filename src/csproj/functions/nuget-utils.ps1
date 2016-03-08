@@ -246,7 +246,7 @@ function invoke-nugetpack {
     }
     
     if ($Build) {
-        update-buildversion (split-path -Parent $nuspecorcsproj)
+        $newver = update-buildversion (split-path -Parent $nuspecorcsproj)
         write-host "building project"
         $o = msbuild $nuspecorcsproj | % { write-indented 4 "$_"; $_ }
          if ($lastexitcode -ne 0) {
@@ -274,40 +274,47 @@ function update-nugetmeta {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param($path = ".", $description = $null, [Alias("company")]$author = $null, $version = $null, $suffix = $null)
     
+    write-verbose "generating nuget meta"
     $v = get-assemblymeta "Description" $path
-    if ($v -eq $null -or $description -ne $null) {
+    if ([string]::isnullorempty($v) -or $description -ne $null) {
         if ($description -eq $null) { $description =  "No Description" }
-        set-assemblymeta "Description" $description
+        set-assemblymeta "Description" $description $path
+    } else {
+        write-verbose "found Description: $v"
     }
     
     $v = get-assemblymeta "Company" $path
-    if ($v -eq $null -or $company -ne $null) {
+    if ([string]::isnullorempty($v) -or $company -ne $null) {
         if ($company -eq $null) { $company =  "MyCompany" }
-        set-assemblymeta "Company" $company
+        set-assemblymeta "Company" $company $path
+    } else {
+        write-verbose "found Company: $v"
     }
    
     $v = get-assemblymeta "Version" $path
-    if ($v -ne $null -and $suffix -ne $null) {
+    if (![string]::isnullorempty($v) -and $suffix -ne $null) {
         if ($version -eq $null) { $version = $v }
         $version = "$version-$suffix"
+    } else {
+        write-verbose "found Version: $v"
     }
    
     
     $defaultVersion = "1.0.0"
     $ver = $version
-    if ($ver -eq $null) { $ver = $defaultVersion } 
+    if ([string]::isnullorempty($v)) { $ver = $defaultVersion } 
     
-    if ($v -eq $null -or $v -eq "1.0.0.0" -or $version -ne $null) {
-        set-assemblymeta "Version" ((split-packageversion $ver)["version"])
+    if ([string]::isnullorempty($v) -or $v -eq "1.0.0.0" -or $version -ne $null) {
+        set-assemblymeta "Version" ((split-packageversion $ver)["version"]) $path
     }
     $v = get-assemblymeta "FileVersion" $path
-    if ($v -eq $null -or $v -eq "1.0.0.0" -or $version -ne $null) {
-        set-assemblymeta "FileVersion" ((split-packageversion $ver)["version"])
+    if ([string]::isnullorempty($v) -or $v -eq "1.0.0.0" -or $version -ne $null) {
+        set-assemblymeta "FileVersion" ((split-packageversion $ver)["version"]) $path
     }
     
     $v = get-assemblymeta "InformationalVersion" $path
-    if ($v -eq $null -or $v -eq "1.0.0.0"  -or $version -ne $null) {
-        set-assemblymeta "InformationalVersion" $ver
+    if ([string]::isnullorempty($v) -or $v -eq "1.0.0.0"  -or $version -ne $null) {
+        set-assemblymeta "InformationalVersion" $ver $path
     }
 }
 
