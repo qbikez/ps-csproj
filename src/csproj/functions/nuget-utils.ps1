@@ -1,4 +1,4 @@
-
+ipmo nupkg
 
 function update-buildversion {
     [CmdletBinding(SupportsShouldProcess=$true)]

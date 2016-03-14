@@ -23,5 +23,5 @@ Export-ModuleMember -function `
     get-packagesconfig, add-packagetoconfig, remove-packagefromconfig, `
     convert-referencestonuget, get-referencesTo, convertto-projectreference, convertto-nugetreference, convert-nugetToProjectReference, `
     set-assemblymeta, get-assemblymeta, `
-    get-slndependencies, test-sln, test-slndependencies, repair-slnpaths, get-csprojdependencies, repair-csprojpaths, write-indented `
+    get-slndependencies, test-sln, test-slndependencies, repair-slnpaths, get-csprojdependencies, repair-csprojpaths `
     -Alias *

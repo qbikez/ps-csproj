@@ -108,6 +108,8 @@ function Update-Version {
         if ([string]::IsNullOrEmpty($suffix)) {
             #throw "version '$ver' has no suffix"
             $suffix = "build000"
+            $semver.buildnum = 0
+            
         }
         
         if ($component -eq [VersionComponent]::SuffixBuild) {
@@ -122,7 +124,7 @@ function Update-Version {
                 $semver.suffix = $suffix
             }
             else {
-                throw "suffix '$suffix' does not match build[0-9] pattern"
+                throw "suffix '$suffix' does not match build[0-9]+ pattern"
             }
         }
         if ($component -eq [VersionComponent]::SuffixRevision) {

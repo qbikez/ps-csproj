@@ -1,3 +1,4 @@
+ipmo process
 
 function find-nugetdll {
     param (
@@ -136,9 +137,21 @@ function get-packageversion($package) {
    return $m["fullversion"]
 }
 
-function new-nuspec($projectPath) {
+function new-nuspec($projectPath = ".") {
     pushd
     try {
+        if (!(test-path $projectpath)) { throw "file '$projectPath' not found"}
+        if ((get-item $projectpath).psiscontainer) {
+            $dir = $projectpath
+            $projects = @(get-childitem $dir -filter "*.csproj")
+            if ($projects.Length -gt 1) {
+                throw "more than one csproj file found in dir '$projectPath'"
+            } 
+            if ($projects.Length -lt 1) {
+                throw "no csproj file found in dir '$projectPath'"
+            }
+            $projectpath = $projects[0].fullname
+        }
         $dir = split-path $projectpath -parent
         $csproj = split-path $projectpath -leaf
         cd $dir
@@ -280,3 +293,4 @@ function update-nugetmeta {
 
 new-alias push-nuget invoke-nugetpush
 new-alias pack-nuget invoke-nugetpack
+new-alias generate-nuspec new-nuspec
