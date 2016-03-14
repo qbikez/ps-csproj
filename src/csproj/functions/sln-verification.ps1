@@ -280,7 +280,7 @@ function repair-slnpaths {
         if (test-path $_.fullname) {
             $csproj = import-csproj $_.fullname
             
-            if (!tonuget) {
+            if (!$tonuget) {
                 $null = repair-csprojpaths $csproj -reporoot $reporoot
             }            
         }
