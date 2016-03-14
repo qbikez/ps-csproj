@@ -136,7 +136,8 @@ function  find-packagesdir ($path) {
         return "$reporoot/packages"
 }
 
-function find-reporoot($path) {
+function find-reporoot($path = ".") {
+        $path = (get-item $path).FullName
         if (!(get-item $path).IsPsContainer) {
             $dir = split-path -Parent $path
         }
