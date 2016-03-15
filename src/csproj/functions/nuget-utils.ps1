@@ -1,6 +1,7 @@
 ipmo nupkg
 ipmo assemblymeta
 
+
 function Update-BuildVersion {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param(
@@ -8,6 +9,8 @@ function Update-BuildVersion {
         $version = $null,
         [VersionComponent]$component = [VersionComponent]::SuffixBuild
     ) 
+    $verb = $psBoundParameters["Verbose"]
+    write-verbose "verbosity switch: $verb"
     pushd
     try {
         if ($version -eq $null) {
@@ -24,14 +27,14 @@ function Update-BuildVersion {
         $newver = $ver
         if ($newver -eq "1.0.0.0") {
             $newver = "1.0.0"
-            $newver = Update-Version $newver Patch -nuget   
+            $newver = Update-Version $newver Patch -nuget -verbose:$verb
         }
         if ($newver -match "\.\*") {
             $newver = $newver.trim(".*")
             $splits = $newver.Split(".")
             $c= $splits.Length - 1
             if ($component -eq $null -or $component -gt $c) {
-                $newver = Update-Version $newver $c -nuget    
+                $newver = Update-Version $newver $c -nuget -verbose:$verb    
             }
         }
         
@@ -43,19 +46,23 @@ function Update-BuildVersion {
         
 
         if ($component -ne $null) {
-            $newver = Update-Version $newver $component -nuget    
+            $newver = Update-Version $newver $component -nuget -verbose:$verb    
         } else {
-            $newver = Update-Version $newver SuffixBuild -nuget
+            $newver = Update-Version $newver SuffixBuild -nuget -verbose:$verb
         }
         #Write-Verbose "updating version $ver to $newver"
         try {
-        $id = (hg id -i)
+            write-verbose "getting source control revision id"
+            $id = (hg id -i)
+            write-verbose "rev id='$id'"
         } catch {
             write-warning "failed to execute 'hg id'"
         }
         if ($id -ne $null) {
             $id = $id.substring(0,5)
-            $newver = Update-Version $newver SuffixRevision -value $id -nuget
+            $newver = Update-Version $newver SuffixRevision -value $id -nuget -verbose:$verb
+        } else {
+            write-warning "'hg id -i' returned null"
         }
         Write-host "updating version $ver to $newver"
         if ($path -ne $null -and $version -eq $null -and $PSCmdlet.ShouldProcess("update version $ver to $newver")) {

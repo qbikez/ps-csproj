@@ -74,6 +74,7 @@ Increment Patch component of version 1.0.1
 
 #>
 function Update-Version {
+    [CmdletBinding()]
     param(
         [Parameter(mandatory=$true)]$ver, 
         [VersionComponent]$component = [VersionComponent]::Patch, 
@@ -81,6 +82,8 @@ function Update-Version {
         [Alias("nuget")]
         [switch][bool] $compatibilityMode
         ) 
+        
+    write-verbose "updating version $ver component $component to value $value"
     $semver = split-version $ver -compatibilityMode:$compatibilityMode
     $suffix = $semver.Suffix    
     
@@ -106,10 +109,11 @@ function Update-Version {
         } 
     } else {
         if ([string]::IsNullOrEmpty($suffix)) {
+            
             #throw "version '$ver' has no suffix"
             $suffix = "build000"
             $semver.buildnum = 0
-            
+            write-verbose "version '$ver' has no suffix. generated one: '-$suffix'"
         }
         
         if ($component -eq [VersionComponent]::SuffixBuild) {
@@ -128,10 +132,11 @@ function Update-Version {
             }
         }
         if ($component -eq [VersionComponent]::SuffixRevision) {
+            #write-verbose "setting suffix revision to '$value'"
             $revSeparator = "+"
             if ($compatibilityMode) { $revSeparator = "-" }
 
-            if ($semver.Revision -ne $null) {
+            if (![string]::IsNullOrEmpty($semver.Revision)) {
                 $oldrev = $semver.Revision
                 $semver.Revision = $value
                 $suffix = $suffix -replace "\$($semver.RevSeparator)$oldrev","$revSeparator$value"
@@ -140,6 +145,7 @@ function Update-Version {
                 $suffix = $suffix + "$revSeparator$value"
             }
             $semver.suffix = $suffix
+            #write-verbose "semver.suffix = $($semver.suffix)"
         }
     }
     
