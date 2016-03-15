@@ -1,6 +1,7 @@
 ipmo nupkg
+ipmo assemblymeta
 
-function update-buildversion {
+function Update-BuildVersion {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param(
         $path = ".",

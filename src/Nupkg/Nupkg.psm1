@@ -1,5 +1,5 @@
 ipmo process
-
+ipmo assemblymeta
 $root = "."
 if (![string]::IsNullOrEmpty($PSScriptRoot)) {
     $root = $PSScriptRoot
