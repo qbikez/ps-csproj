@@ -1,5 +1,6 @@
 . $PSScriptRoot\includes.ps1
 
+ipmo csproj
 
 $xml = invoke-command { @'
 <?xml version="1.0" encoding="utf-8"?>
