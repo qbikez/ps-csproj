@@ -281,10 +281,8 @@ function update-nugetmeta {
    Update-AssemblyVersion $version $path
 }
 
-
-
-
-
 new-alias push-nuget invoke-nugetpush
 new-alias pack-nuget invoke-nugetpack
 new-alias generate-nuspec new-nuspec
+
+export-modulemember -function * -alias *
