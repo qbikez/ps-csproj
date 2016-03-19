@@ -218,7 +218,8 @@ function invoke-nugetpush {
 function invoke-nugetpack {
     [CmdletBinding()]
     param($nuspecOrCsproj = $null,
-    [switch][bool] $Build) 
+    [switch][bool] $Build,
+    [switch][bool] $NoProjectReferences) 
     
     if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.csproj")
@@ -243,7 +244,13 @@ function invoke-nugetpack {
     }
     
     write-host "packing nuget $nuspecorcsproj"
-    $o = nuget pack $nuspecorcsproj | % { write-indented 4 "$_"; $_ } 
+    $a = @(
+        "$nuspecorcsproj"
+    ) 
+    if (!$noprojectreferences) {
+        $a += "-IncludeReferencedProjects"
+    }
+    $o = nuget pack $a | % { write-indented 4 "$_"; $_ } 
     if ($lastexitcode -ne 0) {
         throw "nuget command failed! `r`n$($o | out-string)"
     } else {
