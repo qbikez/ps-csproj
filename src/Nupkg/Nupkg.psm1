@@ -10,7 +10,8 @@ if (![string]::IsNullOrEmpty($PSScriptRoot)) {
 $helpersPath = $root
 @("choco-utils.ps1", "internal.ps1") |
     % { 
-        . "$root/functions/$_" 
+        $p = Resolve-Path "$root/functions/$_"
+        . $p.ProviderPath
     }
 
 
@@ -288,10 +289,8 @@ function update-nugetmeta {
    Update-AssemblyVersion $version $path
 }
 
-
-
-
-
 new-alias push-nuget invoke-nugetpush
 new-alias pack-nuget invoke-nugetpack
 new-alias generate-nuspec new-nuspec
+
+export-modulemember -function * -alias *

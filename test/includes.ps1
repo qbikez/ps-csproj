@@ -27,22 +27,22 @@ if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost
     write-Verbose "reloading csproj DONE"
 }
 
-import-module chalk -DisableNameChecking
+import-module crayon
 
-if ((get-module chalk) -eq  $null) {
-    write-host "importing chalk"
-    import-module chalk -DisableNameChecking    
-    if ((get-module chalk) -ne $null) {
+#if ((get-module chalk) -eq $null) {
+#    write-host "importing chalk"
+#    import-module chalk -DisableNameChecking    
+#    if ((get-module chalk) -ne $null) {
         $Global:logpattern.Add("""(?<magenta>.*?)""", "quoted names")
         $Global:logpattern.Add("<(?<cyan>[a-zA-Z]+)", "xml node start")
         $Global:logpattern.Add("/(?<cyan>[a-zA-Z]+)>", "xml node end")
-    }
-    else {
-        function log-info($message = "") {
-            write-host -ForegroundColor Cyan $message
-        }
-    }
-}
+#    }
+#    else {
+#        function log-info($message = "") {
+#            write-host -ForegroundColor Cyan $message
+#        }
+#    }
+#}
 
 $inputdir = "$psscriptroot\input"
 
