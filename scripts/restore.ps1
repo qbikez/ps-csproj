@@ -2,4 +2,4 @@
 
 install-module pathutils -verbose
 install-module publishmap -verbose
-install-module logging -verbose
+install-module chalk -verbose
