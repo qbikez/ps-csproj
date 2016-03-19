@@ -190,10 +190,11 @@ function invoke-nugetpush {
     param($file = $null, 
     [Parameter(Mandatory=$false)]$source,
     [Parameter(Mandatory=$false)]$apikey,
-    [switch][bool] $Build) 
+    [switch][bool] $Build,
+    [switch][bool] $NoProjectReferences) 
     
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build
+        $nupkg = invoke-nugetpack $file -Build:$build -NoProjectReferences:$NoProjectReferences
     } else {
         $nupkg = $file
     }
@@ -243,13 +244,14 @@ function invoke-nugetpack {
         }
     }
     
-    write-host "packing nuget $nuspecorcsproj"
     $a = @(
         "$nuspecorcsproj"
     ) 
     if (!$noprojectreferences) {
         $a += "-IncludeReferencedProjects"
     }
+    write-host "packing nuget $nuspecorcsproj"
+    write-host "nuget pack $a"
     $o = nuget pack $a | % { write-indented 4 "$_"; $_ } 
     if ($lastexitcode -ne 0) {
         throw "nuget command failed! `r`n$($o | out-string)"
