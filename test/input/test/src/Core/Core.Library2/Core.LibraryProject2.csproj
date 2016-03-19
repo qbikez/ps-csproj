@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{8F1B55DD-15AB-4ACB-9206-84BA2122F60F}</ProjectGuid>
+    <ProjectGuid>{65A97165-F248-412B-803C-0CEA8936311C}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Core.Library1</RootNamespace>
-    <AssemblyName>Core.Library1</AssemblyName>
+    <RootNamespace>Core.Library2</RootNamespace>
+    <AssemblyName>Core.Library2</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -40,11 +40,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Class1.cs" />
+    <Compile Include="Class2.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Core.Library1.nuspec" />
+    <ProjectReference Include="..\Core.Core\Core.Core.csproj">
+      <Project>{34c25f06-26f0-4938-ace3-b5d373e89ba9}</Project>
+      <Name>Core.Core</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

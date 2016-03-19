@@ -4,12 +4,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Core.Library2
+namespace Core.LibraryProject2
 {
     public class Class2
     {
         public string Bar(string msg)
         {
+            Core.CoreClass.Initialize();
             return $"foobar {msg}";
         }
     }

@@ -1,5 +1,5 @@
-﻿using Core.Library1;
-using Core.Library2;
+﻿using Core.Library2;
+using Core.LibraryNuget1;
 using System;
 using System.Collections.Generic;
 using System.Linq;
