@@ -15,8 +15,8 @@ Describe "Converting dll reference to project" {
     $slndir = split-path -parent $slnfile
     $packagesdir = "$targetdir\test\packages"
     
-    $referenceName = "Core.Library2"
-    $targetProject = "$targetdir\test\src\Core\Core.Library2\Core.Library2.csproj"
+    $referenceName = "Core.LibraryProject2"
+    $targetProject = "$targetdir\test\src\Core\Core.Library2\Core.LibraryProject2.csproj"
     $specificProject = "Console1"
     
     $sln = import-sln $slnfile
@@ -69,7 +69,7 @@ Describe "Converting Project reference to nuget" {
     
     
     Context "When loading sln file" {
-        $projectName = "Core.Library1"
+        $projectName = "Core.LibraryNuget1"
     
         It "Should resolve all sln projects" {
             $sln.gettype().Name | should Be "Sln"
@@ -89,7 +89,7 @@ Describe "Converting Project reference to nuget" {
             $projects = $sln | get-slnprojects
             $p = $projects | ? { $_.Name -eq $projectName }
             $p | Should Not BeNullOrEmpty
-            $p.path | Should be "..\..\src\Core\Core.Library1\Core.Library1.csproj"
+            $p.path | Should be "..\..\src\Core\Core.Library1\Core.LibraryNuget1.csproj"
         }
         
         It "Should list all references to $projectname" {
@@ -102,7 +102,7 @@ Describe "Converting Project reference to nuget" {
 
     Context "When converting project with matching nuget" {
         
-        $projectname = "Core.Library1"
+        $projectname = "Core.LibraryNuget1"
         #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\" -type directory
         #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\$projectname.dll" -type file
         
