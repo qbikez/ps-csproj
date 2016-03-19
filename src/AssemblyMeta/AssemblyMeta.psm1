@@ -60,7 +60,7 @@ function Get-AssemblyMeta {
     return $r
 }
 
-function set-AssemblyMeta {
+function Set-AssemblyMeta {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param ($key, $value, $assemblyinfo = ".") 
     $key = get-assemblymetakey $key
@@ -84,5 +84,34 @@ function set-AssemblyMeta {
     }
     if ($PSCmdlet.ShouldProcess("save output file '$assemblyinfo'")) {
         $content | out-file $assemblyinfo -Encoding utf8
+    }
+}
+
+function Update-AssemblyVersion($version, $path = ".") {
+    
+    $v = get-assemblymeta "Version" $path
+    if (![string]::isnullorempty($v) -and $suffix -ne $null) {
+        if ($version -eq $null) { $version = $v }
+        $version = "$version-$suffix"
+    } else {
+        write-verbose "found Version: $v"
+    }
+   
+    
+    $defaultVersion = "1.0.0"
+    $ver = $version
+    if ([string]::isnullorempty($v)) { $ver = $defaultVersion } 
+    
+    if ([string]::isnullorempty($v) -or $v -eq "1.0.0.0" -or $version -ne $null) {
+        set-assemblymeta "Version" ((split-packageversion $ver)["version"]) $path
+    }
+    $v = get-assemblymeta "FileVersion" $path
+    if ([string]::isnullorempty($v) -or $v -eq "1.0.0.0" -or $version -ne $null) {
+        set-assemblymeta "FileVersion" ((split-packageversion $ver)["version"]) $path
+    }
+    
+    $v = get-assemblymeta "InformationalVersion" $path
+    if ([string]::isnullorempty($v) -or $v -eq "1.0.0.0"  -or $version -ne $null) {
+        set-assemblymeta "InformationalVersion" $ver $path
     }
 }

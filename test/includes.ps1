@@ -27,22 +27,22 @@ if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost
     write-Verbose "reloading csproj DONE"
 }
 
-import-module logging -DisableNameChecking
+import-module crayon
 
-if ((get-module logging) -eq  $null) {
-    write-host "importing logging"
-    import-module logging -DisableNameChecking    
-    if ((get-module logging) -ne $null) {
+#if ((get-module chalk) -eq $null) {
+#    write-host "importing chalk"
+#    import-module chalk -DisableNameChecking    
+#    if ((get-module chalk) -ne $null) {
         $Global:logpattern.Add("""(?<magenta>.*?)""", "quoted names")
         $Global:logpattern.Add("<(?<cyan>[a-zA-Z]+)", "xml node start")
         $Global:logpattern.Add("/(?<cyan>[a-zA-Z]+)>", "xml node end")
-    }
-    else {
-        function log-info($message = "") {
-            write-host -ForegroundColor Cyan $message
-        }
-    }
-}
+#    }
+#    else {
+#        function log-info($message = "") {
+#            write-host -ForegroundColor Cyan $message
+#        }
+#    }
+#}
 
 $inputdir = "$psscriptroot\input"
 
@@ -65,18 +65,5 @@ function copy-samples() {
     return $targetdir
 }
 
-function invoke($command, [string[]]$arguments, [switch][bool]$noassert, [switch][bool]$showoutput) {
-    if ($showoutput) {
-        $o = & $command $arguments | write-host
-    } else {
-        $o = & $command $arguments
-    }
-    if ($lastexitcode -ne 0) {
-        $o | out-string | write-host
-    }
-    if (!$noassert) {
-        $lastexitcode | should Be 0
-    }
-}
 
 write-host "== includes END =="
