@@ -120,7 +120,7 @@ function test-slndependencies {
 }
 
 function  find-packagesdir ($path) {
-    if (!(get-item $path).IsPsContainer) {
+    if (!(get-item $path).PsIsContainer) {
             $dir = split-path -Parent $path
         }
         else {
@@ -155,12 +155,14 @@ function find-reporoot($path = ".") {
 }
 
 function find-matchingprojects {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]$missing,
         [Parameter(Mandatory=$true)]$reporoot
         )
     $csprojs = get-childitem "$reporoot" -Filter "*.csproj" -Recurse
     $packagesdir = find-packagesdir $reporoot
+    write-verbose "detected packages dir of repo '$reporoot' at '$packagesdir'"
     $missing = $missing | % {
         $m = $_
         if ($m.ref.type -eq "project" -or $m.ref.type -eq "csproj") {
