@@ -223,12 +223,16 @@ function invoke-nugetpack {
         $csprojs = @(gci . -filter "*.csproj")
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
+        } else {
+            throw "found multiple csproj files. please choose one."
         }
     }
     if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.nuspec")
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
+        } else {
+            throw "found multiple nuspec files. please choose one."
         }
     }
     
