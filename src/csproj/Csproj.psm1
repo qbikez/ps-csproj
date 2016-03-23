@@ -8,9 +8,9 @@ if (![string]::IsNullOrEmpty($PSScriptRoot)) {
 $helpersPath = $root
 
 # grab functions from files
-Resolve-Path $helpersPath\functions\*.ps1 | 
-    ? { -not ($_.ProviderPath.Contains(".Tests.")) } |
-    % { . $_.ProviderPath }
+get-childitem "$helpersPath\functions" -filter "*.ps1" | 
+    ? { -not ($_.Name.Contains(".Tests.")) } |
+    % { . $_.FullName }
 
 
 
