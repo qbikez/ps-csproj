@@ -3,6 +3,7 @@
 import-module pester
 import-module csproj
 import-module semver
+import-module nupkg -verbose
 
 
 
