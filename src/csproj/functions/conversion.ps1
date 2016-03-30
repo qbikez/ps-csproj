@@ -64,14 +64,20 @@ function convert-projectReferenceToNuget {
         write-verbose "found project reference to $projectname in $($proj.name)"
         
         $result += $pr
-       
-        $converted = convertto-nugetreference $pr $packagesDir
-        if ($converted -eq $null) { throw "failed to convert referece $pr in project $($proj.name)" }
-        $null = replace-reference $proj $pr $converted
-        
-        write-verbose "saving modified projet $($proj.fullname)"
-        $null = $proj.save($proj.fullname)
-        return $converted 
+        if ((get-command install-package -Module nuget) -ne $null) {
+            write-verbose "detected Nuget module. using Nuget/install-package: install-package -ProjectName $($proj.name) -id $($pr.Name)"
+            nuget\install-package -ProjectName $proj.name -id $pr.Name
+            return "converted with NuGet module"
+        }
+        else {
+            $converted = convertto-nugetreference $pr $packagesDir
+            if ($converted -eq $null) { throw "failed to convert referece $pr in project $($proj.name)" }
+            $null = replace-reference $proj $pr $converted
+            
+            write-verbose "saving modified project $($proj.fullname)"
+            $null = $proj.save($proj.fullname)
+            return $converted 
+        }
 }
 
 function  convert-ReferencesToNuget {
