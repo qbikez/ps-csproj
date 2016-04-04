@@ -325,6 +325,11 @@ function Update-BuildVersion {
         }
         
         $newver = $ver
+        $branch = hg branch
+        if ($branch -ne $null) {
+            write-verbose "found hg branch '$branch'"
+            $newver = Update-Version $newver SuffixBranch -value $branch.Replace("/","_").Replace("-","_")
+        }
         if ($newver -eq "1.0.0.0") {
             $newver = "1.0.0"
             $newver = Update-Version $newver Patch -nuget -verbose:$verb

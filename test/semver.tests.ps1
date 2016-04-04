@@ -36,6 +36,7 @@ Describe "update version" {
         @{ version = "1.0.1-alpha-build.123"; component = [VersionComponent]::SuffixBuild; expected = "1.0.1-alpha-build.124" }
         @{ version = "1.0.1-alpha-build.123+12abc"; component = [VersionComponent]::SuffixBuild; expected = "1.0.1-alpha-build.124+12abc" }
         @{ version = "1.0.1-alpha-build.123+12abc"; component = [VersionComponent]::SuffixRevision; value = "abc12ff"; expected = "1.0.1-alpha-build.123+abc12ff" }
+        @{ version = "1.0.1-alpha-build.123"; component = [VersionComponent]::SuffixRevision; value = "abc12ff"; expected = "1.0.1-alpha-build.123+abc12ff" }
         @{ version = "1.0.1-build.123"; component = [VersionComponent]::Patch; expected = "1.0.2-build.001" }
         @{ version = "1.0.1-alpha-build.123"; component = [VersionComponent]::Patch; expected = "1.0.2-alpha-build.001" }
     )

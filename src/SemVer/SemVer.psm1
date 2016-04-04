@@ -10,6 +10,7 @@ Add-Type -TypeDefinition @"
       Patch = 2,
       Build = 3,
       Suffix = 4,
+      SuffixBranch = 45,
       SuffixBuild = 50,
       SuffixRevision = 60
    }
@@ -156,10 +157,11 @@ function Update-Version {
             $semver.RevSeparator = $revSeparator
             if (![string]::IsNullOrEmpty($semver.Revision)) {
                 $oldrev = $semver.Revision
-                $semver.Revision = $value
             }
-            else {
-            }
+            $semver.Revision = $value
+        }
+        if ($component -eq [VersionComponent]::SuffixBranch) {
+            $semver.BranchName = $value
         }
         $sfx = $semver.FormatSuffix()
         write-verbose "updating suffix $($semver.suffix) => $sfx"
