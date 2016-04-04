@@ -1,5 +1,8 @@
 ipmo process
 ipmo assemblymeta
+ipmo semver
+
+
 $root = "."
 if (![string]::IsNullOrEmpty($PSScriptRoot)) {
     $root = $PSScriptRoot
@@ -10,8 +13,8 @@ if (![string]::IsNullOrEmpty($PSScriptRoot)) {
 $helpersPath = $root
 @("choco-utils.ps1", "internal.ps1") |
     % { 
-        $p = Resolve-Path "$root/functions/$_"
-        . $p.ProviderPath
+        $p = get-item "$root/functions/$_"
+        . $p.fullname
     }
 
 
@@ -190,10 +193,11 @@ function invoke-nugetpush {
     param($file = $null, 
     [Parameter(Mandatory=$false)]$source,
     [Parameter(Mandatory=$false)]$apikey,
+    [switch][bool]$Symbols,
     [switch][bool] $Build) 
     
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols
     } else {
         $nupkg = $file
     }
@@ -207,6 +211,7 @@ function invoke-nugetpush {
     if ($apikey -ne $null) {
         $p += "-apikey",$apikey
     }
+   
     if ($PSCmdlet.ShouldProcess("pushing package $p")) {
         $o = nuget push $p | % { write-indented 4 "$_"; $_ } 
         if ($lastexitcode -ne 0) {
@@ -219,6 +224,7 @@ function invoke-nugetpack {
     [CmdletBinding()]
     param($nuspecOrCsproj = $null,
     [switch][bool] $Build,
+    [switch][bool] $Symbols,
     [switch][bool] $NoProjectReferences) 
     
     if ($nuspecorcsproj -eq $null) {
@@ -254,6 +260,9 @@ function invoke-nugetpack {
     if (!$noprojectreferences) {
         $a += "-IncludeReferencedProjects"
     }
+    if ($symbols) {
+        $a += "-Symbols"
+    }
     $o = nuget pack $a | % { write-indented 4 "$_"; $_ } 
     if ($lastexitcode -ne 0) {
         throw "nuget command failed! `r`n$($o | out-string)"
@@ -282,7 +291,7 @@ function update-nugetmeta {
         write-verbose "found Description: $v"
     }
     
-    $v = get-assemblymeta "Company" $path
+    $v = get-assemblymeta "Company" $path   
     if ([string]::isnullorempty($v) -or $company -ne $null) {
         if ($company -eq $null) { $company =  "MyCompany" }
         set-assemblymeta "Company" $company $path
@@ -293,6 +302,80 @@ function update-nugetmeta {
    Update-AssemblyVersion $version $path
 }
 
+function Update-BuildVersion {
+    [CmdletBinding(SupportsShouldProcess=$true)]
+    param(
+        $path = ".",
+        $version = $null,
+        [VersionComponent]$component = [VersionComponent]::SuffixBuild
+    ) 
+    $verb = $psBoundParameters["Verbose"]
+    write-verbose "verbosity switch: $verb"
+    pushd
+    try {
+        if ($version -eq $null) {
+            
+        }
+        if ($version -eq $null -and $path -ne $null) {
+            $ver = Get-AssemblyMeta InformationalVersion 
+            if ($ver -eq $null) { $ver = Get-AssemblyMeta Version }
+        }
+        else {
+            $ver = $version
+        }
+        
+        $newver = $ver
+        if ($newver -eq "1.0.0.0") {
+            $newver = "1.0.0"
+            $newver = Update-Version $newver Patch -nuget -verbose:$verb
+        }
+        if ($newver -match "\.\*") {
+            $newver = $newver.trim(".*")
+            $splits = $newver.Split(".")
+            $c= $splits.Length - 1
+            if ($component -eq $null -or $component -gt $c) {
+                $newver = Update-Version $newver $c -nuget -verbose:$verb    
+            }
+        }
+        
+        if ($newver.split(".").length -lt 3) {
+            1..(3-$newver.split(".").Length) | % {
+                $newver += ".0"
+            }
+        }
+        
+
+        if ($component -ne $null) {
+            $newver = Update-Version $newver $component -nuget -verbose:$verb    
+        } else {
+            $newver = Update-Version $newver SuffixBuild -nuget -verbose:$verb
+        }
+        #Write-Verbose "updating version $ver to $newver"
+        try {
+            write-verbose "getting source control revision id"
+            $id = (hg id -i)
+            write-verbose "rev id='$id'"
+        } catch {
+            write-warning "failed to execute 'hg id'"
+        }
+        if ($id -ne $null) {
+            $id = $id.substring(0,5)
+            $newver = Update-Version $newver SuffixRevision -value $id -nuget -verbose:$verb
+        } else {
+            write-warning "'hg id -i' returned null"
+        }
+        Write-host "updating version $ver to $newver"
+        if ($path -ne $null -and $version -eq $null -and $PSCmdlet.ShouldProcess("update version $ver to $newver")) {
+            update-nugetmeta -version $newver
+        }
+        return $newver
+    } finally {
+        popd
+    }
+    
+}
+
+new-alias generate-nugetmeta update-nugetmeta
 new-alias push-nuget invoke-nugetpush
 new-alias pack-nuget invoke-nugetpack
 new-alias generate-nuspec new-nuspec
