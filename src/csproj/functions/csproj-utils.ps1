@@ -7,6 +7,7 @@ public class Csproj {
     public string Path {get;set;}
     public string FullName { get { return Path; } }
     public string Name {get;set;}
+    public string Guid {get;set;}
     
     public override string ToString() {
         return Name;
@@ -62,10 +63,18 @@ function import-csproj {
     } catch {
         throw "failed to parse project '$file': $_"
     }
+    
+     try {
+    $guidNode = $xml | get-nodes -nodeName "ProjectGuid"
+    $guid = $guidnode.Node.InnerText
+     } catch {
+         throw "failed to find ProjectGuid"
+     }
     $csproj = new-object -type csproj -Property @{ 
         xml = $xml
         path = $path
         name = $name
+        guid = $guid
     }
 
     return $csproj
@@ -100,17 +109,31 @@ param(
             default { "?" }
         }
         $path = $null
+        
+        #TODO: Reference node may have more than one HintPath! 
         if ($n.HintPath) { $path = $n.HintPath }
         elseif ($n.Include) { $path = $n.Include }
         
+        if ($path -is [System.Array]) {
+            #hopefully, the last path will be a nuget package
+            $path = $path[$path.length -1]
+        }
         $isvalid = $null
         $abspath = $path
+        
+      
+        
         if ($abspath -ne $null `
         -and (test-ispathrelative $abspath) `
         -and $csproj -ne $null `
         -and ![string]::IsNullOrEmpty($csproj.fullname))
         {
+            try {
             $abspath = join-path (split-path -parent $csproj.fullname) $abspath
+            } catch {
+                write-error $_.ScriptStackTrace
+                throw "failed to find abs path of $csproj ($($csproj.length)): $_"
+            }
         }
         if (!(test-ispathrelative $abspath)) {
             $isvalid = test-path $abspath
@@ -130,7 +153,7 @@ param(
 function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName, [switch][bool]$noMeta, [Csproj] $csproj) {
     $r = Select-Xml -Xml $xml.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName"
     if (!$nometa) { 
-        $meta = $r | add-metadata  -csproj $csproj
+        $meta = $r | add-metadata -csproj $csproj
     }
     return $meta
 }

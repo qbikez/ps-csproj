@@ -155,14 +155,18 @@ function find-reporoot($path = ".") {
 }
 
 function find-matchingprojects {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]$missing,
         [Parameter(Mandatory=$true)]$reporoot
         )
     $csprojs = get-childitem "$reporoot" -Filter "*.csproj" -Recurse
+    write-verbose "found $($csprojs.length) csproj files in repo root '$reporoot' and subdirs. pwd='$(pwd)'"
+    #$csprojs | select -expandproperty name | format-table | out-string | write-verbose
     $packagesdir = find-packagesdir $reporoot
     $missing = $missing | % {
         $m = $_
+        $matching = $null
         if ($m.ref.type -eq "project" -or $m.ref.type -eq "csproj") {
             $matching = @($csprojs | ? { [System.io.path]::GetFilenameWithoutExtension($_.Name) -eq $m.ref.Name })
             $null = $m | add-property -name "matching" -value $matching
@@ -182,6 +186,13 @@ function find-matchingprojects {
                 #write-verbose "missing: $_.Name matching: $matching"
             }
         }
+        if ($matching -eq $null) {
+            write-verbose "no project did match '$($m.ref.Name)' reference of type $($m.ref.type)"
+        } else {
+            write-verbose "found matching project $matching for '$($m.ref.Name)' reference of type $($m.ref.type)"
+        }
+        
+        
         return $m
     }
     
@@ -238,6 +249,12 @@ function repair-slnpaths {
                     $_.ref.Path = $relpath
                     
                     update-slnproject $sln $_.ref
+                }
+                else {
+                    $relpath = get-relativepath $sln.fullname $_.matching.fullname
+                    write-verbose "fixing missing SLN reference:  $($_.ref.Path) => $relpath"
+                    $csp = import-csproj $_.matching.fullname
+                    add-slnproject $sln -name $csp.Name -path $relpath -projectguid $csp.guid
                 }
             }
         }
