@@ -156,7 +156,8 @@ function Update-Version {
                 }
             }
             else {
-                throw "suffix '$suffix' does not match $buildSuffixRegex pattern"
+                $semver.buildnum = 1;
+                #throw "suffix '$suffix' does not match $buildSuffixRegex pattern"
             }
         }
         if ($component -eq [VersionComponent]::SuffixRevision) {
@@ -198,10 +199,13 @@ function Split-Version($ver, [switch][bool] $compatibilityMode) {
         $buildnum = [int]$matches["buildno"]
         $suffixbuild = ".$($buildnum.ToString("000"))"
     }
-    if ($suffix -match "^(?<branchname>[^.\-0-9]+)") {
+    if ($suffix -match "^(?<branchname>[^.+]+)") {
         $branch = $matches["branchname"]
         if ($buildnumidx -ne $null -and $buildnumidx -gt 0) {
             $branch = $suffix.SubString(0,$buildnumidx)
+        } elseif ($buildnumidx -eq 0) {
+            $null = $suffix -match "^(?<branchname>[^.+\-0-9]+)"
+            $branch = $matches["branchname"]
         }
     }
     $rev = $null

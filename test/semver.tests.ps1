@@ -6,7 +6,6 @@ import-module semver
 
 Describe "parse version" {
     $cases = @(
-        
         @{ version = "1.0.1-build123"; major = 1; minor = 0; patch = 1; build = 123; branch = "build" }
         @{ version = "1.0.1-build.123"; major = 1; minor = 0; patch = 1; build = 123; branch = "build" }
         @{ version = "1.0.1-build123"; major = 1; minor = 0; patch = 1; build = 123; branch = "build" }
@@ -15,6 +14,9 @@ Describe "parse version" {
         @{ version = "1.0.1-feature-abc123"; major = 1; minor = 0; patch = 1; build = 123; branch = "feature-abc" }
         @{ version = "1.0.1-featureabc.123+4af3d"; major = 1; minor = 0; patch = 1; build = 123; branch = "featureabc"; rev = "4af3d" }
         @{ version = "1.0.1-rc1_2016_01_01.123"; branch = "rc1_2016_01_01"; build = 123 }
+        @{ version = "1.6.0-release_2016_04_01_audio"; branch = "release_2016_04_01_audio" }
+        @{ version = "1.6.0-release-2016_04_01-audio"; branch = "release-2016_04_01-audio" }
+
     )
     It "parsing '<version>' should yield major=<major> minor=<minor> patch=<patch> branch=<branch> buildno=<build> rev=<rev>" -testcases $cases {
         param($version, $major, $minor, $patch, $branch, $build, $rev) 
@@ -33,12 +35,7 @@ Describe "parse version" {
 
 Describe "update version" {
     $cases = @(        
-        # compatibility mode:
-        # branch: 10chars
-        # rev: 6chars
-        # revseparator: -
-        @{ version = "1.0.1-alpha-build.123"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.0.1-alpha-buil124" }
-        @{ version = "1.0.1-alpha_2016_01_01.123"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.0.1-alpha2016-124" }
+    
         @{ version = "1.0.1-build123"; component = [VersionComponent]::SuffixBuild; expected = "1.0.1-build.124" }
         @{ version = "1.0.1"; component = [VersionComponent]::Patch; expected = "1.0.2" }
         @{ version = "1.0.1"; component = [VersionComponent]::Minor; expected = "1.1.0" }
@@ -49,8 +46,15 @@ Describe "update version" {
         @{ version = "1.0.1-alpha-build.123+12abc"; component = [VersionComponent]::SuffixRevision; value = "abc12ff"; expected = "1.0.1-alpha-build.123+abc12ff" }
         @{ version = "1.0.1-alpha-build.123"; component = [VersionComponent]::SuffixRevision; value = "abc12ff"; expected = "1.0.1-alpha-build.123+abc12ff" }
         @{ version = "1.0.1-build.123"; component = [VersionComponent]::Patch; expected = "1.0.2-build.001" }
-        @{ version = "1.0.1-alpha-build.123"; component = [VersionComponent]::Patch; expected = "1.0.2-alpha-build.001" }
-        
+        @{ version = "1.0.1-alpha-build.123"; component = [VersionComponent]::Patch; expected = "1.0.2-alpha-build.001" }        
+
+        # compatibility mode:
+        # branch: 10chars
+        # rev: 6chars
+        # revseparator: -
+        @{ version = "1.0.1-alpha-build.123"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.0.1-alpha-buil124" }
+        @{ version = "1.0.1-alpha_2016_01_01.123"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.0.1-alpha2016-124" }
+        @{ version = "1.6.0-release_2016_04_01_audio"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.6.0-release20-001" }                      
     )
     
     It "incrementing part <component> of '<version>' should yield '<expected>'" -testcases $cases {
