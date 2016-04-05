@@ -43,22 +43,31 @@ Add-Type -TypeDefinition @"
          return s;
      }
      
-     public string FormatSuffix() {
+     public string FormatSuffix(bool compatibilityMode = false) {
          StringBuilder sb = new StringBuilder();
          if (!string.IsNullOrEmpty(BranchName)) {
-             sb.Append(BranchName);
+             var b = BranchName;
+             if (compatibilityMode) b = b.Replace("_","").Replace("+","").Replace(".",""); // nuget does not tolerate these chars in suffix
+             if (compatibilityMode) b = b.Substring(0, Math.Min(10,b.Length)); // max 20 chars for suffix: branch:10, build:3, rev:6, revseparator:1
+             sb.Append(b);
          }
          if (BuildNum != null) {
              if (sb.Length == 0) {
                  sb.Append("build");
              }
-             sb.Append(".").Append(BuildNum.Value.ToString("000"));
+             if (!compatibilityMode) sb.Append("."); // nuget does not tolerate `.` in suffix             
+             if (sb.Length > 0 && Char.IsNumber(sb[sb.Length-1])) sb[sb.Length-1] = '-'; // separate branchname digits from build number
+             sb.Append(BuildNum.Value.ToString("000"));
          }
          if (!string.IsNullOrEmpty(Revision)) {
              if (sb.Length > 0) {
-                 sb.Append(RevSeparator);
+                 var revsep = RevSeparator;
+                 if (compatibilityMode) revsep = "-";
+                 sb.Append(revsep);
              }
-             sb.Append(Revision);
+             var rev = Revision;
+             if (compatibilityMode) rev = rev.Substring(0, Math.Min(6,rev.Length));
+             sb.Append(rev);
          }
          
          return sb.ToString();
@@ -67,7 +76,7 @@ Add-Type -TypeDefinition @"
 "@
 }
 
-$buildSuffixRegex = "(\.|build)(?<buildno>[0-9]{3})"
+$buildSuffixRegex = "(\.|build){0,1}(?<buildno>[0-9]{3})($|[-+][a-fA-F0-9]+$)"
 
 <#
 
@@ -163,7 +172,7 @@ function Update-Version {
         if ($component -eq [VersionComponent]::SuffixBranch) {
             $semver.BranchName = $value
         }
-        $sfx = $semver.FormatSuffix()
+        $sfx = $semver.FormatSuffix($compatibilityMode)
         write-verbose "updating suffix $($semver.suffix) => $sfx"
         $semver.suffix = $sfx
     }
