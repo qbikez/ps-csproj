@@ -313,6 +313,7 @@ function Update-BuildVersion {
     write-verbose "verbosity switch: $verb"
     pushd
     try {
+        if ($path -ne $null) { cd $path }
         if ($version -eq $null) {
             
         }
