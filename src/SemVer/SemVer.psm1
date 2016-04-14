@@ -172,8 +172,12 @@ function Update-Version {
         }
         if ($component -eq [VersionComponent]::SuffixBranch) {
             $semver.BranchName = $value
-        }
+        }        
         $sfx = $semver.FormatSuffix($compatibilityMode)
+        
+        if ($component -eq [VersionComponent]::Suffix) {
+            $sfx = $null
+        }
         write-verbose "updating suffix $($semver.suffix) => $sfx"
         $semver.suffix = $sfx
     }

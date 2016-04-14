@@ -194,10 +194,11 @@ function invoke-nugetpush {
     [Parameter(Mandatory=$false)]$source,
     [Parameter(Mandatory=$false)]$apikey,
     [switch][bool]$Symbols,
-    [switch][bool] $Build) 
+    [switch][bool] $Build,
+    [switch][bool] $Stable) 
     
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable
     } else {
         $nupkg = $file
     }
@@ -225,7 +226,8 @@ function invoke-nugetpack {
     param($nuspecOrCsproj = $null,
     [switch][bool] $Build,
     [switch][bool] $Symbols,
-    [switch][bool] $NoProjectReferences) 
+    [switch][bool] $NoProjectReferences,
+    [switch][bool] $Stable) 
     
     if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.csproj")
@@ -246,6 +248,9 @@ function invoke-nugetpack {
     
     if ($Build) {
         $newver = update-buildversion (split-path -Parent $nuspecorcsproj)
+        if ($stable) {
+            $newver = update-buildversion -stable:$stable
+        }
         write-host "building project"
         $o = msbuild $nuspecorcsproj | % { write-indented 4 "$_"; $_ }
          if ($lastexitcode -ne 0) {
@@ -307,7 +312,9 @@ function Update-BuildVersion {
     param(
         $path = ".",
         $version = $null,
-        [VersionComponent]$component = [VersionComponent]::SuffixBuild
+        [VersionComponent]$component = [VersionComponent]::SuffixBuild,
+        [switch][bool] $stable
+        
     ) 
     $verb = $psBoundParameters["Verbose"]
     write-verbose "verbosity switch: $verb"
@@ -361,6 +368,7 @@ function Update-BuildVersion {
         } else {
             $newver = Update-Version $newver SuffixBuild -nuget -verbose:$verb
         }
+        
         #Write-Verbose "updating version $ver to $newver"
         try {
             write-verbose "getting source control revision id"
@@ -375,6 +383,12 @@ function Update-BuildVersion {
         } else {
             write-warning "'hg id -i' returned null"
         }
+        
+        if ($stable) {
+            $newver = update-version $newver Suffix -value "" -nuget -verbose:$verb
+        }
+
+        
         Write-host "updating version $ver to $newver"
         if ($path -ne $null -and $version -eq $null -and $PSCmdlet.ShouldProcess("update version $ver to $newver")) {
             update-nugetmeta -version $newver
