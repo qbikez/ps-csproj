@@ -120,7 +120,7 @@ function test-slndependencies {
 }
 
 function  find-packagesdir ($path) {
-    if (!(get-item $path).IsPsContainer) {
+    if (!(get-item $path).PsIsContainer) {
             $dir = split-path -Parent $path
         }
         else {
@@ -138,7 +138,7 @@ function  find-packagesdir ($path) {
 
 function find-reporoot($path = ".") {
         $path = (get-item $path).FullName
-        if (!(get-item $path).IsPsContainer) {
+        if (!(get-item $path).PsIsContainer) {
             $dir = split-path -Parent $path
         }
         else {
@@ -161,9 +161,9 @@ function find-matchingprojects {
         [Parameter(Mandatory=$true)]$reporoot
         )
     $csprojs = get-childitem "$reporoot" -Filter "*.csproj" -Recurse
-    write-verbose "found $($csprojs.length) csproj files in repo root '$reporoot' and subdirs. pwd='$(pwd)'"
     #$csprojs | select -expandproperty name | format-table | out-string | write-verbose
     $packagesdir = find-packagesdir $reporoot
+    write-verbose "found $($csprojs.length) csproj files in repo root '$reporoot' and subdirs. pwd='$(pwd)'. Packagesdir = '$packagesdir'"
     $missing = $missing | % {
         $m = $_
         $matching = $null
@@ -250,7 +250,7 @@ function repair-slnpaths {
                     
                     update-slnproject $sln $_.ref
                 }
-                else {
+                elseif ($_.ref -isnot [referencemeta]) {
                     $relpath = get-relativepath $sln.fullname $_.matching.fullname
                     write-verbose "fixing missing SLN reference:  $($_.ref.Path) => $relpath"
                     $csp = import-csproj $_.matching.fullname
