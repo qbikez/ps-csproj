@@ -47,7 +47,7 @@ Add-Type -TypeDefinition @"
          StringBuilder sb = new StringBuilder();
          if (!string.IsNullOrEmpty(BranchName)) {
              var b = BranchName;
-             if (compatibilityMode) b = b.Replace("_","").Replace("+","").Replace(".",""); // nuget does not tolerate these chars in suffix
+             if (compatibilityMode) b = b.Replace("_","").Replace("+","").Replace(".","").Replace("/",""); // nuget does not tolerate these chars in suffix
              if (compatibilityMode) b = b.Substring(0, Math.Min(10,b.Length)); // max 20 chars for suffix: branch:10, build:3, rev:6, revseparator:1
              sb.Append(b);
          }
