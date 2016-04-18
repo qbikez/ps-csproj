@@ -195,10 +195,18 @@ function invoke-nugetpush {
     [Parameter(Mandatory=$false)]$apikey,
     [switch][bool]$Symbols,
     [switch][bool] $Build,
+    [switch][bool] $ForceDll,
     [switch][bool] $Stable) 
     
+    if ($file -eq $null -and !$build) {
+        $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
+        if ($files.length -gt 0){
+            $file = $files[0].name
+        }
+    }
+    
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll
     } else {
         $nupkg = $file
     }
@@ -227,7 +235,8 @@ function invoke-nugetpack {
     [switch][bool] $Build,
     [switch][bool] $Symbols,
     [switch][bool] $NoProjectReferences,
-    [switch][bool] $Stable) 
+    [switch][bool] $Stable,
+    [switch][bool] $ForceDll) 
     
     if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.csproj")
@@ -251,24 +260,43 @@ function invoke-nugetpack {
         if ($stable) {
             $newver = update-buildversion -stable:$stable
         }
-        write-host "building project"
-        $o = msbuild $nuspecorcsproj | % { write-indented 4 "$_"; $_ }
+        $a = @()
+        if ($forceDll) {
+            $a += @("-p:OutputType=Library")
+        }
+        write-host "building project: msbuild $nuspecorcsproj $a "
+        $o = msbuild $nuspecorcsproj $a | % { write-indented 4 "$_"; $_ }
          if ($lastexitcode -ne 0) {
            throw "build failed! `r`n$($o | out-string)"
         }
     }
-    
-    write-host "packing nuget $nuspecorcsproj"
-    $a = @(
-        "$nuspecorcsproj"
-    ) 
+    $a = @()
+    if ($forcedll) {
+        $tmpproj = "$nuspecorcsproj.tmp.csproj" 
+        copy-item $nuspecOrCsproj $tmpproj -Force
+        $c = get-content $tmpproj
+        $c = $c | % { $_ -replace "<OutputType>Exe</OutputType>","<OutputType>Library</OutputType>" } 
+        $c | out-string | out-file $tmpproj -Encoding utf8
+        
+        $a += @(
+            "$tmpproj"
+        )        
+    } else {    
+        $a += @(
+            "$nuspecorcsproj"
+        )     
+    }
     if (!$noprojectreferences) {
         $a += "-IncludeReferencedProjects"
     }
     if ($symbols) {
         $a += "-Symbols"
     }
+    write-host "packing nuget: nuget pack $a"
     $o = nuget pack $a | % { write-indented 4 "$_"; $_ } 
+    if (($tmpproj -ne $null) -and (test-path $tmpproj)) { 
+        remove-item $tmpproj
+     }
     if ($lastexitcode -ne 0) {
         throw "nuget command failed! `r`n$($o | out-string)"
     } else {
