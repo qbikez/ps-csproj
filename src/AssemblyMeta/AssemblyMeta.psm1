@@ -1,6 +1,6 @@
 function Get-AssemblyMetaKey($key, $type = "cs") {
     if ($type -eq "json") {
-        if ($key -ieq "InformationalVersion") {
+        if ($key -ieq "InformationalVersion" -or $key -ieq "AssemblyInformationalVersion") {
             return "version"
         }
         else {
@@ -34,8 +34,8 @@ function Get-AssemblyMetaFile($path = ".") {
         }
         if ($i.psiscontainer) {
             $files = @()
-            if (test-path "$path/project.json") { files += @("$path/project.json")}
-            if (test-path "$path/Properties/AssemblyInfo.cs") { files += @("$path/Properties/AssemblyInfo.cs") }
+            if (test-path "$path/project.json") { $files += @("$path/project.json")}
+            if (test-path "$path/Properties/AssemblyInfo.cs") { $files += @("$path/Properties/AssemblyInfo.cs") }
             if (test-path "$path/AssemblyInfo.cs") { files += @("$path/AssemblyInfo.cs") }            
             if ($files.length -gt 0) { return $files }
         }
@@ -98,17 +98,20 @@ function Get-AssemblyMeta {
 function Set-AssemblyMeta {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param ($key, $value, $assemblyinfo = ".") 
+    
     $key = get-assemblymetakey $key
     $assemblyinfos = @(get-assemblymetafile $assemblyinfo)
-    $assemblyinfo =  $assemblyinfos[0]
     
-    {        
+    # only process the first file, for now
+    for($i = 0; $i -lt 1; $i++) {
+        $assemblyinfo =  $assemblyinfos[$i]
         if ($assemblyinfo.endswith("project.json"))
         {
             $orgkey = $key
             $key = get-assemblymetakey $key -type "json"
             if ($key -eq $null) {
                 write-host "don't know a matching project.json key for '$orgkey'"
+                continue
             }
             $json = get-content $assemblyinfo | out-string | convertfrom-json 
             $json.$key = $value

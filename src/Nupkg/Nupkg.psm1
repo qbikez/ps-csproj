@@ -235,7 +235,7 @@ function invoke-nugetpush {
     }
    
     if ($PSCmdlet.ShouldProcess("pushing package $p")) {
-        $o = nuget push $p | % { write-indented 4 "$_"; $_ } 
+        $o = nuget push $p | % { $_ | write-indented -level 4; $_ } 
         if ($lastexitcode -ne 0) {
             throw "nuget command failed! `r`n$($o | out-string)"
         }
@@ -273,16 +273,23 @@ function invoke-nugetpack {
         if ($stable) {
             $newver = update-buildversion -stable:$stable
         }
-        $a = @()
-        if ($forceDll) {
-            $a += @("-p:OutputType=Library")
+        if ($nuspecorcsproj.endswith("project.json")) {
+            $o = invoke dnu restore
+            $o = invoke dnu build
         }
-        write-host "building project: msbuild $nuspecorcsproj $a "
-        $o = msbuild $nuspecorcsproj $a | % { write-indented 4 "$_"; $_ }
-         if ($lastexitcode -ne 0) {
-           throw "build failed! `r`n$($o | out-string)"
+        else {
+            $a = @()
+            if ($forceDll) {
+                $a += @("-p:OutputType=Library")
+            }
+            write-host "building project: msbuild $nuspecorcsproj $a "
+            $o = msbuild $nuspecorcsproj $a | % { $_ | write-indented -level 4; $_ }
+            if ($lastexitcode -ne 0) {
+            throw "build failed! `r`n$($o | out-string)"
+            }
         }
     }
+    
     if ($nuspecorcsproj.endswith("project.json")) {
         $a = @() 
         $o = invoke dnu pack $a
@@ -316,7 +323,7 @@ function invoke-nugetpack {
             $a += "-Symbols"
         }
         write-host "packing nuget: nuget pack $a"
-        $o = nuget pack $a | % { write-indented 4 "$_"; $_ } 
+        $o = nuget pack $a | % { $_ | write-indented -level 4; $_ } 
         if (($tmpproj -ne $null) -and (test-path $tmpproj)) { 
             remove-item $tmpproj
         }
@@ -359,6 +366,48 @@ function update-nugetmeta {
    Update-AssemblyVersion $version $path
 }
 
+
+
+function get-vcsname($path = ".") {
+    $reporoot = $null
+     $path = (get-item $path).FullName
+        if (!(get-item $path).PsIsContainer) {
+            $dir = split-path -Parent $path
+        }
+        else {
+            $dir = $path
+        }
+        while(![string]::IsNullOrEmpty($dir)) {
+            if ((test-path "$dir/.hg") -or (Test-Path "$dir/.git")) {
+                $reporoot = $dir
+                break;
+            }
+            $dir = split-path -Parent $dir
+        }
+     if ($reporoot -ne $null) {         
+        if (test-path "$reporoot/.hg") { return "hg" }
+        if (test-path "$reporoot/.git") { return "git" }
+     }   
+     
+     return $null
+    
+}
+
+function get-vcsbranch() {
+    $vcs = get-vcsname   
+    if ($vcs -eq "hg") { hg branch }
+    elseif ($vsc -eq "git") { git branch }
+}
+function get-vcsrev() {
+    $vcs = get-vcsname   
+     if ($vcs -eq "hg") {
+        $id = (hg id -i)
+    } 
+    elseif ($vcs -eq "git") {
+        $id = (git rev-parse --short HEAD)
+    }
+}
+
 function Update-BuildVersion {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param(
@@ -385,14 +434,14 @@ function Update-BuildVersion {
         }
         
         $newver = $ver
-        $branch = hg branch
+        $branch = get-vcsbranch
         if ($branch -ne $null) {
             $branchname = $branch 
             if ($branchname.StartsWith("release")) {
                 $branchname = $branchname -replace "/","-" -replace "_","-" -replace "[0-9]","" -replace "-","" -replace "release","rc-"
                 $branchname = $branchname.Trim("-")
             }
-            write-verbose "found hg branch '$branch' => '$branchname'"            
+            write-verbose "found branch '$branch' => '$branchname'"            
             $newver = Update-Version $newver SuffixBranch -value $branchname
         }
         if ($newver -eq "1.0.0.0") {
@@ -424,16 +473,16 @@ function Update-BuildVersion {
         #Write-Verbose "updating version $ver to $newver"
         try {
             write-verbose "getting source control revision id"
-            $id = (hg id -i)
+            $id = get-vscrev
             write-verbose "rev id='$id'"
         } catch {
-            write-warning "failed to execute 'hg id'"
+            write-warning "failed to get vcs rev"
         }
         if ($id -ne $null) {
             $id = $id.substring(0,5)
             $newver = Update-Version $newver SuffixRevision -value $id -nuget -verbose:$verb
         } else {
-            write-warning "'hg id -i' returned null"
+            write-warning "vcs rev returned null"
         }
         
         if ($stable) {

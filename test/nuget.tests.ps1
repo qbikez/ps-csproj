@@ -9,19 +9,22 @@ import-module nupkg -verbose
 
 Describe "Generate nuget for project.json" {
     $targetdir = copy-samples
-    $csproj = "$targetdir/test/src/Core/Core.Vnext/project.json"
+    $targetdir = $targetdir -replace "TestDrive:","$testdrive"
+    $csproj = "$targetdir/test/src/Core/Core.vnext/project.json"
     $dir = split-path -parent $csproj
     $project = split-path -leaf $csproj
-    
-     In $dir {
-            It "Should pack wit build" {
+    #remove-item "$targetdir/test/nuget.config" 
+     In $dir { 
+            It "Should build" {
+                $o = invoke dnu restore
+                $o = invoke dnu build 
+            }    
+            It "Should pack with build" {
                 $nuget = pack-nuget $project -build
                 $nuget | Should Not BeNullOrEmpty
                 test-path $nuget | Should Be $true  
             }
-            It "Should build" {
-                $o = invoke "dnu" "build" 
-            }            
+                   
             It "Should pack without build" {
                 $nuget = pack-nuget $project
                 $nuget | Should Not BeNullOrEmpty
