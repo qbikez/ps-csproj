@@ -440,6 +440,21 @@ function Update-BuildVersion {
         }
         
         $newver = $ver
+        if ($newver -eq $null) {
+            # maybe the version is linked from some other file?
+            # do nothing
+            return $newver
+        }
+        if ($newver -eq "1.0.0.0" -or $newver) {
+            $newver = "1.0.0"
+            $newver = Update-Version $newver Patch -nuget -verbose:$verb
+        }
+        if ($newver.split(".").length -lt 3) {
+            1..(3-$newver.split(".").Length) | % {
+                $newver += ".0"
+            }
+        }
+
         $branch = get-vcsbranch
         if ($branch -ne $null) {
             $branchname = $branch 
@@ -450,10 +465,7 @@ function Update-BuildVersion {
             write-verbose "found branch '$branch' => '$branchname'"            
             $newver = Update-Version $newver SuffixBranch -value $branchname
         }
-        if ($newver -eq "1.0.0.0") {
-            $newver = "1.0.0"
-            $newver = Update-Version $newver Patch -nuget -verbose:$verb
-        }
+       
         if ($newver -match "\.\*") {
             $newver = $newver.trim(".*")
             $splits = $newver.Split(".")
@@ -463,11 +475,7 @@ function Update-BuildVersion {
             }
         }
         
-        if ($newver.split(".").length -lt 3) {
-            1..(3-$newver.split(".").Length) | % {
-                $newver += ".0"
-            }
-        }
+       
         
 
         if ($component -ne $null) {
@@ -501,7 +509,11 @@ function Update-BuildVersion {
             update-nugetmeta -version $newver
         }
         return $newver
-    } finally {
+    } 
+    catch {
+        throw $_
+    }
+    finally {
         popd
     }
     
