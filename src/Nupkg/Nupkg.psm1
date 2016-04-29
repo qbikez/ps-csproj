@@ -1,6 +1,6 @@
 ipmo process
-ipmo assemblymeta
-ipmo semver
+ipmo assemblymeta -Global
+ipmo semver -Global
 
 
 $root = "."
