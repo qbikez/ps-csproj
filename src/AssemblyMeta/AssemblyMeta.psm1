@@ -1,19 +1,29 @@
-function Get-AssemblyMetaKey($key) {
-    if ($key -eq $null) {
-        return "Assembly.*"
-    }
-    $key = "$("$($key[0])".ToUpper()[0])" + $key.Substring(1)
-    
-    if ($key.StartsWith("Assembly")) {
-        return $key
+function Get-AssemblyMetaKey($key, $type = "cs") {
+    if ($type -eq "json") {
+        if ($key -ieq "InformationalVersion") {
+            return "version"
+        }
+        else {
+            return $null
+        }
     }
     else {
-        return "Assembly$key"
+        if ($key -eq $null) {
+            return "Assembly.*"
+        }
+        $key = "$("$($key[0])".ToUpper()[0])" + $key.Substring(1)
+        
+        if ($key.StartsWith("Assembly")) {
+            return $key
+        }
+        else {
+            return "Assembly$key"
+        }
     }
 }
 
 function Get-AssemblyMetaFile($path = ".") {
-    if ($path.EndsWith(".cs")) {
+    if ($path.EndsWith(".cs") -or $path.EndsWith("project.json")) {
         return $path
     }
     if (test-path $path) {
@@ -23,8 +33,11 @@ function Get-AssemblyMetaFile($path = ".") {
             $i = get-item $path
         }
         if ($i.psiscontainer) {
-            if (test-path "$path/Properties/AssemblyInfo.cs") { return "$path/Properties/AssemblyInfo.cs" }
-            if (test-path "$path/AssemblyInfo.cs") { return "$path/AssemblyInfo.cs" }
+            $files = @()
+            if (test-path "$path/project.json") { files += @("$path/project.json")}
+            if (test-path "$path/Properties/AssemblyInfo.cs") { files += @("$path/Properties/AssemblyInfo.cs") }
+            if (test-path "$path/AssemblyInfo.cs") { files += @("$path/AssemblyInfo.cs") }            
+            if ($files.length -gt 0) { return $files }
         }
         
         throw "AssemblyInfo not found in '$($i.fullname)'"    
@@ -39,51 +52,91 @@ function Get-AssemblyMetaFile($path = ".") {
 function Get-AssemblyMeta {
     [CmdletBinding()]
     param ($key, $assemblyinfo = ".")
+    
+    $assemblyinfos = get-assemblymetafile $assemblyinfo
     if ($key -eq $null) { $table = $true }
-    $key = get-assemblymetakey $key
-    $assemblyinfo = get-assemblymetafile $assemblyinfo
-    $content = get-content $assemblyinfo   
-    $r = $content | % {
-        $regex = "\[assembly: (?<key>$($key))\(""(?<value>.*)""\)\]"
-        if ($_ -match $regex -and !($_.trim().startswith("//"))) {
-            if ($table) {
-                return new-object -type pscustomobject -property @{
-                    key = $matches["key"]; value = $matches["value"]
-                }
+    
+    $value = $null
+    
+    foreach($assemblyinfo in $assemblyinfos) {
+        
+        if ($assemblyinfo.endswith("project.json")) 
+        {
+            $key = get-assemblymetakey $key -type "json"
+            if ($key -eq $null) {
+                continue
             }
-            else {
-                return $matches["value"]
-            }            
-        }          
+            $json = get-content $assemblyinfo | out-string | convertfrom-json 
+            return $json.$key     
+        }
+        else {
+            $key = get-assemblymetakey $key    
+
+            $content = get-content $assemblyinfo   
+            $value = $content | % {
+                $regex = "\[assembly: (?<key>$($key))\(""(?<value>.*)""\)\]"
+                if ($_ -match $regex -and !($_.trim().startswith("//"))) {
+                    if ($table) {
+                        return new-object -type pscustomobject -property @{
+                            key = $matches["key"]; value = $matches["value"]
+                        }
+                    }
+                    else {
+                        return $matches["value"]
+                    }            
+                }          
+            }           
+        }
+        if ($value -ne $null) {
+            break
+        }
     }
     
-    return $r
+    return $value
 }
 
 function Set-AssemblyMeta {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param ($key, $value, $assemblyinfo = ".") 
     $key = get-assemblymetakey $key
-    $assemblyinfo = get-assemblymetafile $assemblyinfo
-    # [assembly: AssemblyCompany("")]
-    $content = get-content $assemblyinfo   
+    $assemblyinfos = @(get-assemblymetafile $assemblyinfo)
+    $assemblyinfo =  $assemblyinfos[0]
     
-    $found = $false
-    $content = $content | % {
-        $regex = "\[assembly: ($($key))\(""(.*)""\)\]"
-        $newval = $_
-        if ($_ -match $regex) {            
-            $newval = $newval -replace $regex,"[assembly: `${1}(""$($value)"")]"
-            $found = $true
-            write-verbose "replacing: $_ => $newval"
-        } 
-        $newval
-    } 
-    if (!$found) {
-        $content += "[assembly: $key(""$($value)"")]"
-    }
-    if ($PSCmdlet.ShouldProcess("save output file '$assemblyinfo'")) {
-        $content | out-file $assemblyinfo -Encoding utf8
+    {        
+        if ($assemblyinfo.endswith("project.json"))
+        {
+            $orgkey = $key
+            $key = get-assemblymetakey $key -type "json"
+            if ($key -eq $null) {
+                write-host "don't know a matching project.json key for '$orgkey'"
+            }
+            $json = get-content $assemblyinfo | out-string | convertfrom-json 
+            $json.$key = $value
+            
+            $json | convertto-json | out-file $assemblyinfo -encoding utf8    
+        }
+        else {
+            # [assembly: AssemblyCompany("")]
+            $content = get-content $assemblyinfo   
+            
+            $found = $false
+            $content = $content | % {
+                $regex = "\[assembly: ($($key))\(""(.*)""\)\]"
+                $newval = $_
+                if ($_ -match $regex) {            
+                    $newval = $newval -replace $regex,"[assembly: `${1}(""$($value)"")]"
+                    $found = $true
+                    write-verbose "replacing: $_ => $newval"
+                } 
+                $newval
+            } 
+            if (!$found) {
+                $content += "[assembly: $key(""$($value)"")]"
+            }
+            if ($PSCmdlet.ShouldProcess("save output file '$assemblyinfo'")) {
+                $content | out-file $assemblyinfo -Encoding utf8
+            }
+        }
     }
 }
 

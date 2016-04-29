@@ -26,13 +26,20 @@ function write-indented ([Parameter(ValueFromPipeline=$true, Position=1)]$msg, [
     }
 }
 
-
-function invoke(
-    [parameter(Mandatory=$true)]$command,  
-    [parameter(ValueFromRemainingArguments=$true)][string[]]$arguments, 
+function invoke {
+[CmdletBinding(DefaultParameterSetName="set1")]
+param(
+    [parameter(Mandatory=$true,ParameterSetName="set1", Position=1)]
+    [parameter(Mandatory=$true,ParameterSetName="in",Position=1)]
+    $command,      
+    [parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
+    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="in")]
+    [string[]]$arguments, 
     [switch][bool]$nothrow, 
     [switch][bool]$showoutput,
-    $in) {
+    [Parameter(ParameterSetName="in")]
+    $in
+    ) 
     if ($showoutput) {
         $o = $in | & $command $arguments 2>&1| write-indented -level 2
     } else {

@@ -7,6 +7,34 @@ import-module nupkg -verbose
 
 
 
+Describe "Generate nuget for project.json" {
+    $targetdir = copy-samples
+    $csproj = "$targetdir/test/src/Core/Core.Vnext/project.json"
+    $dir = split-path -parent $csproj
+    $project = split-path -leaf $csproj
+    
+     In $dir {
+            It "Should pack wit build" {
+                $nuget = pack-nuget $project -build
+                $nuget | Should Not BeNullOrEmpty
+                test-path $nuget | Should Be $true  
+            }
+            It "Should build" {
+                $o = invoke "dnu" "build" 
+            }            
+            It "Should pack without build" {
+                $nuget = pack-nuget $project
+                $nuget | Should Not BeNullOrEmpty
+                test-path $nuget | Should Be $true  
+                #$ver = Get-AssemblyMeta "AssemblyInformationalVersion"
+                #$pkgver = get-packageversion $nuget
+                #$pkgver | Should Be $ver
+            }
+          
+        }
+}
+
+
 Describe "Nuget Version manipulation" {
     $cases = @(
         @{ version = "1.0.1"; expected = "1.0.1-build001" }

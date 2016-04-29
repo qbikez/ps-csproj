@@ -252,11 +252,11 @@ function invoke-nugetpack {
     [switch][bool] $ForceDll) 
     
     if ($nuspecorcsproj -eq $null) {
-        $csprojs = @(gci . -filter "*.csproj")
+        $csprojs = @(gci . -filter "*.csproj") +  @(gci . -filter "project.json")  
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
         } else {
-            throw "found multiple csproj files. please choose one."
+            throw "found multiple csproj/project.json files. please choose one."
         }
     }
     if ($nuspecorcsproj -eq $null) {
@@ -283,42 +283,53 @@ function invoke-nugetpack {
            throw "build failed! `r`n$($o | out-string)"
         }
     }
-    $a = @()
-    if ($forcedll) {
-        $tmpproj = "$nuspecorcsproj.tmp.csproj" 
-        copy-item $nuspecOrCsproj $tmpproj -Force
-        $c = get-content $tmpproj
-        $c = $c | % { $_ -replace "<OutputType>Exe</OutputType>","<OutputType>Library</OutputType>" } 
-        $c | out-string | out-file $tmpproj -Encoding utf8
-        
-        $a += @(
-            "$tmpproj"
-        )        
-    } else {    
-        $a += @(
-            "$nuspecorcsproj"
-        )     
-    }
-    if (!$noprojectreferences) {
-        $a += "-IncludeReferencedProjects"
-    }
-    if ($symbols) {
-        $a += "-Symbols"
-    }
-    write-host "packing nuget: nuget pack $a"
-    $o = nuget pack $a | % { write-indented 4 "$_"; $_ } 
-    if (($tmpproj -ne $null) -and (test-path $tmpproj)) { 
-        remove-item $tmpproj
-     }
-    if ($lastexitcode -ne 0) {
-        throw "nuget command failed! `r`n$($o | out-string)"
-    } else {
+    if ($nuspecorcsproj.endswith("project.json")) {
+        $a = @() 
+        $o = invoke dnu pack $a
         $success = $o | % {
-            if ($_ -match "Successfully created package '(.*)'") {
-                return $matches[1]
-            }
+                if ($_ -match "(?<project>.*) -> (?<nupkg>.*\.nupkg)") {
+                    return $matches["nupkg"]
+                }
         }
         return $success
+    }
+    else {
+        if ($forcedll) {
+            $tmpproj = "$nuspecorcsproj.tmp.csproj" 
+            copy-item $nuspecOrCsproj $tmpproj -Force
+            $c = get-content $tmpproj
+            $c = $c | % { $_ -replace "<OutputType>Exe</OutputType>","<OutputType>Library</OutputType>" } 
+            $c | out-string | out-file $tmpproj -Encoding utf8
+            
+            $a += @(
+                "$tmpproj"
+            )        
+        } else {    
+            $a += @(
+                "$nuspecorcsproj"
+            )     
+        }
+        if (!$noprojectreferences) {
+            $a += "-IncludeReferencedProjects"
+        }
+        if ($symbols) {
+            $a += "-Symbols"
+        }
+        write-host "packing nuget: nuget pack $a"
+        $o = nuget pack $a | % { write-indented 4 "$_"; $_ } 
+        if (($tmpproj -ne $null) -and (test-path $tmpproj)) { 
+            remove-item $tmpproj
+        }
+        if ($lastexitcode -ne 0) {
+            throw "nuget command failed! `r`n$($o | out-string)"
+        } else {
+            $success = $o | % {
+                if ($_ -match "Successfully created package '(.*)'") {
+                    return $matches[1]
+                }
+            }
+            return $success
+        }
     }
     
 }
