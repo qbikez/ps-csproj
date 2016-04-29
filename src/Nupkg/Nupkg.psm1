@@ -210,6 +210,19 @@ function invoke-nugetpush {
     } else {
         $nupkg = $file
     }
+    #in case multiple nupkgs are created
+    $nupkg = @($nupkg) | select -last 1
+    if ($symbols) {
+        $symbolpkg = $nupkg
+        $nosymbolspkg = $nupkg -replace "\.symbols\.","."
+        if (test-path $nosymbolspkg) {
+            write-verbose "copying '$nosymbolspkg' to '$($nupkg -replace "\.symbols\.",".nosymbols.")'"
+            copy-item $nosymbolspkg "$($nupkg -replace "\.symbols\.",".nosymbols.")" 
+        }
+        write-host "push Symbols package: replacing $nosymbolspkg with $symbolpkg"
+        copy-item $symbolpkg $nosymbolspkg -Force
+        $nupkg = $nosymbolspkg
+    }
     Write-Host "pushing package $nupkg to $source"
     $p = @(
         $nupkg
