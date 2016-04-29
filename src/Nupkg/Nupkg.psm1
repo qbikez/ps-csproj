@@ -395,10 +395,14 @@ function get-vcsname($path = ".") {
 
 function get-vcsbranch() {
     $vcs = get-vcsname   
-    if ($vcs -eq "hg") { hg branch }
-    elseif ($vsc -eq "git") { git branch }
+    $branch = $null
+    if ($vcs -eq "hg") { $branch = hg branch }
+    elseif ($vcs -eq "git") { $branch = git rev-parse --abbrev-ref HEAD }
+    
+    return $branch
 }
 function get-vcsrev() {
+    $id = $null
     $vcs = get-vcsname   
      if ($vcs -eq "hg") {
         $id = (hg id -i)
@@ -406,6 +410,8 @@ function get-vcsrev() {
     elseif ($vcs -eq "git") {
         $id = (git rev-parse --short HEAD)
     }
+    
+    return $id
 }
 
 function Update-BuildVersion {
