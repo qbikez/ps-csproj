@@ -123,7 +123,14 @@ function Update-Version {
     $suffix = $semver.Suffix    
     
     $lastNumIdx = $component
-    if ($component -lt [VersionComponent]::Suffix) {
+    if ($component -lt [VersionComponent]::Suffix) {      
+        while ($lastNumIdx -gt ($semver.vernums.length-1)) {
+            write-verbose "$lastNumIdx > version length ($($semver.vernums.length-1)) => adding .0"
+            $semver.vernums += @(0)
+        }
+
+        
+          
         $lastNum = $semver.vernums[$lastNumIdx]
         
         if ($value -ne $null) {
