@@ -479,7 +479,7 @@ function Update-BuildVersion {
         #Write-Verbose "updating version $ver to $newver"
         try {
             write-verbose "getting source control revision id"
-            $id = get-vscrev
+            $id = get-vcsrev
             write-verbose "rev id='$id'"
         } catch {
             write-warning "failed to get vcs rev"
