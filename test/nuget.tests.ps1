@@ -7,50 +7,23 @@ import-module nupkg -verbose
 
 
 
-Describe "Generate nuget for project.json" {
-    $targetdir = copy-samples
-    $targetdir = $targetdir -replace "TestDrive:","$testdrive"
-    $csproj = "$targetdir/test/src/Core/Core.vnext/project.json"
-    $dir = split-path -parent $csproj
-    $project = split-path -leaf $csproj
-    #remove-item "$targetdir/test/nuget.config" 
-     In $dir { 
-            It "Should build" {
-                $o = invoke dnu restore
-                $o = invoke dnu build 
-            }    
-            It "Should pack with build" {
-                $nuget = pack-nuget $project -build
-                $nuget | Should Not BeNullOrEmpty
-                test-path $nuget | Should Be $true  
-            }
-                   
-            It "Should pack without build" {
-                $nuget = pack-nuget $project
-                $nuget | Should Not BeNullOrEmpty
-                test-path $nuget | Should Be $true  
-                #$ver = Get-AssemblyMeta "AssemblyInformationalVersion"
-                #$pkgver = get-packageversion $nuget
-                #$pkgver | Should Be $ver
-            }
-          
-        }
-}
-
 
 Describe "Nuget Version manipulation" {
     $cases = @(
+    
+        @{ version = "1.2.*"; expected = "1.3.0-build001" }
+        @{ version = "1.2.3.*"; expected = "1.2.4-build001" }    
         @{ version = "1.0.1"; expected = "1.0.1-build001" }
         @{ version = "1.0.0.0"; expected = "1.0.1-build001" }
         @{ version = "1.0.0.*"; expected = "1.0.1-build001" }
-        @{ version = "1.2.3.*"; expected = "1.2.4-build001" }
-        @{ version = "1.2.*"; expected = "1.3.0-build001" }
+        
+        
         @{ version = "1.*"; expected = "2.0.0-build001" }
     )
     
     It "incrementing part <component> of '<version>' should yield '<expected>'" -testcases $cases {
         param($version, $component, $value, $expected) 
-        $r = update-buildversion -version $version
+        $r = update-buildversion -version $version 
         $r | Should Be $expected 
     }
     
@@ -115,4 +88,36 @@ Describe "Generate nuget for csproj" {
             
         }
     }
+}
+
+
+
+Describe "Generate nuget for project.json" {
+    $targetdir = copy-samples
+    $targetdir = $targetdir -replace "TestDrive:","$testdrive"
+    $csproj = "$targetdir/test/src/Core/Core.vnext/project.json"
+    $dir = split-path -parent $csproj
+    $project = split-path -leaf $csproj
+    #remove-item "$targetdir/test/nuget.config" 
+     In $dir { 
+            It "Should build" {
+                $o = invoke dnu restore
+                $o = invoke dnu build 
+            }    
+            It "Should pack with build" {
+                $nuget = pack-nuget $project -build
+                $nuget | Should Not BeNullOrEmpty
+                test-path $nuget | Should Be $true  
+            }
+                   
+            It "Should pack without build" {
+                $nuget = pack-nuget $project
+                $nuget | Should Not BeNullOrEmpty
+                test-path $nuget | Should Be $true  
+                #$ver = Get-AssemblyMeta "AssemblyInformationalVersion"
+                #$pkgver = get-packageversion $nuget
+                #$pkgver | Should Be $ver
+            }
+          
+        }
 }

@@ -445,10 +445,20 @@ function Update-BuildVersion {
             # do nothing
             return $newver
         }
-        if ($newver -eq "1.0.0.0" -or $newver) {
+        if ($newver -eq "1.0.0.0") {
             $newver = "1.0.0"
             $newver = Update-Version $newver Patch -nuget -verbose:$verb
         }
+
+        if ($newver -match "\.\*") {
+            $newver = $newver.trim(".*")
+            $splits = $newver.Split(".")
+            $c= $splits.Length - 1
+            if ($component -eq $null -or $component -gt $c) {
+                $newver = Update-Version $newver $c -nuget -verbose:$verb    
+            }
+        }        
+
         if ($newver.split(".").length -lt 3) {
             1..(3-$newver.split(".").Length) | % {
                 $newver += ".0"
@@ -466,15 +476,7 @@ function Update-BuildVersion {
             $newver = Update-Version $newver SuffixBranch -value $branchname
         }
        
-        if ($newver -match "\.\*") {
-            $newver = $newver.trim(".*")
-            $splits = $newver.Split(".")
-            $c= $splits.Length - 1
-            if ($component -eq $null -or $component -gt $c) {
-                $newver = Update-Version $newver $c -nuget -verbose:$verb    
-            }
-        }
-        
+       
        
         
 
