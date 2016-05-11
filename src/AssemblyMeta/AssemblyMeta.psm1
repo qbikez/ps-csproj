@@ -62,11 +62,17 @@ function Get-AssemblyMeta {
         
         if ($assemblyinfo.endswith("project.json")) 
         {
+            
             $key = get-assemblymetakey $key -type "json"
             if ($key -eq $null) {
                 continue
             }
-            $json = get-content $assemblyinfo | out-string | convertfrom-json 
+            try {
+            $json = get-content $assemblyinfo | out-string | convertfrom-json
+            } catch {
+                write-error "failed to parse json from file '$assemblyinfo'"
+                throw $_
+            } 
             return $json.$key     
         }
         else {
@@ -144,20 +150,9 @@ function Set-AssemblyMeta {
 }
 
 function Update-AssemblyVersion($version, $path = ".") {
+    $ver = $version
     
     $v = get-assemblymeta "Version" $path
-    if (![string]::isnullorempty($v) -and $suffix -ne $null) {
-        if ($version -eq $null) { $version = $v }
-        $version = "$version-$suffix"
-    } else {
-        write-verbose "found Version: $v"
-    }
-   
-    
-    $defaultVersion = "1.0.0"
-    $ver = $version
-    if ([string]::isnullorempty($v)) { $ver = $defaultVersion } 
-    
     if ([string]::isnullorempty($v) -or $v -eq "1.0.0.0" -or $version -ne $null) {
         set-assemblymeta "Version" ((split-packageversion $ver)["version"]) $path
     }
