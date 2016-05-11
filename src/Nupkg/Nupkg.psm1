@@ -196,7 +196,8 @@ function invoke-nugetpush {
     [switch][bool]$Symbols,
     [switch][bool] $Build,
     [switch][bool] $ForceDll,
-    [switch][bool] $Stable) 
+    [switch][bool] $Stable,
+    $buildProperties = @{}) 
     
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
@@ -206,7 +207,7 @@ function invoke-nugetpush {
     }
     
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties $buildProperties
     } else {
         $nupkg = $file
     }
@@ -249,7 +250,8 @@ function invoke-nugetpack {
     [switch][bool] $Symbols,
     [switch][bool] $NoProjectReferences,
     [switch][bool] $Stable,
-    [switch][bool] $ForceDll) 
+    [switch][bool] $ForceDll,
+    $buildProperties = @{}) 
     
     if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.csproj") +  @(gci . -filter "project.json")  
@@ -282,6 +284,9 @@ function invoke-nugetpack {
             if ($forceDll) {
                 $a += @("-p:OutputType=Library")
             }
+            if ($buildProperties -ne $null) {
+                $buildProperties.GetEnumerator() | % { $a += @("-p:$($_.Key)=$($_.Value)") }
+            }
             write-host "building project: msbuild $nuspecorcsproj $a "
             $o = msbuild $nuspecorcsproj $a | % { $_ | write-indented -level 4; $_ }
             if ($lastexitcode -ne 0) {
@@ -301,6 +306,7 @@ function invoke-nugetpack {
         return $success
     }
     else {
+        $a = @() 
         if ($forcedll) {
             $tmpproj = "$nuspecorcsproj.tmp.csproj" 
             copy-item $nuspecOrCsproj $tmpproj -Force
@@ -322,7 +328,15 @@ function invoke-nugetpack {
         if ($symbols) {
             $a += "-Symbols"
         }
+        
+        if ($buildProperties -ne $null) {
+                $properties = ""
+                $buildProperties.GetEnumerator() | % { $properties += "$($_.Key)=$($_.Value);" }
+                $a += @("-Properties","$properties")
+            }
+        
         write-host "packing nuget: nuget pack $a"
+        
         $o = nuget pack $a | % { $_ | write-indented -level 4; $_ } 
         if (($tmpproj -ne $null) -and (test-path $tmpproj)) { 
             remove-item $tmpproj
