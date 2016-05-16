@@ -68,7 +68,8 @@ function Get-AssemblyMeta {
                 continue
             }
             try {
-            $json = get-content $assemblyinfo | out-string | convertfrom-json
+                import-module newtonsoft.json
+            $json = get-content $assemblyinfo | out-string | convertfrom-jsonnewtonsoft
             } catch {
                 write-error "failed to parse json from file '$assemblyinfo'"
                 throw $_
@@ -119,10 +120,13 @@ function Set-AssemblyMeta {
                 write-host "don't know a matching project.json key for '$orgkey'"
                 continue
             }
-            $json = get-content $assemblyinfo | out-string | convertfrom-json 
+            import-module newtonsoft.json
+            $json = get-content $assemblyinfo | out-string | convertfrom-jsonnewtonsoft 
             $json.$key = $value
-            
-            $json | convertto-json | out-file $assemblyinfo -encoding utf8    
+
+            ipmo publishmap
+            #$json = convertto-hashtable $json -recurse
+            $json | convertto-jsonnewtonsoft | out-file $assemblyinfo -encoding utf8    
         }
         else {
             # [assembly: AssemblyCompany("")]

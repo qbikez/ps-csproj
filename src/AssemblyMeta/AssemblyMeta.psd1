@@ -63,7 +63,7 @@ Description = 'manipulating .cs AssemblyMeta'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-# NestedModules = @()
+ NestedModules = @("Newtonsoft.json")
 
 # Functions to export from this module
 FunctionsToExport = '*'
