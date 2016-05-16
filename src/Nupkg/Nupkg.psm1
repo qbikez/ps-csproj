@@ -332,7 +332,9 @@ function invoke-nugetpack {
         if ($buildProperties -ne $null) {
                 $properties = ""
                 $buildProperties.GetEnumerator() | % { $properties += "$($_.Key)=$($_.Value);" }
-                $a += @("-Properties","$properties")
+                if (![string]::IsNullOrEmpty($properties)) {
+                    $a += @("-Properties","$properties")
+                }
             }
         
         write-host "packing nuget: nuget pack $a"
