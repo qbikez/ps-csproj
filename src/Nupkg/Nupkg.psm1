@@ -190,9 +190,10 @@ function Get-AvailableNugets ($source) {
 
 function invoke-nugetpush {
     [CmdletBinding(SupportsShouldProcess=$true)]
-    param($file = $null, 
-    [Parameter(Mandatory=$false)]$source,
-    [Parameter(Mandatory=$false)]$apikey,
+    param(
+    [Parameter(ValueFromPipeline=$true,Position=0)] $file = $null, 
+    [Parameter(Mandatory=$false)] $source,
+    [Parameter(Mandatory=$false)] $apikey,
     [switch][bool]$Symbols,
     [switch][bool] $Build,
     [switch][bool] $ForceDll,
@@ -245,14 +246,16 @@ function invoke-nugetpush {
 
 function invoke-nugetpack {
     [CmdletBinding()]
-    param($nuspecOrCsproj = $null,
+    param(
+    [Parameter(ValueFromPipeline=$true,Position=0)]
+    $nuspecOrCsproj = $null,
     [switch][bool] $Build,
     [switch][bool] $Symbols,
     [switch][bool] $NoProjectReferences,
     [switch][bool] $Stable,
     [switch][bool] $ForceDll,
     $buildProperties = @{}) 
-    
+process {    
     if ($nuspecorcsproj -eq $null) {
         $csprojs = @(gci . -filter "*.csproj") +  @(gci . -filter "project.json")  
         if ($csprojs.length -eq 1) {
@@ -269,92 +272,102 @@ function invoke-nugetpack {
             throw "found multiple nuspec files. please choose one."
         }
     }
-    
-    if ($Build) {
-        $newver = update-buildversion (split-path -Parent $nuspecorcsproj)
-        if ($stable) {
-            $newver = update-buildversion -stable:$stable
-        }
-        if ($nuspecorcsproj.endswith("project.json")) {
-            $o = invoke dnu restore
-            $o = invoke dnu build
-        }
-        else {
-            $a = @()
-            if ($forceDll) {
-                $a += @("-p:OutputType=Library")
+    $dir = split-path -parent $nuspecorcsproj
+    write-verbose "packing nuget for $(split-path -leaf $nuspecorcsproj) in $dir"
+    pushd 
+    try {
+        cd $dir
+        if ($Build) {
+            $newver = update-buildversion 
+            if ($stable) {
+                $newver = update-buildversion -stable:$stable
             }
-            if ($buildProperties -ne $null) {
-                $buildProperties.GetEnumerator() | % { $a += @("-p:$($_.Key)=$($_.Value)") }
-            }
-            write-host "building project: msbuild $nuspecorcsproj $a "
-            $o = msbuild $nuspecorcsproj $a | % { $_ | write-indented -level 4; $_ }
-            if ($lastexitcode -ne 0) {
-            throw "build failed! `r`n$($o | out-string)"
-            }
-        }
-    }
-    
-    if ($nuspecorcsproj.endswith("project.json")) {
-        $a = @() 
-        $o = invoke dnu pack $a
-        $success = $o | % {
-                if ($_ -match "(?<project>.*) -> (?<nupkg>.*\.nupkg)") {
-                    return $matches["nupkg"]
-                }
-        }
-        return $success
-    }
-    else {
-        $a = @() 
-        if ($forcedll) {
-            $tmpproj = "$nuspecorcsproj.tmp.csproj" 
-            copy-item $nuspecOrCsproj $tmpproj -Force
-            $c = get-content $tmpproj
-            $c = $c | % { $_ -replace "<OutputType>Exe</OutputType>","<OutputType>Library</OutputType>" } 
-            $c | out-string | out-file $tmpproj -Encoding utf8
+            if ($nuspecorcsproj.endswith("project.json")) {
             
-            $a += @(
-                "$tmpproj"
-            )        
-        } else {    
-            $a += @(
-                "$nuspecorcsproj"
-            )     
-        }
-        if (!$noprojectreferences) {
-            $a += "-IncludeReferencedProjects"
-        }
-        if ($symbols) {
-            $a += "-Symbols"
-        }
-        
-        if ($buildProperties -ne $null) {
-                $properties = ""
-                $buildProperties.GetEnumerator() | % { $properties += "$($_.Key)=$($_.Value);" }
-                if (![string]::IsNullOrEmpty($properties)) {
-                    $a += @("-Properties","$properties")
+                
+                    $o = invoke dnu restore
+                    $o = invoke dnu build
+            
+            }
+            else {
+                $a = @()
+                if ($forceDll) {
+                    $a += @("-p:OutputType=Library")
+                }
+                if ($buildProperties -ne $null) {
+                    $buildProperties.GetEnumerator() | % { $a += @("-p:$($_.Key)=$($_.Value)") }
+                }
+                write-host "building project: msbuild $nuspecorcsproj $a "
+                $o = msbuild $nuspecorcsproj $a | % { $_ | write-indented -level 4; $_ }
+                if ($lastexitcode -ne 0) {
+                throw "build failed! `r`n$($o | out-string)"
                 }
             }
-        
-        write-host "packing nuget: nuget pack $a"
-        
-        $o = nuget pack $a | % { $_ | write-indented -level 4; $_ } 
-        if (($tmpproj -ne $null) -and (test-path $tmpproj)) { 
-            remove-item $tmpproj
         }
-        if ($lastexitcode -ne 0) {
-            throw "nuget command failed! `r`n$($o | out-string)"
-        } else {
+    
+        if ($nuspecorcsproj.endswith("project.json")) {
+            $a = @() 
+            $o = invoke dnu pack $a
             $success = $o | % {
-                if ($_ -match "Successfully created package '(.*)'") {
-                    return $matches[1]
-                }
+                    if ($_ -match "(?<project>.*) -> (?<nupkg>.*\.nupkg)") {
+                        return $matches["nupkg"]
+                    }
             }
             return $success
         }
+        else {
+            $a = @() 
+            if ($forcedll) {
+                $tmpproj = "$nuspecorcsproj.tmp.csproj" 
+                copy-item $nuspecOrCsproj $tmpproj -Force
+                $c = get-content $tmpproj
+                $c = $c | % { $_ -replace "<OutputType>Exe</OutputType>","<OutputType>Library</OutputType>" } 
+                $c | out-string | out-file $tmpproj -Encoding utf8
+                
+                $a += @(
+                    "$tmpproj"
+                )        
+            } else {    
+                $a += @(
+                    "$nuspecorcsproj"
+                )     
+            }
+            if (!$noprojectreferences) {
+                $a += "-IncludeReferencedProjects"
+            }
+            if ($symbols) {
+                $a += "-Symbols"
+            }
+            
+            if ($buildProperties -ne $null) {
+                    $properties = ""
+                    $buildProperties.GetEnumerator() | % { $properties += "$($_.Key)=$($_.Value);" }
+                    if (![string]::IsNullOrEmpty($properties)) {
+                        $a += @("-Properties","$properties")
+                    }
+                }
+            
+            write-host "packing nuget: nuget pack $a"
+            
+            $o = nuget pack $a | % { $_ | write-indented -level 4; $_ } 
+            if (($tmpproj -ne $null) -and (test-path $tmpproj)) { 
+                remove-item $tmpproj
+            }
+            if ($lastexitcode -ne 0) {
+                throw "nuget command failed! `r`n$($o | out-string)"
+            } else {
+                $success = $o | % {
+                    if ($_ -match "Successfully created package '(.*)'") {
+                        return $matches[1]
+                    }
+                }
+                return $success
+            }
+        }
+    } finally {
+        popd
     }
-    
+}
 }
 
 
