@@ -447,17 +447,26 @@ function get-vcsrev() {
 function Update-BuildVersion {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param(
+        [Parameter(ValueFromPipeline=$true, Position = 0)]
         $path = ".",
+        [Parameter(Position = 1)]
         $version = $null,
         [VersionComponent]$component = [VersionComponent]::SuffixBuild,
         [switch][bool] $stable
         
     ) 
+process {
     $verb = $psBoundParameters["Verbose"]
     write-verbose "verbosity switch: $verb"
     pushd
     try {
-        if ($path -ne $null) { cd $path }
+        if ($path -ne $null) {
+            $i = gi $path
+            if (!$i.PsIsContainer) {
+                $path = split-path -parent $path
+            } 
+            cd $path 
+        }
         if ($version -eq $null) {
             
         }
@@ -548,7 +557,7 @@ function Update-BuildVersion {
     finally {
         popd
     }
-    
+}
 }
 
 new-alias generate-nugetmeta update-nugetmeta
