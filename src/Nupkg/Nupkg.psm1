@@ -199,14 +199,13 @@ function invoke-nugetpush {
     [switch][bool] $ForceDll,
     [switch][bool] $Stable,
     $buildProperties = @{}) 
-    
+process {
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
         if ($files.length -gt 0){
             $file = $files[0].name
         }
     }
-    
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
         $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties $buildProperties
     } else {
@@ -243,6 +242,7 @@ function invoke-nugetpush {
         }
     }
 }
+}
 
 function invoke-nugetpack {
     [CmdletBinding()]
@@ -273,6 +273,7 @@ process {
         }
     }
     $dir = split-path -parent $nuspecorcsproj
+    $nuspecorcsproj = split-path -Leaf $nuspecorcsproj
     write-verbose "packing nuget for $(split-path -leaf $nuspecorcsproj) in $dir"
     pushd 
     try {
