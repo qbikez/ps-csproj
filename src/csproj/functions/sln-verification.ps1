@@ -119,22 +119,6 @@ function test-slndependencies {
     return $valid,$missing
 }
 
-function  find-packagesdir ($path) {
-    if (!(get-item $path).PsIsContainer) {
-            $dir = split-path -Parent $path
-        }
-        else {
-            $dir = $path
-        }
-        while(![string]::IsNullOrEmpty($dir)) {
-            if ((test-path "$dir/packages") -or (Test-Path "$dir/packages")) {
-                $reporoot = $dir
-                break;
-            }
-            $dir = split-path -Parent $dir
-        }
-        return "$reporoot/packages"
-}
 
 function find-reporoot($path = ".") {
         $path = (get-item $path).FullName
