@@ -11,7 +11,7 @@ if (![string]::IsNullOrEmpty($PSScriptRoot)) {
 #    $root = $MyInvocation.MyCommand.Definition
 #}
 $helpersPath = $root
-@("choco-utils.ps1", "internal.ps1") |
+@("choco-utils.ps1", "internal.ps1", "nuget-helpers.ps1") |
     % { 
         $p = get-item "$root/functions/$_"
         . $p.fullname
@@ -240,6 +240,7 @@ process {
         if ($lastexitcode -ne 0) {
             throw "nuget command failed! `r`n$($o | out-string)"
         }
+        return $nupkg
     }
 }
 }
@@ -261,7 +262,7 @@ process {
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
         } else {
-            throw "found multiple csproj/project.json files. please choose one."
+            throw "found multiple csproj/project.json files in '$((gi .).FullName)'. please choose one."
         }
     }
     if ($nuspecorcsproj -eq $null) {
@@ -269,7 +270,7 @@ process {
         if ($csprojs.length -eq 1) {
             $nuspecorcsproj = $csprojs[0].Name
         } else {
-            throw "found multiple nuspec files. please choose one."
+            throw "found multiple nuspec files in '$((gi .).FullName)'. please choose one."
         }
     }
     $dir = split-path -parent $nuspecorcsproj

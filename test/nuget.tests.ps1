@@ -5,7 +5,19 @@ import-module csproj
 import-module semver
 import-module nupkg -verbose
 
-
+Describe "find Nuget packages dir" {
+    $targetdir = copy-samples
+    $targetdir = $targetdir -replace "TestDrive:","$testdrive"
+    $csproj = "$targetdir/test/src/Core/Core.vnext/project.json"
+    $dir = split-path -parent $csproj
+    
+    #remove-item "$targetdir/test/nuget.config" 
+    In $dir {
+            $p = find-packagesdir
+            $p | Should not BeNullOrEmpty
+            $p | should be "$targetdir\test\packages" 
+    }
+}
 
 
 Describe "Nuget Version manipulation" {
