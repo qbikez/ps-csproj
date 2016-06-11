@@ -51,14 +51,19 @@ param(
     if ([string]::IsNullOrEmpty($machine)) {
         throw "Machine property is not set!"
     }      
+
+    $addtionalProps = @{ }   
+
     if ($machine -ne $null) {                
         $machine = $machine 
-        if (!$isVnext) { $machine = "https://$machine/msdeploy.axd" }
-                
-    }
-
-          
-    $addtionalProps = @{ }   
+        if ($machine -match "azurewebsites.net") {
+            $addtionalProps["_DestinationType"] = "AzureWebSites"
+            $addtionalProps["PublishProvider"] = "AzureWebSite"
+        } else {       
+            if (!$isVnext) { $machine = "https://$machine/msdeploy.axd" }
+        }
+    }          
+    
     $addtionalProps["subdir"] = ""    
     $addtionalProps["Recycle"] = "True"
     $customParams.GetEnumerator() | % {    

@@ -8,20 +8,21 @@ if (![string]::IsNullOrEmpty($PSScriptRoot)) {
 $helpersPath = $root
 
 # grab functions from files
-Resolve-Path $helpersPath\functions\*.ps1 | 
-    ? { -not ($_.ProviderPath.Contains(".Tests.")) } |
-    % { . $_.ProviderPath }
+get-childitem "$helpersPath\functions" -filter "*.ps1" | 
+    ? { -not ($_.Name.Contains(".Tests.")) } |
+    % { . $_.FullName }
 
 
 
 #Export-ModuleMember -Function *
 Export-ModuleMember -function `
     Import-Sln, Get-Slnprojects, Remove-SlnProject, Update-SlnProject, `
-    Find-Nugetpath, find-reporoot, Get-NugetToolsPath, Get-InstalledNugets, Get-AvailableNugets, Update-BuildVersion, `
-    Invoke-NugetPack, Invoke-NugetPush, Get-PackageVersion, Get-PackageName, Update-NugetMeta, `
+    find-reporoot, Get-InstalledNugets, Get-AvailableNugets, `
+    Get-PackageVersion, Get-PackageName, `
     import-csproj, get-nodes, get-projectreferences, get-externalreferences, get-nugetreferences, get-systemreferences,  get-allreferences, add-projectItem, convertto-nuget, convert-reference, `
     get-packagesconfig, add-packagetoconfig, remove-packagefromconfig, `
     convert-referencestonuget, get-referencesTo, convertto-projectreference, convertto-nugetreference, convert-nugetToProjectReference, `
     set-assemblymeta, get-assemblymeta, `
-    get-slndependencies, test-sln, test-slndependencies, repair-slnpaths, get-csprojdependencies, repair-csprojpaths `
+    get-slndependencies, test-sln, test-slndependencies, repair-slnpaths, get-csprojdependencies, repair-csprojpaths, `
+    convert-packagestoprojectjson, repair-ProjectJSonProjectReferences `
     -Alias *

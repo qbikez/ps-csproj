@@ -90,7 +90,10 @@ function find-slnproject {
 
 function Update-SlnProject {
 [CmdletBinding()]
-param([Sln]$sln, [SlnProject] $project) 
+param(
+    [Parameter(Mandatory=$true)][Sln]$sln, 
+    [Parameter(Mandatory=$true)][SlnProject] $project
+) 
       # Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legimi.Core.Utils.Diag", "..\..\..\src\Core\Legimi.Core.Utils.Diag\Legimi.Core.Utils.Diag.csproj", "{678181A1-BF92-46F2-8D71-E3F5057042AB}"
    $regex = 'Project\((?<typeguid>.*?)\)\s*=\s*"(?<name>.*?)",\s*"(?<path>.*?)",\s*"(?<guid>.*?)"'
    $line = "Project($($project.typeguid)) = ""$($project.Name)"", ""$($project.Path)"", ""$($project.guid)"""
@@ -99,6 +102,39 @@ param([Sln]$sln, [SlnProject] $project)
    write-verbose "=> $line"
    $sln.content[$project.line] = $sln.content[$project.line] -replace $regex,$line 
 }
+
+function Add-SlnProject {
+[CmdletBinding()]
+param(
+    [Parameter(Mandatory=$true)][Sln]$sln, 
+    [Parameter(Mandatory=$true)]$Name,
+    [Parameter(Mandatory=$true)]$Path,
+    [Parameter(Mandatory=$true)]$ProjectGuid,
+    [Parameter(Mandatory=$false)]$TypeGuid = "{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}"
+
+) 
+      # Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Legimi.Core.Utils.Diag", "..\..\..\src\Core\Legimi.Core.Utils.Diag\Legimi.Core.Utils.Diag.csproj", "{678181A1-BF92-46F2-8D71-E3F5057042AB}"
+      #EndProject
+   $line = "Project(""$($TypeGuid)"") = ""$($Name)"", ""$($Path)"", ""$ProjectGuid"""
+   $pos = -1
+   for($i = $sln.content.length-1; $i -ge 0; $i--) {
+       if ($sln.content[$i] -match "EndProject") {
+           $pos = $i + 1
+           break;
+       }
+   } 
+   if ($pos -lt 0) {
+       throw "failed to found last 'EndProject' node"
+   }
+   write-verbose "adding line: at pos $pos"
+   write-verbose "=> $line"
+   $c = { $sln.content }.Invoke()
+   $c.Insert($pos, "EndProject")
+   $c.Insert($pos, $line)
+   
+   $sln.content = $c 
+}
+
 
 function remove-slnproject {
 [CmdletBinding()]    

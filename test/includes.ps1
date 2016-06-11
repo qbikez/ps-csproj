@@ -59,8 +59,8 @@ function get-testoutputdir() {
 function copy-samples() {
     $targetdir = get-testoutputdir
     copy-item "$inputdir/test" "$targetdir" -Recurse
-    copy-item "$inputdir/packages" "$targetdir/test" -Recurse
-    copy-item "$inputdir/packages-repo" "$targetdir" -Recurse
+    copy-item "$inputdir/packages" "$targetdir/test" -Recurse -force
+    copy-item "$inputdir/packages-repo" "$targetdir" -Recurse -force
 
     return $targetdir
 }

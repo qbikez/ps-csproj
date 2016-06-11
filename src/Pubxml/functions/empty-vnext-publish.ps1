@@ -40,7 +40,7 @@ write-verbose "workingdir=$((get-item .).FullName)"
 $publishModulePath = $null
 $scriptsDir = $null
 
-$scriptDirs = @("scripts", "scripts-lib")
+$scriptDirs = @("scripts", "scripts-lib", "submodules/scripts-lib")
 
 for($dir = (gi .).FullName; $dir = split-path $dir -parent; $dir -ne $null) {
     foreach($scriptsDir in $scriptDirs) {

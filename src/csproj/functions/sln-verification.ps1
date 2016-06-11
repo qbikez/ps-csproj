@@ -119,26 +119,10 @@ function test-slndependencies {
     return $valid,$missing
 }
 
-function  find-packagesdir ($path) {
-    if (!(get-item $path).IsPsContainer) {
-            $dir = split-path -Parent $path
-        }
-        else {
-            $dir = $path
-        }
-        while(![string]::IsNullOrEmpty($dir)) {
-            if ((test-path "$dir/packages") -or (Test-Path "$dir/packages")) {
-                $reporoot = $dir
-                break;
-            }
-            $dir = split-path -Parent $dir
-        }
-        return "$reporoot/packages"
-}
 
 function find-reporoot($path = ".") {
         $path = (get-item $path).FullName
-        if (!(get-item $path).IsPsContainer) {
+        if (!(get-item $path).PsIsContainer) {
             $dir = split-path -Parent $path
         }
         else {
@@ -155,14 +139,18 @@ function find-reporoot($path = ".") {
 }
 
 function find-matchingprojects {
+    [CmdletBinding()]
     param (
         [Parameter(Mandatory=$true)]$missing,
         [Parameter(Mandatory=$true)]$reporoot
         )
     $csprojs = get-childitem "$reporoot" -Filter "*.csproj" -Recurse
+    #$csprojs | select -expandproperty name | format-table | out-string | write-verbose
     $packagesdir = find-packagesdir $reporoot
+    write-verbose "found $($csprojs.length) csproj files in repo root '$reporoot' and subdirs. pwd='$(pwd)'. Packagesdir = '$packagesdir'"
     $missing = $missing | % {
         $m = $_
+        $matching = $null
         if ($m.ref.type -eq "project" -or $m.ref.type -eq "csproj") {
             $matching = @($csprojs | ? { [System.io.path]::GetFilenameWithoutExtension($_.Name) -eq $m.ref.Name })
             $null = $m | add-property -name "matching" -value $matching
@@ -182,6 +170,13 @@ function find-matchingprojects {
                 #write-verbose "missing: $_.Name matching: $matching"
             }
         }
+        if ($matching -eq $null) {
+            write-verbose "no project did match '$($m.ref.Name)' reference of type $($m.ref.type)"
+        } else {
+            write-verbose "found matching project $matching for '$($m.ref.Name)' reference of type $($m.ref.type)"
+        }
+        
+        
         return $m
     }
     
@@ -238,6 +233,12 @@ function repair-slnpaths {
                     $_.ref.Path = $relpath
                     
                     update-slnproject $sln $_.ref
+                }
+                elseif ($_.ref -isnot [referencemeta]) {
+                    $relpath = get-relativepath $sln.fullname $_.matching.fullname
+                    write-verbose "fixing missing SLN reference:  $($_.ref.Path) => $relpath"
+                    $csp = import-csproj $_.matching.fullname
+                    add-slnproject $sln -name $csp.Name -path $relpath -projectguid $csp.guid
                 }
             }
         }
@@ -361,10 +362,25 @@ function repair-csprojpaths {
             }
         }
 
-        #TODO: update csproj with fixed references
     }
-    
+
     $csproj.Save()
+
+    $dir = split-path -parent $csproj.FullName
+    if (test-path (Join-Path $dir "packages.config")) {
+        write-verbose "checking packages.config"
+        $pkgs = get-packagesconfig (Join-Path $dir "packages.config") 
+        $pkgs = $pkgs.packages
+        
+        if ((get-command install-package -Module nuget) -ne $null) {
+            write-verbose "detected Nuget module. using Nuget/install-package"
+            foreach($dep in $pkgs) {
+                nuget\install-package -ProjectName $csproj.name -id $dep.id -version $dep.version -prerelease
+            }
+        } else {
+            "cannot verify if all references from packages.config are installed. run this script inside Visual Studio!"
+        }
+    }
     
 #    $valid,$missing = test-slndependencies $sln
 #    $valid | Should Be $true
