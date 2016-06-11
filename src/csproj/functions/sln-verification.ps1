@@ -362,10 +362,25 @@ function repair-csprojpaths {
             }
         }
 
-        #TODO: update csproj with fixed references
     }
-    
+
     $csproj.Save()
+
+    $dir = split-path -parent $csproj.FullName
+    if (test-path (Join-Path $dir "packages.config")) {
+        write-verbose "checking packages.config"
+        $pkgs = get-packagesconfig (Join-Path $dir "packages.config") 
+        $pkgs = $pkgs.packages
+        
+        if ((get-command install-package -Module nuget) -ne $null) {
+            write-verbose "detected Nuget module. using Nuget/install-package"
+            foreach($dep in $pkgs) {
+                nuget\install-package -ProjectName $csproj.name -id $dep.id -version $dep.version -prerelease
+            }
+        } else {
+            "cannot verify if all references from packages.config are installed. run this script inside Visual Studio!"
+        }
+    }
     
 #    $valid,$missing = test-slndependencies $sln
 #    $valid | Should Be $true
