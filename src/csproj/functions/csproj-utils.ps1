@@ -68,6 +68,7 @@ function import-csproj {
     $guidNode = $xml | get-nodes -nodeName "ProjectGuid"
     $guid = $guidnode.Node.InnerText
      } catch {
+         Write-Warning $_
          throw "failed to find ProjectGuid"
      }
     $csproj = new-object -type csproj -Property @{ 
