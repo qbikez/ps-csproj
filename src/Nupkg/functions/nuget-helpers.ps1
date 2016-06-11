@@ -145,10 +145,6 @@ function get-nugettoolspath {
     return $tools | ? { $_.psiscontainer } | % { $_.FullName }
 }
 
-function get-shortName($package) {
-    $m = $package -match "(?<shortname>.*?)(,(?<specificversion>.+)){0,1}$"
-    return $Matches["shortname"]
-}
 
 function split-packagename($package) {
      if ($package -match "[\\/]" ) {
