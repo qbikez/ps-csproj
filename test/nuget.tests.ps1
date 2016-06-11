@@ -12,33 +12,32 @@ Describe "find Nuget packages dir" {
     $dir = split-path -parent $csproj
     
     #remove-item "$targetdir/test/nuget.config" 
-    In $dir {
-            $p = find-packagesdir
-            $p | Should not BeNullOrEmpty
-            $p | should be "$targetdir\test\packages" 
+    It "should find packages dir" {
+        In $dir {
+                $p = find-packagesdir
+                $p | Should not BeNullOrEmpty
+                $p | should be "$targetdir\test\packages" 
+        }
     }
 }
 
 
 Describe "Nuget Version manipulation" {
-    $cases = @(
-    
+    $cases = @(   
         @{ version = "1.2.*"; expected = "1.3.0-build001" }
         @{ version = "1.2.3.*"; expected = "1.2.4-build001" }    
         @{ version = "1.0.1"; expected = "1.0.1-build001" }
         @{ version = "1.0.0.0"; expected = "1.0.1-build001" }
         @{ version = "1.0.0.*"; expected = "1.0.1-build001" }
-        
-        
         @{ version = "1.*"; expected = "2.0.0-build001" }
     )
-    
-    It "incrementing part <component> of '<version>' should yield '<expected>'" -testcases $cases {
-        param($version, $component, $value, $expected) 
-        $r = update-buildversion -version $version 
-        $r | Should Be $expected 
+    In "TestDrive:" {      
+        It "incrementing part <component> of '<version>' should yield '<expected>'" -testcases $cases   {
+            param($version, $component, $value, $expected) 
+            $r = update-buildversion -version $version 
+            $r | Should Be $expected
+        } 
     }
-    
 }
 
 
