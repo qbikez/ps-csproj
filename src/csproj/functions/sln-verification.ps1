@@ -144,7 +144,14 @@ function find-matchingprojects {
         [Parameter(Mandatory=$true)]$missing,
         [Parameter(Mandatory=$true)]$reporoot
         )
-    $csprojs = get-childitem "$reporoot" -Filter "*.csproj" -Recurse
+    if (test-path (join-path $reporoot ".projects.json")) {
+        $script:projects = get-content (join-path $reporoot ".projects.json") | out-string | convertfrom-jsonnewtonsoft 
+        $csprojs = $script:projects.GetEnumerator() | % {
+            get-item (join-path $reporoot $_.value.path)
+        }
+    } else { 
+        $csprojs = get-childitem "$reporoot" -Filter "*.csproj" -Recurse
+    }
     #$csprojs | select -expandproperty name | format-table | out-string | write-verbose
     $packagesdir = find-packagesdir $reporoot
     write-verbose "found $($csprojs.length) csproj files in repo root '$reporoot' and subdirs. pwd='$(pwd)'. Packagesdir = '$packagesdir'"
@@ -173,7 +180,10 @@ function find-matchingprojects {
         if ($matching -eq $null) {
             write-verbose "no project did match '$($m.ref.Name)' reference of type $($m.ref.type)"
         } else {
-            write-verbose "found matching project $matching for '$($m.ref.Name)' reference of type $($m.ref.type)"
+            write-verbose "found  $(@($matching).Length) matching projects for '$($m.ref.Name)' reference of type $($m.ref.type):"
+            $matching | % {
+                write-verbose "    $($_.fullname)"
+            }
         }
         
         
@@ -207,7 +217,7 @@ function repair-slnpaths {
         if ($reporoot -eq $null) {
             $reporoot = find-reporoot $sln.fullname
             if ($reporoot -ne $null) {
-                write-verbose "auto-detected repo root at $reporoot"
+                write-host "auto-detected repo root at $reporoot"
             }
         }
         
@@ -215,11 +225,15 @@ function repair-slnpaths {
             throw "No repository root given and none could be detected"
         }
 
+        write-host "Fixing SLN..."
+        
+        write-verbose "looking for csprojs in reporoot..."
         $missing = find-matchingprojects $missing $reporoot
         
         $missing | % {
+            write-verbose "trying to fix missing SLN reference '$($_.ref.name))'"
             if ($_.matching -eq $null -or $_.matching.length -eq 0) {
-                write-warning "no matching project found for SLN item $($_.ref.Path)"
+                write-warning "no matching project found for SLN item $($_.ref.name)"
                 if ($removemissing) {
                     write-warning "removing $($_.ref.Path)"
                     remove-slnproject $sln $($_.ref.Name) -ifexists
@@ -227,18 +241,36 @@ function repair-slnpaths {
                 }
             }
             else {
+                $matching = $_.matching
+                if (@($matching).length -gt 1) {
+                    write-host "found $($matching.length) matching projects for $($_.ref.name). Choose one:"
+                    $i = 1
+                    $matching = $matching | sort FullName                                        
+                    $matching | % {
+                        write-host "  $i. $($_.fullname)"
+                        $i++
+                    }
+                    $c = read-host 
+                    $matching = $matching[[int]$c-1]
+                }
                 if ($_.ref -is [slnproject]) {
-                    $relpath = get-relativepath $sln.fullname $_.matching.fullname
-                    write-verbose "fixing SLN reference: $($_.ref.Path) => $relpath"
+                    $relpath = get-relativepath $sln.fullname  $matching.fullname
+                    write-host "Fixing bad SLN reference: $($_.ref.Path) => $relpath"
                     $_.ref.Path = $relpath
                     
                     update-slnproject $sln $_.ref
                 }
                 elseif ($_.ref -isnot [referencemeta]) {
-                    $relpath = get-relativepath $sln.fullname $_.matching.fullname
-                    write-verbose "fixing missing SLN reference:  $($_.ref.Path) => $relpath"
-                    $csp = import-csproj $_.matching.fullname
+                    $relpath = get-relativepath $sln.fullname  $matching.fullname
+                    write-host "Adding missing SLN reference:  $($_.ref.Path) => $relpath"
+                    $csp = import-csproj  $matching.fullname
                     add-slnproject $sln -name $csp.Name -path $relpath -projectguid $csp.guid
+                } else {
+                    $relpath = get-relativepath $sln.fullname  $matching.fullname
+                    write-host "Adding missing SLN reference:  $($_.ref.Path) => $relpath"
+                    $csp = import-csproj  $matching.fullname
+                    add-slnproject $sln -name $csp.Name -path $relpath -projectguid $csp.guid
+                    #write-warning "Don't know what to do with $($_.ref) of type $($_.ref.GetType())"
                 }
             }
         }
@@ -251,7 +283,10 @@ function repair-slnpaths {
         return 
     }
     
+    write-host "Fixing CSPROJs..."
+
     $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
+    
     
     
      if ($tonuget) {
