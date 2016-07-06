@@ -230,8 +230,14 @@ function repair-slnpaths {
         write-verbose "looking for csprojs in reporoot..."
         $missing = find-matchingprojects $missing $reporoot
         
+        $fixed = @{}
+
         $missing | % {
-            write-verbose "trying to fix missing SLN reference '$($_.ref.name))'"
+            if ($fixed.ContainsKey($_.ref.name)) {
+                write-verbose "skipping fixed reference $($_.ref.name)"
+                continue
+            }
+            write-verbose "trying to fix missing SLN reference '$($_.ref.name)'"
             if ($_.matching -eq $null -or $_.matching.length -eq 0) {
                 write-warning "no matching project found for SLN item $($_.ref.name)"
                 if ($removemissing) {
@@ -257,19 +263,21 @@ function repair-slnpaths {
                     $relpath = get-relativepath $sln.fullname  $matching.fullname
                     write-host "Fixing bad SLN reference: $($_.ref.Path) => $relpath"
                     $_.ref.Path = $relpath
-                    
                     update-slnproject $sln $_.ref
+                    $fixed[$_.ref.name] = $true
                 }
                 elseif ($_.ref -isnot [referencemeta]) {
                     $relpath = get-relativepath $sln.fullname  $matching.fullname
                     write-host "Adding missing SLN reference:  $($_.ref.Path) => $relpath"
                     $csp = import-csproj  $matching.fullname
                     add-slnproject $sln -name $csp.Name -path $relpath -projectguid $csp.guid
+                    $fixed[$_.ref.name] = $true
                 } else {
                     $relpath = get-relativepath $sln.fullname  $matching.fullname
                     write-host "Adding missing SLN reference:  $($_.ref.Path) => $relpath"
                     $csp = import-csproj  $matching.fullname
                     add-slnproject $sln -name $csp.Name -path $relpath -projectguid $csp.guid
+                    $fixed[$_.ref.name] = $true
                     #write-warning "Don't know what to do with $($_.ref) of type $($_.ref.GetType())"
                 }
             }
