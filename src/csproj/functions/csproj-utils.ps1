@@ -309,7 +309,10 @@ param(
     $projectId = $node.Project
     $projectName = $node.Name
     
-    $path,$version,$framework = find-nugetPath $projectName $packagesRelPath
+    $nuget = find-nugetPath $projectName $packagesRelPath
+    $path = $nuget.Path
+    $version = $nuget.LatestVersion
+    $framework = $nuget.Framework 
 
     if ($path -eq $null) {
         throw "package '$projectName' not found in packages dir '$packagesRelPath'"

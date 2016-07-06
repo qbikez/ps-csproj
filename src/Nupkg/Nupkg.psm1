@@ -18,6 +18,18 @@ $helpersPath = $root
     }
 
 
+function Expand-ZIPFile
+{
+[CmdletBinding()]
+param($file, $destination)
+    $shell = new-object -com shell.application
+    $zip = $shell.NameSpace($file)
+    foreach($item in $zip.items())
+    {
+        write-verbose "extracting $($item.Name) to $destination"
+        $shell.Namespace($destination).copyhere($item, 0x14)
+    }
+}
 
 function new-nuspec($projectPath = ".") {
     pushd
@@ -84,6 +96,7 @@ function invoke-nugetpush {
     [switch][bool] $Stable,
     $buildProperties = @{}) 
 process {
+    
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
         if ($files.length -gt 0){
@@ -96,9 +109,9 @@ process {
         $nupkg = $file
     }
     #in case multiple nupkgs are created
-    $nupkg = @($nupkg) | select -last 1
     if ($symbols) {
-        $symbolpkg = $nupkg
+        $symbolpkg = @($nupkg) | ? { $_ -match "-symbols\." } | select -last 1
+        $nupkg = $symbolpkg
         $nosymbolspkg = $nupkg -replace "\.symbols\.","."
         if (test-path $nosymbolspkg) {
             write-verbose "copying '$nosymbolspkg' to '$($nupkg -replace "\.symbols\.",".nosymbols.")'"
@@ -107,24 +120,46 @@ process {
         write-host "push Symbols package: replacing $nosymbolspkg with $symbolpkg"
         copy-item $symbolpkg $nosymbolspkg -Force
         $nupkg = $nosymbolspkg
+    } else {
+        $nupkg = @($nupkg)| ? { $_ -notmatch "-symbols\." }  | select -last 1
+
     }
-    Write-Host "pushing package $nupkg to $source"
-    $p = @(
-        $nupkg
-    )
-    if ($source -ne $null) {
-        $p += "-source",$source
-    }
-    if ($apikey -ne $null) {
-        $p += "-apikey",$apikey
-    }
-   
-    if ($PSCmdlet.ShouldProcess("pushing package $p")) {
-        $o = nuget push $p | % { $_ | write-indented -level 4; $_ } 
-        if ($lastexitcode -ne 0) {
-            throw "nuget command failed! `r`n$($o | out-string)"
+
+    $sources = @($source)
+    foreach($source in $sources) {
+        Write-Host "pushing package $nupkg to $source"
+        $p = @(
+            $nupkg
+        )
+
+        if ($source -eq "rolling") {
+            $packagesDir = find-packagesdir
+            $packagename = (split-packagename (split-path -leaf $nupkg)).Name
+            $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir
+            $packagedir = $nuget.PackageDir
+            $zip = "$nupkg.zip"
+            copy-item $nupkg $zip
+
+            Expand-ZIPFile -file $zip -destination $packageDir -verbose
+            copy-item $nupkg $packageDir -Verbose
+
         }
-        return $nupkg
+        else {
+            if ($source -ne $null) {
+                $p += "-source",$source
+            }
+            if ($apikey -ne $null) {
+                $p += "-apikey",$apikey
+            }
+        
+            if ($PSCmdlet.ShouldProcess("pushing package $p")) {
+                $o = nuget push $p | % { $_ | write-indented -level 4; $_ } 
+                if ($lastexitcode -ne 0) {
+                    throw "nuget command failed! `r`n$($o | out-string)"
+                }
+                write-output $nupkg
+            }
+        }
     }
 }
 }
@@ -139,29 +174,39 @@ function invoke-nugetpack {
     [switch][bool] $NoProjectReferences,
     [switch][bool] $Stable,
     [switch][bool] $ForceDll,
+    [switch][bool] $useDotnet,
     $buildProperties = @{}) 
 process {    
-    if ($nuspecorcsproj -eq $null) {
-        $csprojs = @(gci . -filter "*.csproj") +  @(gci . -filter "project.json")  
-        if ($csprojs.length -eq 1) {
-            $nuspecorcsproj = $csprojs[0].Name
-        } else {
-            throw "found multiple csproj/project.json files in '$((gi .).FullName)'. please choose one."
-        }
-    }
-    if ($nuspecorcsproj -eq $null) {
-        $csprojs = @(gci . -filter "*.nuspec")
-        if ($csprojs.length -eq 1) {
-            $nuspecorcsproj = $csprojs[0].Name
-        } else {
-            throw "found multiple nuspec files in '$((gi .).FullName)'. please choose one."
-        }
-    }
-    $dir = split-path -parent $nuspecorcsproj
-    $nuspecorcsproj = split-path -Leaf $nuspecorcsproj
-    write-verbose "packing nuget for $(split-path -leaf $nuspecorcsproj) in $dir"
-    pushd 
+    pushd
     try {
+        if ($nuspecorcsproj -ne $null -and (test-path $nuspecOrCsproj) -and (get-item $nuspecorcsproj).PsIsContainer) {
+            cd $nuspecorcsproj
+            $nuspecorcsproj = $null
+        } 
+        if ($nuspecorcsproj -eq $null) {
+            $csprojs = @(gci . -filter "*.csproj") +  @(gci . -filter "project.json")  
+            if ($csprojs.length -eq 1) {
+                $nuspecorcsproj = $csprojs[0].Name
+            } else {
+                throw "found multiple csproj/project.json files in '$((gi .).FullName)'. please choose one."
+            }
+        }
+        if ($nuspecorcsproj -eq $null) {
+            $csprojs = @(gci . -filter "*.nuspec")
+            if ($csprojs.length -eq 1) {
+                $nuspecorcsproj = $csprojs[0].Name
+            } else {
+                throw "found multiple nuspec files in '$((gi .).FullName)'. please choose one."
+            }
+        }
+        $dotnet = "dnu"
+        if ($useDotnet) { $dotnet = "dotnet" }
+        
+        $dir = split-path -parent $nuspecorcsproj
+        $nuspecorcsproj = split-path -Leaf $nuspecorcsproj
+        write-verbose "packing nuget for $(split-path -leaf $nuspecorcsproj) in $dir"
+    
+    
         cd $dir
         if ($Build) {
             $newver = update-buildversion 
@@ -169,10 +214,9 @@ process {
                 $newver = update-buildversion -stable:$stable
             }
             if ($nuspecorcsproj.endswith("project.json")) {
-            
-                
-                    $o = invoke dnu restore
-                    $o = invoke dnu build
+				
+                    $o = invoke $dotnet restore
+                    $o = invoke $dotnet build
             
             }
             else {
@@ -193,7 +237,7 @@ process {
     
         if ($nuspecorcsproj.endswith("project.json")) {
             $a = @() 
-            $o = invoke dnu pack $a
+            $o = invoke $dotnet pack $a
             $success = $o | % {
                     if ($_ -match "(?<project>.*) -> (?<nupkg>.*\.nupkg)") {
                         return $matches["nupkg"]
