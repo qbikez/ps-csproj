@@ -163,17 +163,15 @@ process {
     pushd 
     try {
         cd $dir
+        $dotnet = "dotnet"
         if ($Build) {
             $newver = update-buildversion 
             if ($stable) {
                 $newver = update-buildversion -stable:$stable
             }
             if ($nuspecorcsproj.endswith("project.json")) {
-            
-                
-                    $o = invoke dnu restore
-                    $o = invoke dnu build
-            
+                    $o = invoke $dotnet restore
+                    $o = invoke $dotnet build
             }
             else {
                 $a = @()
@@ -193,7 +191,7 @@ process {
     
         if ($nuspecorcsproj.endswith("project.json")) {
             $a = @() 
-            $o = invoke dnu pack $a
+            $o = invoke $dotnet pack $a
             $success = $o | % {
                     if ($_ -match "(?<project>.*) -> (?<nupkg>.*\.nupkg)") {
                         return $matches["nupkg"]
