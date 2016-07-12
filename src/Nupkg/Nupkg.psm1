@@ -153,6 +153,7 @@ process {
             }
         
             if ($PSCmdlet.ShouldProcess("pushing package $p")) {
+                write-verbose "nuget push $p"
                 $o = nuget push $p | % { $_ | write-indented -level 4; $_ } 
                 if ($lastexitcode -ne 0) {
                     throw "nuget command failed! `r`n$($o | out-string)"
