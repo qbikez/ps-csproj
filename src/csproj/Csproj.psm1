@@ -12,6 +12,9 @@ get-childitem "$helpersPath\functions" -filter "*.ps1" |
     ? { -not ($_.Name.Contains(".Tests.")) } |
     % { . $_.FullName }
 
+get-childitem "$helpersPath\scan" -filter "*.ps1" | 
+    ? { -not ($_.Name.Contains(".Tests.")) } |
+    % { . $_.FullName }
 
 
 #Export-ModuleMember -Function *
@@ -24,5 +27,6 @@ Export-ModuleMember -function `
     convert-referencestonuget, get-referencesTo, convertto-projectreference, convertto-nugetreference, convert-nugetToProjectReference, `
     set-assemblymeta, get-assemblymeta, `
     get-slndependencies, test-sln, test-slndependencies, repair-slnpaths, get-csprojdependencies, repair-csprojpaths, `
-    convert-packagestoprojectjson, repair-ProjectJSonProjectReferences `
+    convert-packagestoprojectjson, repair-ProjectJSonProjectReferences, `
+    initialize-projects, push-nugets, use-projects `
     -Alias *
