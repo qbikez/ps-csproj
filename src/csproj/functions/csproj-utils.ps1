@@ -68,7 +68,7 @@ function import-csproj {
     $guidNode = $xml | get-nodes -nodeName "ProjectGuid"
     $guid = $guidnode.Node.InnerText
      } catch {
-         throw "failed to find ProjectGuid"
+         throw "failed to find ProjectGuid: $($_.Exception.Message)"
      }
     $csproj = new-object -type csproj -Property @{ 
         xml = $xml
@@ -150,8 +150,13 @@ param(
     }
 }
 
-function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName, [switch][bool]$noMeta, [Csproj] $csproj) {
-    $r = Select-Xml -Xml $xml.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName"
+function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName) {
+    $r = Select-Xml -Xml $xml.Project -Namespace @{ d = $ns } -XPath "//d:$nodeName" 
+    return $r
+}
+
+function get-referencenodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName, [switch][bool]$noMeta, [Csproj] $csproj) {
+    $r = get-nodes $xml $nodename
     if (!$nometa) { 
         $meta = $r | add-metadata -csproj $csproj
     }
@@ -159,11 +164,11 @@ function get-nodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nodeName, [s
 }
 
 function get-projectreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
-    return get-nodes $csproj.xml "ProjectReference"  -csproj $csproj
+    return get-referencenodes $csproj.xml "ProjectReference"  -csproj $csproj
 }
 
 function get-allexternalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
-    get-nodes $csproj.xml "Reference[d:HintPath]"  -csproj $csproj    
+    get-referencenodes $csproj.xml "Reference[d:HintPath]"  -csproj $csproj    
 }
 
 
@@ -190,7 +195,7 @@ function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true
 
 
 function get-systemreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
-    get-nodes $csproj.xml "Reference[not(d:HintPath)]" -csproj $csproj    
+    get-referencenodes $csproj.xml "Reference[not(d:HintPath)]" -csproj $csproj    
 }
 
 
