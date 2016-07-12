@@ -86,18 +86,28 @@ Describe "Nuget path resolution" {
         It "Should resolve proper path for package '<pkgdir>' without version" -TestCases $cases {
             param ($pkgdir)
 
-            $nuget,$version,$framework = find-nugetPath $pkgdir -packagesRelPath $packagesdir
+            $nuget = find-nugetPath $pkgdir -packagesRelPath $packagesdir
             if ($nuget -eq $null) {
-                $nuget,$version,$framework = find-nugetPath $pkgdir -packagesRelPath $packagesdir                
+                $nuget = find-nugetPath $pkgdir -packagesRelPath $packagesdir
             }
+            $path = $nuget.Path
+            $version = $nuget.LatestVersion
+            $framework = $nuget.Framework
+
             $nuget | Should Not BeNullOrEmpty
+            $path | Should Not BeNullOrEmpty
         }
 
         $cases = $packages | % { @{ pkgdir = $_.Name  } }        
         It "Should resolve proper path for package '<pkgdir>' with version" -TestCases $cases {
             param ($pkgdir)
-            $nuget,$version,$framework  = find-nugetPath $pkgdir -packagesRelPath $packagesdir
+            $nuget = find-nugetPath $pkgdir -packagesRelPath $packagesdir
+            $path = $nuget.Path
+            $version = $nuget.LatestVersion
+            $framework = $nuget.Framework
+
             $nuget | Should Not BeNullOrEmpty
+            $nuget.Path | Should Not BeNullOrEmpty
         }
         
     }

@@ -64,7 +64,7 @@ function convert-projectReferenceToNuget {
         write-verbose "found project reference to $projectname in $($proj.name)"
         
         $result += $pr
-        if ((get-command install-package -Module nuget) -ne $null) {
+        if ((get-command install-package -Module nuget -erroraction ignore) -ne $null) {
             write-verbose "detected Nuget module. using Nuget/install-package: install-package -ProjectName $($proj.name) -id $($pr.Name)"
             nuget\install-package -ProjectName $proj.name -id $pr.Name -prerelease
             return "converted with NuGet module"

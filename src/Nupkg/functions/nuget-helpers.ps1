@@ -130,7 +130,12 @@ function find-nugetPath {
         }
     }
     # check lib\frameworkname\*
-    return $path,$latest,$framework 
+    return @{
+        Path =$path
+        LatestVersion=$latest
+        Framework=$framework
+        PackageDir = $packageDir
+    }
 }
 
 

@@ -86,7 +86,9 @@ try {
 
     if ($changed) {
         write-verbose "saving pubprofile to $outpath"
-        $profile | format-xml | Out-File $outPath -Encoding utf8 -Force
+        import-module pscx
+        # TODO: remove PSCX dependency
+        $profile | pscx\format-xml | Out-File $outPath -Encoding utf8 -Force
     }
     
 }
