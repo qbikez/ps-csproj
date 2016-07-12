@@ -121,7 +121,7 @@ process {
         copy-item $symbolpkg $nosymbolspkg -Force
         $nupkg = $nosymbolspkg
     } else {
-        $nupkg = @($nupkg)| ? { $_ -notmatch "-symbols\." }  | select -last 1
+        $nupkg = @($nupkg)| ? { $_ -notmatch "\.symbols\." }  | select -last 1
 
     }
 
@@ -215,8 +215,8 @@ process {
                 $newver = update-buildversion -stable:$stable
             }
             if ($nuspecorcsproj.endswith("project.json")) {
-                    $o = invoke $dotnet restore
-                    $o = invoke $dotnet build
+                    $o = invoke $dotnet restore -verbose:$($verbosePreference="Continue")
+                    $o = invoke $dotnet build -verbose:$($verbosePreference="Continue")
             }
             else {
                 $a = @()
@@ -236,7 +236,8 @@ process {
     
         if ($nuspecorcsproj.endswith("project.json")) {
             $a = @() 
-            $o = invoke $dotnet pack $a
+            
+            $o = invoke $dotnet pack $a -verbose:$($verbosePreference="Continue")
             $success = $o | % {
                     if ($_ -match "(?<project>.*) -> (?<nupkg>.*\.nupkg)") {
                         return $matches["nupkg"]
