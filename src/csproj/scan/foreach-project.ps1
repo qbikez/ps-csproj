@@ -51,10 +51,12 @@ DynamicParam
     return $paramDictionary
 }
 begin {
-    function filter-BoundParameters($cmd) {
+    function filter-BoundParameters($cmd, $bound) {
         $c = get-command $cmd
         $cmdlet = $pscmdlet
-        $bound = $cmdlet.MyInvocation.BoundParameters
+        if ($bound -eq $null) {
+            $bound = $cmdlet.MyInvocation.BoundParameters
+        }
         $r = @{}
         foreach($p in $c.Parameters.GetEnumerator()) {
             if ($p.key -in $bound.Keys) {
@@ -81,12 +83,22 @@ process {
     } 
     elseif ($project -eq $null) {
         $project = $projects.Keys
-        $project = $project | ? { $projects[$_].hasNuspec -eq "true" }
+        if (!$AllowNoNuspec) {
+            $project = $project | ? { $projects[$_].hasNuspec -eq "true" }
+            if ($project.count -eq 0) {
+                write-host "no projects with nuspec found! try using -allownonuspec"
+            }
+            write-verbose "found $($project.count) projects with nuspec"
+        }
+        else {
+            write-verbose "processing $($project.count) projects"
+        }
     }
     #. ./pack-nugets.ps1 -Filter $Filter
     
-    function push-project($project) {
+    function process-project($project) {
         $path = $projects[$project].path
+        $projects[$project].name = $project
         if ($projects[$project].hasNuspec -ne "true" -and !$force -and !$AllowNoNuspec) {
             write-host "skipping project '$project' with no nuspec"
             continue
@@ -94,8 +106,8 @@ process {
         pushd 
         try {
             cd (split-path -parent $path)
-            $p = filter-BoundParameters "push-nuget"
-            $o = Invoke-Command $cmd
+            $_ = $projects[$project]
+            $o = Invoke-Command $cmd -ArgumentList @($projects[$project])
             return $o
         } 
         catch {
@@ -108,9 +120,10 @@ process {
     }
 
     $r = @{}
+    
 
     foreach($p in @($project)) {
-        $r += @{ $p = (push-project $p) }
+        $r += @{ $p = (process-project $p) }
     }
 
     $r

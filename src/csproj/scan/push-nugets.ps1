@@ -49,10 +49,12 @@ DynamicParam
     return $paramDictionary
 }
 begin {
-    function filter-BoundParameters($cmd) {
+    function filter-BoundParameters($cmd, $bound) {
         $c = get-command $cmd
         $cmdlet = $pscmdlet
-        $bound = $cmdlet.MyInvocation.BoundParameters
+        if ($bound -eq $null) {
+            $bound = $cmdlet.MyInvocation.BoundParameters
+        }
         $r = @{}
         foreach($p in $c.Parameters.GetEnumerator()) {
             if ($p.key -in $bound.Keys) {
@@ -69,47 +71,31 @@ process {
         return 
     }
 
-    ipmo nupkg
-
+    $b = $cmdlet.MyInvocation.BoundParameters
     $project =  $PSBoundParameters["Project"]
-    if ($script:projects -eq $null) { $projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft  }
-    
-    if ($all) {
-        $project = $projects.Keys
-    } 
-    elseif ($project -eq $null) {
-        $project = $projects.Keys
-        $project = $project | ? { $projects[$_].hasNuspec -eq "true" }
-    }
-    #. ./pack-nugets.ps1 -Filter $Filter
-    
+
     function push-project($project) {
-        $path = $projects[$project].path
-        if ($projects[$project].hasNuspec -ne "true" -and !$force -and !$AllowNoNuspec) {
-            write-host "skipping project '$project' with no nuspec"
+        $path = $project.path
+        if ($project.hasNuspec -ne "true" -and !$force -and !$AllowNoNuspec) {
+            write-host "skipping project '$($project.name)' with no nuspec"
             continue
         }
-        pushd 
+        if ($project.path.startswith("test\")) { 
+            write-host "skipping TEST project '$($project.name)'"
+            continue
+        }
         try {
-            cd (split-path -parent $path)
-            $p = filter-BoundParameters "push-nuget"
+            $p = filter-BoundParameters "push-nuget" -bound $b
             return push-nuget @p
         } 
         catch {
             write-error $_
             return $_
         }
-        finally {
-            popd
-        }
     }
 
-    $r = @{}
-
-    foreach($p in @($project)) {
-        $r += @{ $p = (push-project $p) }
-    }
-
-    $r
+    foreach-project -project:$project -AllowNoNuspec:($AllowNoNuspec -or $force) -cmd { 
+        push-project $_ 
+    }   
 }
 }
