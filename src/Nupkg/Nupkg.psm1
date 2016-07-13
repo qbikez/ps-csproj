@@ -94,6 +94,7 @@ function invoke-nugetpush {
     [switch][bool] $Build,
     [switch][bool] $ForceDll,
     [switch][bool] $Stable,
+    [switch][bool] $useDotnet,
     $buildProperties = @{}) 
 process {
     
@@ -104,7 +105,7 @@ process {
         }
     }
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties $buildProperties
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties  $buildProperties -usedotnet:$usedotnet
     } else {
         $nupkg = $file
     }

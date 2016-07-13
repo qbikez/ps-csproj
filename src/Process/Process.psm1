@@ -40,7 +40,7 @@ param(
     [Parameter(ParameterSetName="in")]
     $in
     ) 
-    write-verbose "Invoking: $command $arguments"
+    write-verbose "Invoking: $command $arguments in '$($pwd.path)'"
     if ($showoutput) {
         $o = $in | & $command $arguments 2>&1| write-indented -level 2
     } else {
