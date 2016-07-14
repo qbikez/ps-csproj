@@ -119,8 +119,7 @@ function test-slndependencies {
     return $valid,$missing
 }
 
-
-function find-reporoot($path = ".") {
+function find-upwards($pattern, $path = "." ) {
         $path = (get-item $path).FullName
         if (!(get-item $path).PsIsContainer) {
             $dir = split-path -Parent $path
@@ -129,7 +128,7 @@ function find-reporoot($path = ".") {
             $dir = $path
         }
         while(![string]::IsNullOrEmpty($dir)) {
-            if ((test-path "$dir/.hg") -or (Test-Path "$dir/.git")) {
+            if (($pattern | % { "$dir/$_" } | test-path) -eq $true) {
                 $reporoot = $dir
                 break;
             }
@@ -137,6 +136,20 @@ function find-reporoot($path = ".") {
         }
         return $reporoot
 }
+
+function find-reporoot($path = ".") {
+        return find-upwards ".git",".hg" -path $path
+}
+
+function find-globaljson($path = ".") {
+    $dir = find-upwards "global.json"
+    if ($dir -ne $null) {
+        return "$dir/global.json"
+    } else {
+        return $null
+    }
+}
+
 
 function find-matchingprojects {
     [CmdletBinding()]
@@ -415,7 +428,7 @@ function repair-csprojpaths {
         $pkgs = get-packagesconfig (Join-Path $dir "packages.config") 
         $pkgs = $pkgs.packages
         
-        if ((get-command install-package -Module nuget) -ne $null) {
+        if ((get-command "install-package" -Module nuget -errorAction Ignore) -ne $null) {
             write-verbose "detected Nuget module. using Nuget/install-package"
             foreach($dep in $pkgs) {
                 nuget\install-package -ProjectName $csproj.name -id $dep.id -version $dep.version -prerelease
