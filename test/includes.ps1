@@ -22,10 +22,12 @@ if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost
     if (gmo csproj) {
         rmo csproj 
     }
-    write-Verbose "importing csproj"
-    import-module csproj -DisableNameChecking
-    write-Verbose "reloading csproj DONE"
 }
+
+write-Verbose "importing csproj"
+import-module csproj -DisableNameChecking
+write-Verbose "reloading csproj DONE"
+
 
 import-module crayon
 

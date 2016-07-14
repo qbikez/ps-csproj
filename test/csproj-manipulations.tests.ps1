@@ -45,7 +45,9 @@ Describe "project file manipulation" {
         
         ipmo publishmap
         ipmo pathutils
-        $cases = $ref | % { (publishmap\convertto-hashtable $_) }  
+        $cases = $ref | % { 
+            (publishmap\convertto-hashtable $_)
+         }  
         It "nuget reference <name> should have relative path" -TestCases $cases {
             param($name,$path)
                 $name | Should Not BeNullOrEmpty

@@ -53,7 +53,7 @@ Describe "Generate nuget for csproj" {
                 invoke "msbuild" 
             }            
             It "Should pack" {
-                $nuget = pack-nuget $project
+                $nuget = pack-nuget $project -build
                 $nuget | Should Not BeNullOrEmpty
                 test-path $nuget | Should Be $true  
                 $ver = Get-AssemblyMeta "AssemblyInformationalVersion"
