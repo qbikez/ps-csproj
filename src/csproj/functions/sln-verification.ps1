@@ -142,7 +142,7 @@ function find-reporoot($path = ".") {
 }
 
 function find-globaljson($path = ".") {
-    $dir = find-upwards "global.json"
+    $dir = find-upwards "global.json" -path $path
     if ($dir -ne $null) {
         return "$dir/global.json"
     } else {

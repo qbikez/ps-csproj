@@ -133,6 +133,7 @@ process {
             $nupkg
         )
 
+        # TODO: handle rolling updates for dotnet/dnx/nuget3 model
         if ($source -eq "rolling") {
             $packagesDir = find-packagesdir
             $packagename = (split-packagename (split-path -leaf $nupkg)).Name
