@@ -73,3 +73,5 @@ function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wai
 }
 
 New-alias Run-AsAdmin Invoke-AsAdmin
+
+Export-ModuleMember -Function * -Alias *
