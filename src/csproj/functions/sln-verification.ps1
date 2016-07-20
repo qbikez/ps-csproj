@@ -121,6 +121,7 @@ function test-slndependencies {
 
 function find-upwards($pattern, $path = "." ) {
         $path = (get-item $path).FullName
+        $foundfile = $null
         if (!(get-item $path).PsIsContainer) {
             $dir = split-path -Parent $path
         }
@@ -130,24 +131,23 @@ function find-upwards($pattern, $path = "." ) {
         while(![string]::IsNullOrEmpty($dir)) {
             if (($pattern | % { "$dir/$_" } | test-path) -eq $true) {
                 $reporoot = $dir
+                $foundfile = $pattern | % { "$dir/$_" } | ? { test-path $_ } | select -First 1
                 break;
             }
             $dir = split-path -Parent $dir
         }
-        return $reporoot
+        
+        return $foundfile
 }
 
 function find-reporoot($path = ".") {
-        return find-upwards ".git",".hg" -path $path
+        $found = find-upwards ".git",".hg" -path $path
+        if ($found -ne $null) { return split-path -Parent $found }
+        else { return $null } 
 }
 
 function find-globaljson($path = ".") {
-    $dir = find-upwards "global.json" -path $path
-    if ($dir -ne $null) {
-        return "$dir/global.json"
-    } else {
-        return $null
-    }
+    return find-upwards "global.json" -path $path    
 }
 
 
