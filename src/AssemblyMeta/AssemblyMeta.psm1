@@ -170,3 +170,9 @@ function Update-AssemblyVersion($version, $path = ".") {
         set-assemblymeta "InformationalVersion" $ver $path
     }
 }
+
+
+function split-packageVersion($version) {
+    $m = $version -match "(?<version>[0-9]+(\.[0-9]+)*)+(?<suffix>-.*){0,1}$"
+    return $matches
+}
