@@ -59,10 +59,11 @@ function test-sln {
         [Parameter(Mandatory=$false, ParameterSetName="sln",Position=0)][Sln]$sln,
         [Parameter(Mandatory=$false, ParameterSetName="slnfile",Position=0)][string]$slnfile,
         [switch][bool] $missing,
-        [switch][bool] $validate
+        [switch][bool] $validate,
+        $filter = $null
     )    
     if ($sln -eq $null) {
-        if ($slnfile -eq $null) {
+        if ([string]::IsNullOrEmpty($slnfile)) {
             $slns = @(get-childitem "." -Filter "*.sln")
             if ($slns.Length -eq 1) {
                 $slnfile = $slns[0].fullname
@@ -76,11 +77,20 @@ function test-sln {
                 }
             }
         }
+        if ($slnfile -eq $null) { throw "no sln file given and no *.sln found in current directory" }
         $sln = import-sln $slnfile
     }
     
     
     $deps = get-slndependencies $sln
+
+    if ($filter -ne $null) {
+        $deps = $deps | ? {
+                if (!($_.ref.ShortName -match $filter)) { write-verbose "$($_.ref.ShortName) does not match filter:$filter" } 
+                return $_.ref.ShortName -match $filter 
+        }
+    }
+
     $missingdeps = @($deps | ? { $_.IsProjectValid -eq $false -or ($_.ref -ne $null -and $_.ref.IsValid -eq $false) })
     if ($missing) {        
         return $missingdeps
@@ -105,7 +115,7 @@ function test-slndependencies {
     $valid = $true
     $missing = @()
     
-    foreach($d in $deps) {
+    foreach($d in $deps) {      
         if ($d.ref -ne $null -and $d.ref.IsValid -eq $false) {
             $valid = $false
             $missing += new-object -type pscustomobject -property @{ Ref = $d.ref; In = $d.project.fullname  }
@@ -116,6 +126,8 @@ function test-slndependencies {
         }
     }
     
+   
+
     return $valid,$missing
 }
 
@@ -159,7 +171,10 @@ function find-matchingprojects {
         )
     if (test-path (join-path $reporoot ".projects.json")) {
         $script:projects = get-content (join-path $reporoot ".projects.json") | out-string | convertfrom-jsonnewtonsoft 
-        $csprojs = $script:projects.GetEnumerator() | % {
+        $csprojs = $script:projects.GetEnumerator() | ? {
+                #ignore non-existing projects from ".projects.json" 
+                test-path (join-path $reporoot $_.value.path) 
+        } | % {
             get-item (join-path $reporoot $_.value.path)
         }
     } else { 
@@ -213,18 +228,38 @@ function find-matchingprojects {
 function repair-slnpaths {
     [CmdletBinding(DefaultParameterSetName = "sln")]
     param(
-        [Parameter(Mandatory=$true, ParameterSetName="sln",Position=0)][Sln]$sln,
-        [Parameter(Mandatory=$true, ParameterSetName="slnfile",Position=0)][string]$slnfile,
+        [Parameter(Mandatory=$false, ParameterSetName="sln",Position=0)][Sln]$sln,
+        [Parameter(Mandatory=$false, ParameterSetName="slnfile",Position=0)][string]$slnfile,
         [Parameter(Position=1)] $reporoot,
+        [Parameter(Position=2)] $filter = $null,
         [switch][bool] $tonuget,
         [switch][bool] $insln,
         [switch][bool] $incsproj,
-        [switch][bool] $removemissing
+        [switch][bool] $removemissing,
+        [switch][bool] $prerelease
     )
-    if ($sln -eq $null) { $sln = import-sln $slnfile }
+     if ($sln -eq $null) {
+        if ([string]::IsNullOrEmpty($slnfile)) {
+            $slns = @(get-childitem "." -Filter "*.sln")
+            if ($slns.Length -eq 1) {
+                $slnfile = $slns[0].fullname
+            }
+            else {
+                if ($slns.Length -eq 0) {
+                    throw "no sln file given and no *.sln found in current directory"
+                }
+                else {
+                    throw "no sln file given and more than one *.sln file found in current directory"
+                }
+            }
+        }
+        if ($slnfile -eq $null) { throw "no sln file given and no *.sln found in current directory" }
+        $sln = import-sln $slnfile
+    }
+
   
     if ($insln -or !$insln.IsPresent) {
-        $valid,$missing = test-slndependencies $sln
+        $valid,$missing = test-slndependencies $sln 
         
         write-verbose "SLN: found $($missing.length) missing projects"
         if ($reporoot -eq $null) {
@@ -242,7 +277,15 @@ function repair-slnpaths {
         
         write-verbose "looking for csprojs in reporoot..."
         $missing = find-matchingprojects $missing $reporoot
+        if ($filter -ne $null) {
+        $missing = $missing | ? {
+                #if (!($_.ref.ShortName -match $filter)) { write-verbose "$($_.ref.ShortName) does not match filter:$filter" } 
+                return $_.ref.ShortName -match $filter 
+        }
+    }
+
         
+
         $fixed = @{}
 
         $missing | % {
@@ -308,7 +351,7 @@ function repair-slnpaths {
 
     $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
     
-    
+    ipmo nupkg
     
      if ($tonuget) {
         $pkgdir =(find-packagesdir $reporoot)
@@ -327,7 +370,7 @@ function repair-slnpaths {
                     write-host "installing package $_"
                 nuget install $_ -out $pkgdir -pre
                 }                    
-                tonuget $sln -projectName $_ -packagesDir $pkgdir 
+                convert-referencestonuget $sln -projectName $_ -packagesDir $pkgdir -filter $filer
             } catch {
                 write-error $_
             }
@@ -339,7 +382,7 @@ function repair-slnpaths {
             $csproj = import-csproj $_.fullname
             
             if (!$tonuget) {
-                $null = repair-csprojpaths $csproj -reporoot $reporoot
+                $null = repair-csprojpaths $csproj -reporoot $reporoot -prerelease:$prerelease
             }            
         }
     }
@@ -379,7 +422,8 @@ function repair-csprojpaths {
     param(
         [Parameter(Mandatory=$true, ParameterSetName="csproj",Position=0)][Csproj]$csproj,
         [Parameter(Mandatory=$true, ParameterSetName="csprojfile",Position=0)][string]$csprojfile,
-        $reporoot = $null
+        $reporoot = $null,
+        [switch][bool] $prerelease
     )
     if ($csproj -eq $null) { $csproj = import-csproj $csprojfile }
   
@@ -431,7 +475,7 @@ function repair-csprojpaths {
         if ((get-command "install-package" -Module nuget -errorAction Ignore) -ne $null) {
             write-verbose "detected Nuget module. using Nuget/install-package"
             foreach($dep in $pkgs) {
-                nuget\install-package -ProjectName $csproj.name -id $dep.id -version $dep.version -prerelease
+                nuget\install-package -ProjectName $csproj.name -id $dep.id -version $dep.version -prerelease:$prerelease
             }
         } else {
             "cannot verify if all references from packages.config are installed. run this script inside Visual Studio!"

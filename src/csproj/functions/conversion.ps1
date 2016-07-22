@@ -58,7 +58,9 @@ function convert-projectReferenceToNuget {
     param(
         [Parameter(Mandatory=$true)][Csproj] $proj,
         [Parameter(Mandatory=$true, ParameterSetName="referenceObj")][ReferenceMeta] $pr,
-        [Parameter(Mandatory=$true, ParameterSetName="referencename")][string] $projectname    
+        [Parameter(Mandatory=$true, ParameterSetName="referencename")][string] $projectname,
+        [Alias("pre")]
+        [switch][bool] $prerelease
     )    
         if ($pr -eq $null) { throw "missing reference in $($proj.name)" }
         write-verbose "found project reference to $projectname in $($proj.name)"
@@ -66,7 +68,7 @@ function convert-projectReferenceToNuget {
         $result += $pr
         if ((get-command install-package -Module nuget -erroraction ignore) -ne $null) {
             write-verbose "detected Nuget module. using Nuget/install-package: install-package -ProjectName $($proj.name) -id $($pr.Name)"
-            nuget\install-package -ProjectName $proj.name -id $pr.Name -prerelease
+            nuget\install-package -ProjectName $proj.name -id $pr.Name -prerelease:$prerelease
             return "converted with NuGet module"
         }
         else {
@@ -87,7 +89,10 @@ function  convert-ReferencesToNuget {
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="slnfile", Position=0)][string] $slnfile,
         [Parameter(Mandatory=$true, ValueFromPipeline=$true, ParameterSetName="csprojobj", Position=0)][csproj] $csproj, 
         [Alias("project")][Parameter(Mandatory=$true, Position=1)][string]$projectName, 
-        [Parameter(Mandatory=$false, Position=2)] $packagesDir = $null
+        [Parameter(Mandatory=$false, Position=2)] $packagesDir = $null,
+        $filter = $null,
+        [Alias("pre")]
+        [switch][bool] $prerelease
     )
     if (![string]::isnullorempty($slnfile)) {
         $sln = import-sln $slnfile
@@ -116,7 +121,8 @@ function  convert-ReferencesToNuget {
         
     foreach($r in $references) {
         if ($r.type -ne "project") { continue }
-        $converted = @(convert-projectReferenceToNuget -proj $r.project -pr $r.ref)
+        if ($fiter -ne $null -and $r.shortname -notmatch $filter) { continue }
+        $converted = @(convert-projectReferenceToNuget -proj $r.project -pr $r.ref -prerelease:$prerelease)
         $csprojs += get-content $r.projectpath
         $converted += $converted
     }
