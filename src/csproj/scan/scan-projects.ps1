@@ -1,10 +1,12 @@
-function Initialize-Projects($Path = ".") {
+function Initialize-Projects {
+    [CmdletBinding()]
+    param ($Path = ".") 
 
 $_path = $path
 
 ipmo deployment
 $projectFiles = Get-Listing -Path $_path -files -include "*.csproj","*.xproj" -Recursive `
-    -Excludes "node_modules/","artifacts/","bin/","obj/",".hg/","dnx-packages/","packages/","common/","bower_components/","reader-content/","publish/"
+    -Excludes "node_modules/","artifacts/","bin/","obj/",".hg/","dnx-packages/","packages/","/common/","bower_components/","reader-content/","publish/"
 
 $projects = @{}
 
@@ -25,7 +27,7 @@ $projectFiles | % {
         $guid = [guid]::NewGuid().ToString("n")
         $projects += @{ "$($name)_$guid" = @{ path = $path; hasNuspec = $hasNuspec }} 
     } else {
-        
+        write-verbose "found project '$name' at '$path'"
         $projects += @{ "$name" = @{ path = $path; hasNuspec = $hasNuspec }} 
     }
     
