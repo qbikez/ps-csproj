@@ -22,12 +22,18 @@ function Expand-ZIPFile
 {
 [CmdletBinding()]
 param($file, $destination)
+    if (!(test-path $file)) { throw "zip file '$file' not found in '$((get-item .).FullName)'" }
     $shell = new-object -com shell.application
-    $zip = $shell.NameSpace($file)
-    foreach($item in $zip.items())
-    {
-        write-verbose "extracting $($item.Name) to $destination"
-        $shell.Namespace($destination).copyhere($item, 0x14)
+    $zip = $shell.NameSpace((get-item $file).FullName)
+    if ($zip -eq $null) { throw "failed to open zipfile '$file'" }
+    try {
+        foreach($item in $zip.items())
+        {
+            write-verbose "extracting $($item.Name) to $destination"
+            $shell.Namespace((get-item $destination).fullname).copyhere($item, 0x14)
+        }
+    } catch {
+        throw (New-Object System.Exception "Failed to extract zip '$file' to '$destination'", $_.Exception)
     }
 }
 
@@ -136,12 +142,17 @@ process {
         # TODO: handle rolling updates for dotnet/dnx/nuget3 model
         if ($source -eq "rolling") {
             $packagesDir = find-packagesdir
+            if ($packagesDir -eq $null) { throw "packages dir not found" }
             $packagename = (split-packagename (split-path -leaf $nupkg)).Name
             $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir
             $packagedir = $nuget.PackageDir
+            if ($packagedir -eq $null) {
+                throw "package dir for package '$packagename' not found in '$packagesdir'"
+            }
             $zip = "$nupkg.zip"
             copy-item $nupkg $zip
 
+            
             Expand-ZIPFile -file $zip -destination $packageDir -verbose
             copy-item $nupkg $packageDir -Verbose
 
