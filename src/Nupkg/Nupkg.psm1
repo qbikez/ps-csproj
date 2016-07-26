@@ -187,7 +187,10 @@ process {
             $nuspecorcsproj = $null
         } 
         if ($nuspecorcsproj -eq $null) {
-            $csprojs = @(gci . -filter "*.csproj") +  @(gci . -filter "project.json")  
+            $csprojs = @(gci . -filter "*.csproj") 
+            if ($csprojs.Length -eq 0) {
+                $csprojs += @(gci . -filter "project.json")  
+            }
             if ($csprojs.length -eq 1) {
                 $nuspecorcsproj = $csprojs[0].Name
             } else {
@@ -306,7 +309,7 @@ process {
 function update-nugetmeta {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param($path = ".", $description = $null, [Alias("company")]$author = $null, $version = $null)
-    
+    $verb = $psBoundParameters["Verbose"] -eq $true
     write-verbose "generating nuget meta"
     $v = get-assemblymeta "Description" $path
     if ([string]::isnullorempty($v) -or $description -ne $null) {
@@ -324,7 +327,7 @@ function update-nugetmeta {
         write-verbose "found Company: $v"
     }
    
-   Update-AssemblyVersion $version $path
+   Update-AssemblyVersion $version $path -Verbose:$verb
 }
 
 
@@ -387,7 +390,7 @@ function Update-BuildVersion {
         
     ) 
 process {
-    $verb = $psBoundParameters["Verbose"]
+    $verb = $psBoundParameters["Verbose"] -eq $true
     write-verbose "verbosity switch: $verb"
     pushd
     try {
@@ -402,8 +405,8 @@ process {
             
         }
         if ($version -eq $null -and $path -ne $null) {
-            $ver = Get-AssemblyMeta InformationalVersion 
-            if ($ver -eq $null) { $ver = Get-AssemblyMeta Version }
+            $ver = Get-AssemblyMeta InformationalVersion -verbose:$verb
+            if ($ver -eq $null) { $ver = Get-AssemblyMeta Version -verbose:$verb }
         }
         else {
             $ver = $version
@@ -435,7 +438,7 @@ process {
             }
         }
 
-        $branch = get-vcsbranch
+        $branch = get-vcsbranch -verbose:$verb
         if ($branch -ne $null) {
             $branchname = $branch 
             if ($branchname.StartsWith("release")) {
@@ -443,7 +446,7 @@ process {
                 $branchname = $branchname.Trim("-")
             }
             write-verbose "found branch '$branch' => '$branchname'"            
-            $newver = Update-Version $newver SuffixBranch -value $branchname
+            $newver = Update-Version $newver SuffixBranch -value $branchname -verbose:$verb
         }
        
        
@@ -459,7 +462,7 @@ process {
         #Write-Verbose "updating version $ver to $newver"
         try {
             write-verbose "getting source control revision id"
-            $id = get-vcsrev
+            $id = get-vcsrev -verbose:$verb
             write-verbose "rev id='$id'"
         } catch {
             write-warning "failed to get vcs rev"
@@ -478,7 +481,7 @@ process {
         
         Write-host "updating version $ver to $newver"
         if ($path -ne $null -and $version -eq $null -and $PSCmdlet.ShouldProcess("update version $ver to $newver")) {
-            update-nugetmeta -version $newver
+            update-nugetmeta -version $newver -verbose:$verb
         }
         return $newver
     } 

@@ -3,7 +3,8 @@
 import-module pester
 import-module csproj
 import-module semver
-import-module nupkg -verbose
+import-module nupkg 
+import-module assemblymeta -verbose
 
 Describe "find Nuget packages dir" {
     $targetdir = copy-samples
@@ -131,4 +132,67 @@ Describe "Generate nuget for project.json" {
             }
           
         }
+} 
+
+
+
+Describe "Handle csproj with project.json" {
+    $targetdir = copy-samples
+    $targetdir = $targetdir -replace "TestDrive:","$testdrive"
+    $dir = "$targetdir/test/src/Core/Core.csproj+json/"
+
+     In $dir {
+        It "project.json should win" {
+            $ver = Get-AssemblyMeta "AssemblyInformationalVersion"
+            $ver | Should Be "1.2.3"
+
+            $desc = Get-AssemblyMeta "Description"
+            $desc | Should Be "A short json description"
+        } 
+        It "assembly version should be resolved from AssemblyInfo" {
+            $ver = Get-AssemblyMeta "AssemblyVersion"
+            $ver | Should Be "1.0.1"
+        }
+        It "assembly version should be retrieved from specific file" {
+            $ver = Get-AssemblyMeta "AssemblyInformationalVersion"  -assemblyinfo "Properties/AssemblyInfo.cs" 
+            $ver | Should Be "1.0.1"
+        }
+
+        It "assembly version should be updated in both files" {
+            $newver = update-buildversion -component Patch
+            $newver | Should Be "1.2.4"
+
+            $csver = Get-AssemblyMeta "AssemblyInformationalVersion"  -assemblyinfo "Properties/AssemblyInfo.cs"
+            $csvershort = Get-AssemblyMeta "AssemblyVersion"  -assemblyinfo "Properties/AssemblyInfo.cs"
+            $jsonver = Get-AssemblyMeta "AssemblyInformationalVersion"  -assemblyinfo "project.json"            
+            
+            $jsonver | Should Be $newver
+            $csver | Should Be $newver            
+            $csvershort | Should Be $newver
+        }
+    
+        It "short assembly version should not have prefix" {
+            $newver = update-buildversion -verbose
+            $newver | Should Match "1\.2\.4-.*"
+
+            $csver = Get-AssemblyMeta "AssemblyInformationalVersion"  -assemblyinfo "Properties/AssemblyInfo.cs"
+            $csvershort = Get-AssemblyMeta "AssemblyVersion"  -assemblyinfo "Properties/AssemblyInfo.cs"
+            $jsonver = Get-AssemblyMeta "AssemblyInformationalVersion"  -assemblyinfo "project.json"
+
+            
+            $jsonver | Should Be $newver
+            $csver | Should Be $newver            
+            $csvershort | Should Be "1.2.4"
+        }
+        
+        It "assembly description should be copied from json" {
+            $newver = update-buildversion -component Patch
+            
+            $desc = Get-AssemblyMeta "Description" -assemblyinfo "project.json"
+            $csdesc = Get-AssemblyMeta "Description" -assemblyinfo "Properties/AssemblyInfo.cs"
+
+            $desc | Should Be "A short json description"
+            $csdesc | Should Be "My csproj Description"
+        }
+     }
 }

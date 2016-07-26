@@ -1,11 +1,13 @@
-function Get-AssemblyMetaKey($key, $type = "cs") {
+function Get-AssemblyMetaKey {
+[CmdletBinding()]
+param($key, $type = "cs")
     if ($type -eq "json") {
-        if ($key -ieq "InformationalVersion" -or $key -ieq "AssemblyInformationalVersion") {
-            return "version"
+        $r = switch($key)  {
+            { @("InformationalVersion","AssemblyInformationalVersion") -eq $_ } { "version"; break; }
+            "Description" { "description"; break; }
+            default { $null; break; }
         }
-        else {
-            return $null
-        }
+        return $r
     }
     else {
         if ($key -eq $null) {
@@ -22,7 +24,10 @@ function Get-AssemblyMetaKey($key, $type = "cs") {
     }
 }
 
-function Get-AssemblyMetaFile($path = ".") {
+function Get-AssemblyMetaFile {
+[CmdletBinding()]
+param($path = ".")
+
     if ($path.EndsWith(".cs") -or $path.EndsWith("project.json")) {
         return $path
     }
@@ -52,7 +57,8 @@ function Get-AssemblyMetaFile($path = ".") {
 function Get-AssemblyMeta {
     [CmdletBinding()]
     param ($key, $assemblyinfo = ".")
-    
+
+    $originalKey = $key
     $assemblyinfos = get-assemblymetafile $assemblyinfo
     if ($key -eq $null) { $table = $true }
     
@@ -63,7 +69,7 @@ function Get-AssemblyMeta {
         if ($assemblyinfo.endswith("project.json")) 
         {
             
-            $key = get-assemblymetakey $key -type "json"
+            $key = get-assemblymetakey $originalKey -type "json"
             if ($key -eq $null) {
                 continue
             }
@@ -77,7 +83,7 @@ function Get-AssemblyMeta {
             return $json.$key     
         }
         else {
-            $key = get-assemblymetakey $key    
+            $key = get-assemblymetakey $originalKey     
 
             $content = get-content $assemblyinfo   
             $value = $content | % {
@@ -105,19 +111,16 @@ function Get-AssemblyMeta {
 function Set-AssemblyMeta {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param ($key, $value, $assemblyinfo = ".") 
+    $originalKey = $key
     
-    $key = get-assemblymetakey $key
     $assemblyinfos = @(get-assemblymetafile $assemblyinfo)
     
-    # only process the first file, for now
-    for($i = 0; $i -lt 1; $i++) {
-        $assemblyinfo =  $assemblyinfos[$i]
+    foreach($assemblyinfo in $assemblyinfos) {
         if ($assemblyinfo.endswith("project.json"))
         {
-            $orgkey = $key
-            $key = get-assemblymetakey $key -type "json"
+            $key = get-assemblymetakey $originalKey -type "json"
             if ($key -eq $null) {
-                write-host "don't know a matching project.json key for '$orgkey'"
+                write-host "don't know a matching project.json key for '$originalKey'"
                 continue
             }
             import-module newtonsoft.json
@@ -129,6 +132,7 @@ function Set-AssemblyMeta {
             $json | convertto-jsonnewtonsoft | out-file $assemblyinfo -encoding utf8    
         }
         else {
+            $key = get-assemblymetakey $originalKey
             # [assembly: AssemblyCompany("")]
             $content = get-content $assemblyinfo   
             
@@ -153,7 +157,10 @@ function Set-AssemblyMeta {
     }
 }
 
-function Update-AssemblyVersion($version, $path = ".") {
+function Update-AssemblyVersion {
+[CmdletBinding()]
+param($version, $path = ".") 
+
     $ver = $version
     
     $v = get-assemblymeta "Version" $path
