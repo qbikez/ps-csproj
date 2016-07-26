@@ -112,7 +112,8 @@ process {
         } 
         catch {
             write-error $_
-            return $_
+            #return $_
+            throw $_
         }
         finally {
             popd

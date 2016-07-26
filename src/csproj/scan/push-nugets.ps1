@@ -84,18 +84,18 @@ process {
             write-host "skipping TEST project '$($project.name)'"
             continue
         }
-        try {
-            $p = filter-BoundParameters "push-nuget" -bound $b
-            return push-nuget @p
-        } 
-        catch {
-            write-error $_
-            return $_
-        }
+        
+        $p = filter-BoundParameters "push-nuget" -bound $b
+        return push-nuget @p        
+        
     }
 
     foreach-project -project:$project -AllowNoNuspec:($AllowNoNuspec -or $force) -cmd { 
-        push-project $_ 
+        try {
+        push-project $_
+        } catch {
+            throw $_
+        } 
     }   
 }
 }
