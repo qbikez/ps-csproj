@@ -40,8 +40,9 @@ param($path = ".")
         if ($i.psiscontainer) {
             $files = @()
             if (test-path "$path/project.json") { $files += @("$path/project.json")}
+            if (test-path "$path/AssemblyVersionInfo.cs") { $files += @("$path/AssemblyVersionInfo.cs") }
             if (test-path "$path/Properties/AssemblyInfo.cs") { $files += @("$path/Properties/AssemblyInfo.cs") }
-            if (test-path "$path/AssemblyInfo.cs") { files += @("$path/AssemblyInfo.cs") }            
+            if (test-path "$path/AssemblyInfo.cs") { $files += @("$path/AssemblyInfo.cs") }            
             if ($files.length -gt 0) { return $files }
         }
         
@@ -56,7 +57,7 @@ param($path = ".")
 
 function Get-AssemblyMeta {
     [CmdletBinding()]
-    param ($key, $assemblyinfo = ".")
+    param ($key, $assemblyinfo = ".", [switch][bool] $table)
 
     $originalKey = $key
     $assemblyinfos = get-assemblymetafile $assemblyinfo
@@ -65,33 +66,41 @@ function Get-AssemblyMeta {
     $value = $null
     
     foreach($assemblyinfo in $assemblyinfos) {
-        
+        write-verbose "cheking file '$assemblyinfo' for assembly info"
         if ($assemblyinfo.endswith("project.json")) 
-        {
-            
+        {            
             $key = get-assemblymetakey $originalKey -type "json"
             if ($key -eq $null) {
                 continue
             }
             try {
                 import-module newtonsoft.json
-            $json = get-content $assemblyinfo | out-string | convertfrom-jsonnewtonsoft
+                $json = get-content $assemblyinfo | out-string | convertfrom-jsonnewtonsoft
             } catch {
                 write-error "failed to parse json from file '$assemblyinfo'"
                 throw $_
             } 
-            return $json.$key     
+            if ($json.$key -ne $null) {
+                if ($table) {
+                    return new-object -type pscustomobject -property @{
+                        key = $key; value = $json.$key; file = $assemblyinfo
+                    }
+                }
+                else {
+                    return $json.$key
+                }            
+            }
         }
         else {
             $key = get-assemblymetakey $originalKey     
-
+            write-verbose "looking for key '$key' in '$assemblyinfo'"
             $content = get-content $assemblyinfo   
             $value = $content | % {
-                $regex = "\[assembly: (?<key>$($key))\(""(?<value>.*)""\)\]"
+                $regex = "\[assembly: (System\.Reflection\.){0,1}(?<key>$($key))\(""(?<value>.*)""\)\]"
                 if ($_ -match $regex -and !($_.trim().startswith("//"))) {
                     if ($table) {
                         return new-object -type pscustomobject -property @{
-                            key = $matches["key"]; value = $matches["value"]
+                            key = $matches["key"]; value = $matches["value"]; file = $assemblyinfo
                         }
                     }
                     else {
@@ -113,6 +122,7 @@ function Set-AssemblyMeta {
     param ($key, $value, $assemblyinfo = ".") 
     $originalKey = $key
     
+    $originalFile = 
     $assemblyinfos = @(get-assemblymetafile $assemblyinfo)
     
     foreach($assemblyinfo in $assemblyinfos) {
@@ -138,8 +148,11 @@ function Set-AssemblyMeta {
             
             $found = $false
             $content = $content | % {
-                $regex = "\[assembly: ($($key))\(""(.*)""\)\]"
                 $newval = $_
+                $regex = "\[assembly: ($($key))\(""(.*)""\)\]"
+                if ($_ -notmatch $regex) {
+                    $regex = "\[assembly: (System\.Reflection\.$($key))\(""(.*)""\)\]"
+                }
                 if ($_ -match $regex) {            
                     $newval = $newval -replace $regex,"[assembly: `${1}(""$($value)"")]"
                     $found = $true
