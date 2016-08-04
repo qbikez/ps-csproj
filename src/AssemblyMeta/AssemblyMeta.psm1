@@ -2,6 +2,9 @@ function Get-AssemblyMetaKey {
 [CmdletBinding()]
 param($key, $type = "cs")
     if ($type -eq "json") {
+        if ($key -eq $null) {
+            return 
+        }
         $r = switch($key)  {
             { @("InformationalVersion","AssemblyInformationalVersion") -eq $_ } { "version"; break; }
             "Description" { "description"; break; }
@@ -63,13 +66,13 @@ function Get-AssemblyMeta {
     $assemblyinfos = get-assemblymetafile $assemblyinfo
     if ($key -eq $null) { $table = $true }
     
-    $value = $null
-    
+    $value = @()
     foreach($assemblyinfo in $assemblyinfos) {
         write-verbose "cheking file '$assemblyinfo' for assembly info"
         if ($assemblyinfo.endswith("project.json")) 
         {            
             $key = get-assemblymetakey $originalKey -type "json"
+            write-verbose "looking for key '$key' in '$assemblyinfo'"
             if ($key -eq $null) {
                 continue
             }
@@ -80,38 +83,38 @@ function Get-AssemblyMeta {
                 write-error "failed to parse json from file '$assemblyinfo'"
                 throw $_
             } 
-            if ($json.$key -ne $null) {
-                if ($table) {
-                    return new-object -type pscustomobject -property @{
-                        key = $key; value = $json.$key; file = $assemblyinfo
+            foreach($k in @($key)) {
+                if ($json.$k -ne $null) {
+                    if ($table) {
+                        $value += @(new-object -type pscustomobject -property @{
+                            key = $k; value = $json.$k; file = $assemblyinfo; fileKey = $k
+                        })
+                        continue
                     }
+                    else {
+                        return $json.$k
+                    }            
                 }
-                else {
-                    return $json.$key
-                }            
             }
         }
         else {
             $key = get-assemblymetakey $originalKey     
             write-verbose "looking for key '$key' in '$assemblyinfo'"
             $content = get-content $assemblyinfo   
-            $value = $content | % {
-                $regex = "\[assembly: (System\.Reflection\.){0,1}(?<key>$($key))\(""(?<value>.*)""\)\]"
+            $value += @($content | % {
+                $regex = "\[assembly: (?<fileKey>(System\.Reflection\.){0,1}(?<key>$($key))(Attribute){0,1})\(""(?<value>.*)""\)\]"
                 if ($_ -match $regex -and !($_.trim().startswith("//"))) {
                     if ($table) {
                         return new-object -type pscustomobject -property @{
-                            key = $matches["key"]; value = $matches["value"]; file = $assemblyinfo
+                            key = $matches["key"]; value = $matches["value"]; file = $assemblyinfo; fileKey=$matches["fileKey"]
                         }
                     }
                     else {
                         return $matches["value"]
                     }            
                 }          
-            }           
-        }
-        if ($value -ne $null) {
-            break
-        }
+            })           
+        }       
     }
     
     return $value
@@ -122,9 +125,12 @@ function Set-AssemblyMeta {
     param ($key, $value, $assemblyinfo = ".") 
     $originalKey = $key
     
-    $originalFile = 
+    $current = get-assemblymeta $key $assemblyinfo -table
     $assemblyinfos = @(get-assemblymetafile $assemblyinfo)
-    
+    if ($current -ne $null) {
+        $json = $assemblyinfos | ? {$_.endswith("project.json") }
+        $assemblyinfos = @($current.File) + @($json)
+    }
     foreach($assemblyinfo in $assemblyinfos) {
         if ($assemblyinfo.endswith("project.json"))
         {
@@ -135,14 +141,19 @@ function Set-AssemblyMeta {
             }
             import-module newtonsoft.json
             $json = get-content $assemblyinfo | out-string | convertfrom-jsonnewtonsoft 
-            $json.$key = $value
-
-            ipmo publishmap
+            $json.$key = $value           
+            write-verbose "setting json value '$key' to '$value' in $assemblyinfo"
+            #ipmo publishmap
             #$json = convertto-hashtable $json -recurse
             $json | convertto-jsonnewtonsoft | out-file $assemblyinfo -encoding utf8    
         }
         else {
             $key = get-assemblymetakey $originalKey
+
+            if ($current -ne $null) {
+                $ck = $current | ? { $_.file -eq $assemblyinfo }
+                if ($ck -ne $null) { $key = $ck.filekey }
+            }
             # [assembly: AssemblyCompany("")]
             $content = get-content $assemblyinfo   
             
