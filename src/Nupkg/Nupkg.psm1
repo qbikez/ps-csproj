@@ -320,11 +320,12 @@ process {
 function update-nugetmeta {
     [CmdletBinding(SupportsShouldProcess=$true)]
     param($path = ".", $description = $null, [Alias("company")]$author = $null, $version = $null)
+    
     $verb = $psBoundParameters["Verbose"] -eq $true
     write-verbose "generating nuget meta"
     $v = get-assemblymeta "Description" $path
     if ([string]::isnullorempty($v) -or $description -ne $null) {
-        if ($description -eq $null) { $description =  "No Description" }
+        if ($description -eq $null) { $description =  "no description" }
         set-assemblymeta "Description" $description $path
     } else {
         write-verbose "found Description: $v"
@@ -491,8 +492,11 @@ process {
 
         
         Write-host "updating version $ver to $newver"
-        if ($path -ne $null -and $version -eq $null -and $PSCmdlet.ShouldProcess("update version $ver to $newver")) {
-            update-nugetmeta -version $newver -verbose:$verb
+        if ($path -ne $null -and $PSCmdlet.ShouldProcess("update version $ver to $newver")) {
+            $assemblyinfos = Get-AssemblyMetaFile -ErrorAction Ignore
+            if ($assemblyinfos -ne $null) { update-nugetmeta -version $newver -verbose:$verb }
+        } else {
+
         }
         return $newver
     } 

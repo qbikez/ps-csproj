@@ -46,10 +46,14 @@ param($path = ".")
             if (test-path "$path/AssemblyVersionInfo.cs") { $files += @("$path/AssemblyVersionInfo.cs") }
             if (test-path "$path/Properties/AssemblyInfo.cs") { $files += @("$path/Properties/AssemblyInfo.cs") }
             if (test-path "$path/AssemblyInfo.cs") { $files += @("$path/AssemblyInfo.cs") }            
+            if (test-path "$path/GeneratedAssemblyInfo.cs") { $files += @("$path/GeneratedAssemblyInfo.cs") }            
             if ($files.length -gt 0) { return $files }
         }
-        
-        throw "AssemblyInfo not found in '$($i.fullname)'"    
+        if ($ErrorActionPreference -ne "Ignore") {
+            throw "AssemblyInfo not found in '$($i.fullname)'"
+        } else {
+            return $null
+        }
     }
     else {
         throw "Path not found: '$path'"
@@ -131,9 +135,14 @@ function Set-AssemblyMeta {
         $json = $assemblyinfos | ? {$_.endswith("project.json") }
         $assemblyinfos = @($current.File) + @($json)
     }
+    $jsonSet = $false;
+    $csSet = $false;
     foreach($assemblyinfo in $assemblyinfos) {
         if ($assemblyinfo.endswith("project.json"))
         {
+            #only set value in one of json files
+            if ($current -eq $null -and $jsonSet) { continue }
+
             $key = get-assemblymetakey $originalKey -type "json"
             if ($key -eq $null) {
                 write-host "don't know a matching project.json key for '$originalKey'"
@@ -142,12 +151,15 @@ function Set-AssemblyMeta {
             import-module newtonsoft.json
             $json = get-content $assemblyinfo | out-string | convertfrom-jsonnewtonsoft 
             $json.$key = $value           
+            $jsonSet = $true
             write-verbose "setting json value '$key' to '$value' in $assemblyinfo"
             #ipmo publishmap
             #$json = convertto-hashtable $json -recurse
-            $json | convertto-jsonnewtonsoft | out-file $assemblyinfo -encoding utf8    
+            $json | convertto-jsonnewtonsoft | out-file $assemblyinfo -encoding utf8  
         }
         else {
+            #only set value in one of cs files
+            if ($current -eq $null -and $csSet) { continue }
             $key = get-assemblymetakey $originalKey
 
             if ($current -ne $null) {
@@ -168,16 +180,20 @@ function Set-AssemblyMeta {
                     $newval = $newval -replace $regex,"[assembly: `${1}(""$($value)"")]"
                     $found = $true
                     write-verbose "replacing: $_ => $newval"
+                    $csSet = $true
                 } 
                 $newval
             } 
-            if (!$found) {
-                $content += "[assembly: $key(""$($value)"")]"
+            if (!$found -and $current -eq $null) {
+                $content += "[assembly: System.Reflection.$key(""$($value)"")]"
+                $csSet = $true
             }
             if ($PSCmdlet.ShouldProcess("save output file '$assemblyinfo'")) {
                 $content | out-file $assemblyinfo -Encoding utf8
             }
         }
+
+        
     }
 }
 
