@@ -1,3 +1,5 @@
+import-module newtonsoft.json
+
 function Push-Nugets {
 [CmdletBinding()]
 param(

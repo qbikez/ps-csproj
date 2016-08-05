@@ -1,3 +1,5 @@
+import-module newtonsoft.json
+    
 function Use-Projects {
 [CmdletBinding()]
 param(
@@ -12,7 +14,7 @@ param(
 
 DynamicParam
 {
-    $paramDictionary = new-object -Type System.Management.Automation.RuntimeDefinedParameterDictionary
+   $paramDictionary = new-object -Type System.Management.Automation.RuntimeDefinedParameterDictionary
     
     if ($true -or (test-path ".projects")) {
         $paramname = "Project"
@@ -24,7 +26,7 @@ DynamicParam
         #$attributes.Position = 0
         $attributeCollection = new-object -Type System.Collections.ObjectModel.Collection[System.Attribute]
         $attributeCollection.Add($attributes)
-
+		
         $script:projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft 
 
         $validvalues = $projects.Keys
@@ -68,6 +70,7 @@ begin {
     }
 }
 process {
+	
     if ($scan -or !(test-path ".projects.json")) {
         scan-projects 
         return 

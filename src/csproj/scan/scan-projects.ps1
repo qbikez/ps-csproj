@@ -1,3 +1,5 @@
+import-module newtonsoft.json
+
 function Initialize-Projects {
     [CmdletBinding()]
     param ($Path = ".") 
