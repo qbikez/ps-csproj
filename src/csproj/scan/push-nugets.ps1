@@ -25,12 +25,13 @@ DynamicParam
         $attributeCollection = new-object -Type System.Collections.ObjectModel.Collection[System.Attribute]
         $attributeCollection.Add($attributes)
 
-        $script:projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft 
-
-        $validvalues = $projects.Keys
-
-        $validateset = new-object System.Management.Automation.ValidateSetAttribute -ArgumentList @($validvalues)
-        $attributeCollection.Add($validateset)
+         if ((test-path ".projects")) {
+            $script:projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft 
+            $validvalues = $projects.Keys
+            $validateset = new-object System.Management.Automation.ValidateSetAttribute -ArgumentList @($validvalues)
+            $attributeCollection.Add($validateset)
+        }
+        
         $dynParam1 = new-object -Type System.Management.Automation.RuntimeDefinedParameter($paramname, $paramType, $attributeCollection)
 
         
@@ -70,7 +71,6 @@ begin {
 process {
     if ($scan -or !(test-path ".projects.json")) {
         scan-projects
-        return 
     }
 
     $b = $cmdlet.MyInvocation.BoundParameters
@@ -94,7 +94,7 @@ process {
 
     foreach-project -project:$project -AllowNoNuspec:($AllowNoNuspec -or $force) -cmd { 
         try {
-        push-project $_
+            push-project $_
         } catch {
             throw $_
         } 

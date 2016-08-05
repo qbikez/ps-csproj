@@ -27,12 +27,12 @@ DynamicParam
         $attributeCollection = new-object -Type System.Collections.ObjectModel.Collection[System.Attribute]
         $attributeCollection.Add($attributes)
 		
-        $script:projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft 
-
-        $validvalues = $projects.Keys
-
-        $validateset = new-object System.Management.Automation.ValidateSetAttribute -ArgumentList @($validvalues)
-        $attributeCollection.Add($validateset)
+        if ((test-path ".projects")) {
+            $script:projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft 
+            $validvalues = $projects.Keys
+            $validateset = new-object System.Management.Automation.ValidateSetAttribute -ArgumentList @($validvalues)
+            $attributeCollection.Add($validateset)
+        }
         $dynParam1 = new-object -Type System.Management.Automation.RuntimeDefinedParameter($paramname, $paramType, $attributeCollection)
 
         
@@ -73,7 +73,6 @@ process {
 	
     if ($scan -or !(test-path ".projects.json")) {
         scan-projects 
-        return 
     }
 
     ipmo nupkg
@@ -109,8 +108,11 @@ process {
         pushd 
         try {
             cd (split-path -parent $path)
-            $_ = $projects[$project]
-            $o = Invoke-Command $cmd -ArgumentList @($projects[$project])
+            $curr  = $projects[$project]
+            @($curr) | % {
+                $o = Invoke-Expression $cmd.ToString()
+            } 
+            #$o = Invoke-Command $cmd -ArgumentList @($projects[$project]) -InputObject $projects[$project] -NoNewScope
             return $o
         } 
         catch {
