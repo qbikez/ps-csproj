@@ -253,7 +253,7 @@ function add-projectItem {
 [CmdletBinding()]
 param ([Parameter(Mandatory=$true)] $csproj, [Parameter(Mandatory=$true)] $file)
 
-    ipmo deployment
+    ipmo pathutils
 
     if ($csproj -is [string]) {
         $csprojPath = $csproj

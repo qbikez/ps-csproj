@@ -6,7 +6,7 @@ function Initialize-Projects {
 
 $_path = $path
 
-ipmo deployment
+ipmo pathutils
 $projectFiles = Get-Listing -Path $_path -files -include "*.csproj","*.xproj" -Recursive `
     -Excludes "node_modules/","artifacts/","bin/","obj/",".hg/","dnx-packages/","packages/","/common/","bower_components/","reader-content/","publish/"
 
