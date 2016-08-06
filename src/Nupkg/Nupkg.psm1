@@ -1,7 +1,8 @@
 ipmo process
 ipmo assemblymeta -Global
 ipmo semver -Global
-
+ipmo newtonsoft.json
+ipmo pathutils
 
 $root = "."
 if (![string]::IsNullOrEmpty($PSScriptRoot)) {
@@ -189,6 +190,7 @@ function invoke-nugetpack {
     [switch][bool] $Stable,
     [switch][bool] $ForceDll,
     [switch][bool] $useDotnet,
+    $suffix = $null,
     $buildProperties = @{}) 
 process {    
     pushd
@@ -216,7 +218,8 @@ process {
                 throw "found multiple nuspec files in '$((gi .).FullName)'. please choose one."
             }
         }
-        $dotnet = "dnu"
+        $dotnet = get-dotnetcommand
+        if ($dotnet -eq $null) { $dotnet = "dotnet" }
         if ($useDotnet) { $dotnet = "dotnet" }
         
         $dir = split-path -parent $nuspecorcsproj
@@ -226,9 +229,14 @@ process {
         cd $dir
 
         if ($Build) {
-            $newver = update-buildversion 
-            if ($stable) {
-                $newver = update-buildversion -stable:$stable
+            if ($suffix -ne $null) {
+                $newver = update-buildversion -component Suffix -value $suffix
+            }
+            else {
+                $newver = update-buildversion 
+                if ($stable) {
+                    $newver = update-buildversion -stable:$stable
+                }
             }
             if ($nuspecorcsproj.endswith("project.json")) {
                     $o = invoke $dotnet restore -verbose:$($verbosePreference="Continue")
@@ -398,7 +406,8 @@ function Update-BuildVersion {
         [Parameter(Position = 1)]
         $version = $null,
         [VersionComponent]$component = [VersionComponent]::SuffixBuild,
-        [switch][bool] $stable
+        [switch][bool] $stable,
+        $value = $null
         
     ) 
 process {
@@ -466,7 +475,7 @@ process {
         
 
         if ($component -ne $null) {
-            $newver = Update-Version $newver $component -nuget -verbose:$verb    
+            $newver = Update-Version $newver $component -nuget -verbose:$verb -value $value  
         } else {
             $newver = Update-Version $newver SuffixBuild -nuget -verbose:$verb
         }
@@ -507,6 +516,27 @@ process {
         popd
     }
 }
+}
+
+
+function find-globaljson($path = ".") {
+    return find-upwards "global.json" -path $path    
+}
+
+
+function get-dotnetcommand {
+    $global = find-globaljson
+    if ($global -eq $null) { return $null }
+    $json = get-content $global | out-string | ConvertFrom-JsonNewtonsoft
+    $default = "dotnet"
+    if ($json.sdk -eq $null) { return $default }
+    if ($json.sdk.version -eq $null) { return $default }
+    if ($json.sdk.version.startswith("1.0.0-beta") -or $json.sdk.version.startswith("1.0.0-rc2")) {
+        return "dnu"
+    } 
+    else {
+        return "dotnet"
+    }
 }
 
 new-alias generate-nugetmeta update-nugetmeta
