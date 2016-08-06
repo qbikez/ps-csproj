@@ -1,13 +1,17 @@
 import-module newtonsoft.json
     
 function Use-Projects {
-[CmdletBinding()]
+[CmdletBinding(DefaultParameterSetName="default")]
 param(
+    [Parameter(ParameterSetName="scan")]
     [switch][bool] $scan,
+    [Parameter(ParameterSetName="default")]
     [switch][bool] $all,
+    [Parameter(ParameterSetName="default")]
     [switch][bool] $AllowNoNuspec = $true,
+    [Parameter(ParameterSetName="default")]
     [switch][bool] $force,
-    [Parameter(Mandatory=$true)]
+    [Parameter(Mandatory=$true, ParameterSetName="default")]
     [ScriptBlock] $cmd
 )
 
@@ -72,7 +76,8 @@ begin {
 process {
 	
     if ($scan -or !(test-path ".projects.json")) {
-        scan-projects 
+        scan-projects
+        if ($scan) { return }
     }
 
     ipmo nupkg

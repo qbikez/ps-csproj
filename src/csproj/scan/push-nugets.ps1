@@ -71,6 +71,7 @@ begin {
 process {
     if ($scan -or !(test-path ".projects.json")) {
         scan-projects
+        if ($scan) { return }
     }
 
     $b = $cmdlet.MyInvocation.BoundParameters
@@ -96,6 +97,7 @@ process {
         try {
             push-project $_
         } catch {
+            Write-Error $_.ScriptStackTrace
             throw $_
         } 
     }   

@@ -8,7 +8,7 @@ $_path = $path
 
 ipmo pathutils
 $projectFiles = Get-Listing -Path $_path -files -include "*.csproj","*.xproj" -Recursive `
-    -Excludes "node_modules/","artifacts/","bin/","obj/",".hg/","dnx-packages/","packages/","/common/","bower_components/","reader-content/","publish/"
+    -Excludes "node_modules/","artifacts/","bin/","obj/",".hg/","dnx-packages/","packages/","/common/","bower_components/","reader-content/","publish/","^\..*/"
 
 $projects = @{}
 
@@ -24,7 +24,7 @@ $projectFiles | % {
     } catch {
     }
     if ($projects.ContainsKey($name)) {
-        write-warning "duplicate projects found: $($projects[$name])"
+        write-warning "duplicate projects found: $($projects[$name].path)"
         write-warning "                     and  $path"
         $guid = [guid]::NewGuid().ToString("n")
         $projects += @{ "$($name)_$guid" = @{ path = $path; hasNuspec = $hasNuspec }} 
