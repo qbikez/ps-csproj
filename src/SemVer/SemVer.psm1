@@ -183,7 +183,7 @@ function Update-Version {
         $sfx = $semver.FormatSuffix($compatibilityMode)
         
         if ($component -eq [VersionComponent]::Suffix) {
-            $sfx = $null
+            $sfx = $value
         }
         write-verbose "updating suffix $($semver.suffix) => $sfx"
         $semver.suffix = $sfx

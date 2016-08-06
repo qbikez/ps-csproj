@@ -38,6 +38,14 @@ Describe "Nuget Version manipulation" {
             $r = update-buildversion -version $version 
             $r | Should Be $expected
         } 
+        It "update build version with custom suffix" {
+            $r = update-buildversion -version "1.0.1" -component Suffix -value "sfx"
+            $r | Should Be "1.0.1-sfx"
+        }
+        It "update build version with custom suffix 2" {
+            $r = update-buildversion -version "1.0.1-build001" -component Suffix -value "sfx"
+            $r | Should Be "1.0.1-sfx"
+        }
     }
 }
 
@@ -55,6 +63,14 @@ Describe "Generate nuget for csproj" {
             }            
             It "Should pack" {
                 $nuget = pack-nuget $project -build
+                $nuget | Should Not BeNullOrEmpty
+                test-path $nuget | Should Be $true  
+                $ver = Get-AssemblyMeta "AssemblyInformationalVersion"
+                $pkgver = get-packageversion $nuget
+                $pkgver | Should Be $ver
+            }
+            It "Should pack with suffix" {
+                $nuget = pack-nuget $project -build -suffix "mysuffix"
                 $nuget | Should Not BeNullOrEmpty
                 test-path $nuget | Should Be $true  
                 $ver = Get-AssemblyMeta "AssemblyInformationalVersion"

@@ -102,6 +102,7 @@ function invoke-nugetpush {
     [switch][bool] $ForceDll,
     [switch][bool] $Stable,
     [switch][bool] $useDotnet,
+    $suffix = $null,
     $buildProperties = @{}) 
 process {
     
@@ -112,7 +113,7 @@ process {
         }
     }
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties  $buildProperties -usedotnet:$usedotnet
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties  $buildProperties -usedotnet:$usedotnet -suffix:$suffix
     } else {
         $nupkg = $file
     }
@@ -480,19 +481,21 @@ process {
             $newver = Update-Version $newver SuffixBuild -nuget -verbose:$verb
         }
         
-        #Write-Verbose "updating version $ver to $newver"
-        try {
-            write-verbose "getting source control revision id"
-            $id = get-vcsrev -verbose:$verb
-            write-verbose "rev id='$id'"
-        } catch {
-            write-warning "failed to get vcs rev"
-        }
-        if ($id -ne $null) {
-            $id = $id.substring(0,5)
-            $newver = Update-Version $newver SuffixRevision -value $id -nuget -verbose:$verb
-        } else {
-            write-warning "vcs rev returned null"
+        if ($component -ne [VersionComponent]::Suffix -or $value -eq $null) {
+            #Write-Verbose "updating version $ver to $newver"
+            try {
+                write-verbose "getting source control revision id"
+                $id = get-vcsrev -verbose:$verb
+                write-verbose "rev id='$id'"
+            } catch {
+                write-warning "failed to get vcs rev"
+            }
+            if ($id -ne $null) {
+                $id = $id.substring(0,5)
+                $newver = Update-Version $newver SuffixRevision -value $id -nuget -verbose:$verb
+            } else {
+                write-warning "vcs rev returned null"
+            }
         }
         
         if ($stable) {
