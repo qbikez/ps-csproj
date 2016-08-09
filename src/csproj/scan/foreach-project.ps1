@@ -20,7 +20,7 @@ DynamicParam
 {
    $paramDictionary = new-object -Type System.Management.Automation.RuntimeDefinedParameterDictionary
     
-    if ($true -or (test-path ".projects")) {
+    if ($true -or (test-path ".projects.json")) {
         $paramname = "Project"
         $paramType = [string[]]
 
@@ -31,7 +31,7 @@ DynamicParam
         $attributeCollection = new-object -Type System.Collections.ObjectModel.Collection[System.Attribute]
         $attributeCollection.Add($attributes)
 		
-        if ((test-path ".projects")) {
+        if ((test-path ".projects.json")) {
             $script:projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft 
             $validvalues = $projects.Keys
             $validateset = new-object System.Management.Automation.ValidateSetAttribute -ArgumentList @($validvalues)
