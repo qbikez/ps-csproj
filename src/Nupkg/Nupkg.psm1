@@ -102,6 +102,7 @@ function invoke-nugetpush {
     [switch][bool] $ForceDll,
     [switch][bool] $Stable,
     [switch][bool] $useDotnet,
+    [switch][bool] $incrementVersion,
     $suffix = $null,
     $buildProperties = @{}) 
 process {
@@ -113,7 +114,7 @@ process {
         }
     }
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties  $buildProperties -usedotnet:$usedotnet -suffix:$suffix
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties  $buildProperties -usedotnet:$usedotnet -suffix:$suffix -incrementVersion:$incrementVersion
     } else {
         $nupkg = $file
     }
@@ -191,6 +192,7 @@ function invoke-nugetpack {
     [switch][bool] $Stable,
     [switch][bool] $ForceDll,
     [switch][bool] $useDotnet,
+    [switch][bool] $incrementVersion,
     $suffix = $null,
     $buildProperties = @{}) 
 process {    
@@ -234,7 +236,8 @@ process {
                 $newver = update-buildversion -component Suffix -value $suffix
             }
             else {
-                $newver = update-buildversion 
+                if ($incrementVersion) { $newver = update-buildversion -component patch } 
+                else { $newver = update-buildversion } 
                 if ($stable) {
                     $newver = update-buildversion -stable:$stable
                 }
