@@ -31,7 +31,11 @@ param($file, $destination)
         foreach($item in $zip.items())
         {
             write-verbose "extracting $($item.Name) to $destination"
-            $shell.Namespace((get-item $destination).fullname).copyhere($item, 0x14)
+            if ($item.name -eq "lib") {                
+                $shell.Namespace((get-item $destination).fullname).copyhere($item, 0x14)
+            } else {
+                $shell.Namespace((get-item $destination).fullname).copyhere($item, 0x14)
+            }
         }
     } catch {
         throw (New-Object System.Exception "Failed to extract zip '$file' to '$destination'", $_.Exception)
@@ -144,21 +148,38 @@ process {
 
         # TODO: handle rolling updates for dotnet/dnx/nuget3 model
         if ($source -eq "rolling") {
-            $packagesDir = find-packagesdir
-            if ($packagesDir -eq $null) { throw "packages dir not found" }
+            $packagesDirs = find-packagesdir -all
+            if ($packagesDirs -eq $null) { throw "packages dir not found" }    
             $packagename = (split-packagename (split-path -leaf $nupkg)).Name
-            $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir
-            $packagedir = $nuget.PackageDir
-            if ($packagedir -eq $null) {
-                throw "package dir for package '$packagename' not found in '$packagesdir'"
-            }
-            $zip = "$nupkg.zip"
-            copy-item $nupkg $zip
-
             
-            Expand-ZIPFile -file $zip -destination $packageDir -verbose
-            copy-item $nupkg $packageDir -Verbose
+            foreach($packagesDir in $packagesDirs) {        
+                $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir
+                $packagedir = $nuget.PackageDir
+                if ($packagedir -eq $null) {
+                    throw "package dir for package '$packagename' not found in '$packagesdir'"
+                }
+                $zip = "$nupkg.zip"
+                copy-item $nupkg $zip
 
+                
+                Expand-ZIPFile -file $zip -destination $packageDir -verbose
+                copy-item $nupkg $packageDir -Verbose
+                $lib = get-childitem $packageDir -Filter "lib"
+                if($lib -ne $null) {
+                    $frameworks = get-childitem ($lib.FullName)
+                    foreach($f in $frameworks) {
+                        if ($f.name.contains("%")) {
+                            [Reflection.Assembly]::LoadWithPartialName("System.Web") | Out-Null
+                            $decoded = $([System.Web.HttpUtility]::UrlDecode($f.fullname))
+                            if ($decoded -ne $f.fullname) {
+                                if (test-path $decoded) { rmdir $decoded -Force -Recurse }
+                                Rename-Item -path $($f.fullname) -NewName $decoded -Verbose -Force
+                            }
+                        }
+                    }
+                }
+
+            }
         }
         else {
             if ($source -ne $null) {
