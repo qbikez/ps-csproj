@@ -147,38 +147,49 @@ process {
         )
 
         # TODO: handle rolling updates for dotnet/dnx/nuget3 model
-        if ($source -eq "rolling") {
-            $packagesDirs = find-packagesdir -all
-            if ($packagesDirs -eq $null) { throw "packages dir not found" }    
-            $packagename = (split-packagename (split-path -leaf $nupkg)).Name
+        if ($source.startsWith("rolling")) {
             
-            foreach($packagesDir in $packagesDirs) {        
-                $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir
-                $packagedir = $nuget.PackageDir
-                if ($packagedir -eq $null) {
-                    throw "package dir for package '$packagename' not found in '$packagesdir'"
+            pushd
+            try {
+                if ($source -match "rolling:(.*)") {
+                    cd $matches[1]
                 }
-                $zip = "$nupkg.zip"
-                copy-item $nupkg $zip
-
+                $packagesDirs = find-packagesdir -all
+                if ($packagesDirs -eq $null) { throw "packages dir not found" }
+                write-host "rolling source specified. Will extract to $packagesDirs"    
+                $packagename = (split-packagename (split-path -leaf $nupkg)).Name
                 
-                Expand-ZIPFile -file $zip -destination $packageDir -verbose
-                copy-item $nupkg $packageDir -Verbose
-                $lib = get-childitem $packageDir -Filter "lib"
-                if($lib -ne $null) {
-                    $frameworks = get-childitem ($lib.FullName)
-                    foreach($f in $frameworks) {
-                        if ($f.name.contains("%")) {
-                            [Reflection.Assembly]::LoadWithPartialName("System.Web") | Out-Null
-                            $decoded = $([System.Web.HttpUtility]::UrlDecode($f.fullname))
-                            if ($decoded -ne $f.fullname) {
-                                if (test-path $decoded) { rmdir $decoded -Force -Recurse }
-                                Rename-Item -path $($f.fullname) -NewName $decoded -Verbose -Force
+                foreach($packagesDir in $packagesDirs) {        
+                    $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir
+                    $packagedir = $nuget.PackageDir
+                    if ($packagedir -eq $null) {
+                        write-warning "package dir for package '$packagename' not found in '$packagesdir'"
+                        continue
+                    }
+                    $zip = "$nupkg.zip"
+                    copy-item $nupkg $zip
+
+                    
+                    Expand-ZIPFile -file $zip -destination $packageDir -verbose
+                    copy-item $nupkg $packageDir -Verbose
+                    $lib = get-childitem $packageDir -Filter "lib"
+                    if($lib -ne $null) {
+                        $frameworks = get-childitem ($lib.FullName)
+                        foreach($f in $frameworks) {
+                            if ($f.name.contains("%")) {
+                                [Reflection.Assembly]::LoadWithPartialName("System.Web") | Out-Null
+                                $decoded = $([System.Web.HttpUtility]::UrlDecode($f.fullname))
+                                if ($decoded -ne $f.fullname) {
+                                    if (test-path $decoded) { rmdir $decoded -Force -Recurse }
+                                    Rename-Item -path $($f.fullname) -NewName $decoded -Verbose -Force
+                                }
                             }
                         }
                     }
-                }
 
+                }
+            } finally {
+                popd
             }
         }
         else {
