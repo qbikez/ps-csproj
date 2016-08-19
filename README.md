@@ -16,6 +16,11 @@ This will:
  * build it
  * pack nuget, by invoking `nuget pack`
  * push nuget, by invoking `nuget push`
+ 
+Other usefull parameters:
+ * `-Stable` - generate a stable nuget version (without suffix)
+ * `-IncrementVersion` - incrememt `patch` version component
+ * `-Suffux` - manually set version suffix
 
 
 ### Create and push nugets for multiple projects
@@ -29,6 +34,9 @@ This will:
  * scan your repo for `*.csproj` files (this is done only once and cached in `.projects.json` file)
  * invoke `push-nuget` with provided parameters for every project given in `-project`
 
+Other usefull parameters:
+ * `-allowNoNuspec` - allow pushing of packages without a .nuspec file
+ * `-scan` - rescan repo directory for projects
 
 ### Convert project references to nuget references
 
