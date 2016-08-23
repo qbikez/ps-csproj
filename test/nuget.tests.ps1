@@ -76,6 +76,8 @@ Describe "Generate nuget for csproj" {
                 $ver = Get-AssemblyMeta "AssemblyInformationalVersion"
                 $pkgver = get-packageversion $nuget
                 $pkgver | Should Be $ver
+                $ver = Split-Version $pkgver
+                $ver.Suffix | Should Be "mysuffix"
             }
             
         }

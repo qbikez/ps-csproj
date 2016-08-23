@@ -12,7 +12,7 @@
 RootModule = 'Nupkg.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.5'
+ModuleVersion = '1.0.5.220'
 
 # ID used to uniquely identify this module
 GUID = '4c503cbf-5ccc-4b9a-8146-db54365767ef'
@@ -63,7 +63,7 @@ Description = 'Cmdlets for building, packing and pushing nugets'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @("AssemblyMeta", "Process","SemVer", "Newtonsoft.json")
+NestedModules = @("AssemblyMeta","Process","SemVer","Newtonsoft.json")
 
 # Functions to export from this module
 FunctionsToExport = '*'
@@ -117,6 +117,12 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+
+
+
+
+
+
 
 
 
