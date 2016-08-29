@@ -1,26 +1,40 @@
 
 #todo: move this to logging module
-function write-indented ([Parameter(ValueFromPipeline=$true, Position=1)]$msg, [Parameter(Position=2)]$level, [Parameter(Position=3)]$mark = "> ", [Parameter(Position=4)]$maxlen) {
-    $pad = $mark.PadLeft($level)
-    if ($maxlen -eq $null) {
-        if ($host.UI.RawUI.WindowSize.Width -gt 0) {
-            $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
-        }
-        else {
-            $maxlen = 512
+function write-indented 
+{
+    param(
+        [Parameter(ValueFromPipeline=$true, Position=1)]$msg, 
+        [Parameter(Position=2)]$level, 
+        [Parameter(Position=3)]$mark = "> ", 
+        [Parameter(Position=4)]$maxlen, 
+        [switch][bool]$passthru
+    )
+    begin {
+        $pad = $mark.PadLeft($level)
+        if ($maxlen -eq $null) {
+            if ($host.UI.RawUI.WindowSize.Width -gt 0) {
+                $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
+            }
+            else {
+                $maxlen = 512
+            }
         }
     }
-    
-    $msgs = @($msg)
-    $msgs | % {        
-        @($_.ToString().split("`n")) | % {
-            $msg = $_
-            $idx = 0    
-            while($idx -lt $msg.length) {
-                $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
-                $chunk = [System.Math]::Max($chunk, 0)
-                write-host "$pad$($msg.substring($idx,$chunk))"
-                $idx += $chunk
+    process { 
+        $msgs = @($msg)
+        $msgs | % {        
+            @($_.ToString().split("`n")) | % {
+                $msg = $_
+                $idx = 0    
+                while($idx -lt $msg.length) {
+                    $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
+                    $chunk = [System.Math]::Max($chunk, 0)
+                    write-host "$pad$($msg.substring($idx,$chunk))" #[$($msg.GetType().Name)]
+                    $idx += $chunk
+                    if ($passthru) {
+                        write-output $msgs
+                    }
+                }
             }
         }
     }
@@ -32,19 +46,42 @@ param(
     [parameter(Mandatory=$true,ParameterSetName="set1", Position=1)]
     [parameter(Mandatory=$true,ParameterSetName="in",Position=1)]
     $command,      
-    [parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
-    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="in")]
-    [string[]]$arguments, 
+    [parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1",Position=2)]
+    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="in",Position=2)]
+    $arguments, 
     [switch][bool]$nothrow, 
-    [switch][bool]$showoutput,
+    [switch][bool]$showoutput = $true,
+    [switch][bool]$silent,
+    [switch][bool]$passthru,
     [Parameter(ParameterSetName="in")]
     $in
     ) 
-    write-verbose "Invoking: $command $arguments in '$($pwd.path)'"
+    if ($silent) { $showoutput = $false }
+    if ($arguments -ne $null) { 
+        
+        $argstr = [string]::Join(" ", $arguments) 
+        write-verbose "Invoking: $command $argstr in '$($pwd.path)' $($arguments.count)"
+    }
+    else {
+    write-verbose "Invoking: $command with no args in '$($pwd.path)'"
+    }
+    
     if ($showoutput) {
-        $o = $in | & $command $arguments 2>&1| write-indented -level 2
+        write-host "  ===== $command ====="
+        if ($in -ne $null) {
+            $o = $in | & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
+        } else {
+            $o = & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
+        }
+        
+        write-host "  === END $command == ($lastexitcode)" 
     } else {
-        $o = $in | & $command $arguments 2>&1
+        if ($in -ne $null) {
+            $o = $in | & $command $arguments 2>&1
+        }
+        else {
+            $o = & $command $arguments 2>&1
+        }
     }
     if ($lastexitcode -ne 0) {
         if (!$nothrow) {
