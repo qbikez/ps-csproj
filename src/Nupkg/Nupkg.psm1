@@ -84,7 +84,7 @@ function Get-InstalledNugets($packagesdir) {
 }
 
 function Get-AvailableNugets ($source) {
-    $l = nuget list -source $source
+    $l = invoke nuget list -source $source -passthru -silent
     $l = $l | % {
         $s = $_.split(" ")
          new-object -type pscustomobject -Property @{ 
@@ -139,9 +139,13 @@ process {
 
     }
 
+    if ($nupkg -eq $null) {
+        throw "no nupkg produced"
+    }
+
     $sources = @($source)
     foreach($source in $sources) {
-        Write-Host "pushing package $nupkg to $source"
+        Write-Host "pushing package '$nupkg' to '$source'"
         $p = @(
             $nupkg
         )
@@ -200,9 +204,9 @@ process {
                 $p += "-apikey",$apikey
             }
         
-            if ($PSCmdlet.ShouldProcess("pushing package $p")) {
+            if ($PSCmdlet.ShouldProcess("pushing package '$p'")) {
                 write-verbose "nuget push $p"
-                $o = nuget push $p | % { $_ | write-indented -level 4; $_ } 
+                $o = invoke nuget push @p -passthru -verbose
                 if ($lastexitcode -ne 0) {
                     throw "nuget command failed! `r`n$($o | out-string)"
                 }
@@ -275,8 +279,8 @@ process {
                 }
             }
             if ($nuspecorcsproj.endswith("project.json")) {
-                    $o = invoke $dotnet restore -verbose:$($verbosePreference="Continue")
-                    $o = invoke $dotnet build -verbose:$($verbosePreference="Continue")
+                    $o = invoke $dotnet restore -verbose:$($verbosePreference="Continue") -passthru
+                    $o = invoke $dotnet build -verbose:$($verbosePreference="Continue") -passthru
             }
             else {
                 $a = @()
@@ -297,7 +301,7 @@ process {
         if ($nuspecorcsproj.endswith("project.json")) {
             $a = @() 
             
-            $o = invoke $dotnet pack $a -verbose:$($verbosePreference="Continue")
+            $o = invoke $dotnet pack @a -verbose:$($verbosePreference="Continue") -passthru
             $success = $o | % {
                     if ($_ -match "(?<project>.*) -> (?<nupkg>.*\.nupkg)") {
                         return $matches["nupkg"]
@@ -337,9 +341,9 @@ process {
                     }
                 }
             
-            write-host "packing nuget: nuget pack $a"
+            write-host "packing nuget"
             
-            $o = nuget pack $a | % { $_ | write-indented -level 4; $_ } 
+            $o = invoke nuget pack @a -passthru 
             if (($tmpproj -ne $null) -and (test-path $tmpproj)) { 
                 remove-item $tmpproj
             }
