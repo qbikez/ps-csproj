@@ -59,11 +59,14 @@ param(
     if ($silent) { $showoutput = $false }
     if ($arguments -ne $null) { 
         
-        $argstr = [string]::Join(" ", $arguments) 
-        write-verbose "Invoking: $command $argstr in '$($pwd.path)' $($arguments.count)"
+        $argstr = ""
+        for($i = 0; $i -lt $arguments.length; $i++) {
+            $argstr += "[$i] $($arguments[$i])`r`n"
+        } 
+        write-verbose "Invoking: '$command' in '$($pwd.path)' arguments ($($arguments.count)):`r`n$argstr"
     }
     else {
-    write-verbose "Invoking: $command with no args in '$($pwd.path)'"
+        write-verbose "Invoking: '$command' with no args in '$($pwd.path)'"
     }
     
     if ($showoutput) {
