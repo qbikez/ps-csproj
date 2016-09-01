@@ -36,6 +36,7 @@ DynamicParam
             $validvalues = $projects.Keys
             $validateset = new-object System.Management.Automation.ValidateSetAttribute -ArgumentList @($validvalues)
             $attributeCollection.Add($validateset)
+            $attributeCollection.Add((new-object System.Management.Automation.AllowEmptyStringAttribute))
         }
         $dynParam1 = new-object -Type System.Management.Automation.RuntimeDefinedParameter($paramname, $paramType, $attributeCollection)
 
