@@ -301,13 +301,21 @@ process {
         if ($nuspecorcsproj.endswith("project.json")) {
             $a = @() 
             
-            $o = invoke $dotnet pack @a -verbose:$($verbosePreference="Continue") -passthru
+            $o = invoke $dotnet pack @a -verbose -passthru
             $success = $o | % {
                     if ($_ -match "(?<project>.*) -> (?<nupkg>.*\.nupkg)") {
                         return $matches["nupkg"]
                     }
             }
-            return $success
+            
+            # for some reason, dotnet pack results are duplicated
+            <# 
+            write-host "success:"
+            foreach($l in $success) { write-host ": $l" }
+            write-host "output:"
+            foreach($l in $o) { write-host ": $l" }
+            #>
+            return $success | select -unique
         }
         else {
             $a = @() 
@@ -343,7 +351,7 @@ process {
             
             write-host "packing nuget"
             
-            $o = invoke nuget pack @a -passthru 
+            $o = invoke nuget pack @a -passthru -verbose
             if (($tmpproj -ne $null) -and (test-path $tmpproj)) { 
                 remove-item $tmpproj
             }
@@ -355,7 +363,8 @@ process {
                         return $matches[1]
                     }
                 }
-                return $success
+             
+                return $success | select -unique
             }
         }
     } finally {

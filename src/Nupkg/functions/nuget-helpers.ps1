@@ -182,6 +182,7 @@ function split-packagename($package) {
     }
     
     $m = $package -match "(?<name>.*?)\.(?<fullversion>(?<version>[0-9]+(\.[0-9]+)*)+(?<suffix>-.*){0,1})$"
+    if (!$m) { throw "package name '$package' does not match pattern {name}.{0}.{0}.{0}-{suffix}"}
     return $Matches
 }
 
@@ -197,6 +198,15 @@ function get-packageName($package) {
 
 
 function get-packageversion($package) {
-   $m = split-packagename $package
-   return $m["fullversion"]
+    $r = @($package) | % {
+        try {
+            $p = $_
+            $m = split-packagename $p
+            return $m["fullversion"]
+        } catch {
+            throw "failed to extract package version from package '$p': $($_.Exception.Message)"
+        }
+    }
+
+    return $r
 }

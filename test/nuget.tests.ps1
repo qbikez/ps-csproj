@@ -58,17 +58,20 @@ Describe "Generate nuget for csproj" {
         $dir = split-path -parent $csproj
         $project = split-path -leaf $csproj
         In $dir {
-            It "Should build" {
-                invoke "msbuild" 
-            }            
+                     
             It "Should pack" {
                 $nuget = pack-nuget $project -build
                 $nuget | Should Not BeNullOrEmpty
                 test-path $nuget | Should Be $true  
                 $ver = Get-AssemblyMeta "AssemblyInformationalVersion"
+                write-host "getting packages version from $nuget"
                 $pkgver = get-packageversion $nuget
                 $pkgver | Should Be $ver
             }
+            
+            It "Should build" {
+                invoke "msbuild" 
+            } 
             It "Should pack with suffix" {
                 $nuget = pack-nuget $project -build -suffix "mysuffix"
                 $nuget | Should Not BeNullOrEmpty
@@ -131,8 +134,8 @@ Describe "Generate nuget for project.json" {
     #remove-item "$targetdir/test/nuget.config" 
      In $dir { 
             It "Should build" {
-                $o = invoke dnu restore
-                $o = invoke dnu build 
+                $o = invoke dotnet restore
+                $o = invoke dotnet build 
             }    
             It "Should pack with build" {
                 $nuget = pack-nuget $project -build
@@ -213,4 +216,5 @@ Describe "Handle csproj with project.json" {
             $csdesc | Should Be "My csproj Description"
         }
      }
+     
 }
