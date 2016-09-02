@@ -104,7 +104,7 @@ function Test-IsAdmin() {
     return ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 }
 
-function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wait) {	
+function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wait = $trie) {	
 	if (!(test-IsAdmin)) {
 		Start-Process $proc -Verb runAs -ArgumentList $ArgumentList -wait:$Wait
     } else {
@@ -113,5 +113,6 @@ function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wai
 }
 
 New-alias Run-AsAdmin Invoke-AsAdmin
+New-alias sudo Invoke-AsAdmin
 
 Export-ModuleMember -Function * -Alias *
