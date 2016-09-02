@@ -112,7 +112,7 @@ function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wai
     }
 }
 
-New-alias Run-AsAdmin Invoke-AsAdmin
-New-alias sudo Invoke-AsAdmin
+if ((get-alias Run-AsAdmin -ErrorAction ignore) -eq $null) { New-alias Run-AsAdmin Invoke-AsAdmin }
+if ((get-alias sudo -ErrorAction ignore) -eq $null) { New-alias sudo Invoke-AsAdmin }
 
 Export-ModuleMember -Function * -Alias *
