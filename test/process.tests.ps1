@@ -2,6 +2,12 @@
 import-module process
 
 Describe "Process module tests" {
+    # init - download echoargs
+    if ((get-command echoargs -erroraction "Ignore") -eq $null) {
+        nuget install echoargs -version 3.2.0 -source https://chocolatey.org/api/v2/ -outputdirectory .tools
+        $env:Path = $env:Path + ";$((get-item '.tools/echoargs.3.2.0/tools').FullName)"
+    }
+
     It "Should invoke process" {
         invoke echoargs
     }
