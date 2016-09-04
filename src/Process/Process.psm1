@@ -1,12 +1,24 @@
-
-#todo: move this to logging module
-function write-indented 
+<#
+.Synopsis 
+"Writes the input to host output (using write-host) with added indentation"
+.Parameter msg
+Message to output
+.Parameter level
+Indentation level (default=2)
+.Parameter mark
+The marker for indented lines (default="> ")
+.Parameter maxlen
+Maximum line length - after which lines will be wrapped (also with indentation)
+.Parameter passthru
+Pass the input to the output
+#>
+function Write-Indented 
 {
     param(
-        [Parameter(ValueFromPipeline=$true, Position=1)]$msg, 
-        [Parameter(Position=2)]$level, 
+        [Parameter(ValueFromPipeline=$true, Position=1, Mandatory=$true)]$msg, 
+        [Parameter(Position=2)]$level = 2, 
         [Parameter(Position=3)]$mark = "> ", 
-        [Parameter(Position=4)]$maxlen, 
+        [Parameter(Position=4)]$maxlen = $null, 
         [switch][bool]$passthru
     )
     begin {
@@ -40,7 +52,25 @@ function write-indented
     }
 }
 
-function invoke {
+<#
+.Synopsis
+Invokes an external Command
+.Parameter command
+Command to invoke (either full path or filename)
+.Parameter arguments
+Arguments for the command
+.Parameter nothrow
+Do not throw if command's exit code != 0
+.Parameter showoutput 
+Write command output to host (default=true)
+.Parameter silent
+Do not rite command output to host (same as -showoutput:$false)
+.Parameter passthru
+Pass the command output to the output stream
+.Parameter in
+Input for the command (optional)
+#>
+function Invoke {
 [CmdletBinding(DefaultParameterSetName="set1")]
 param(
     [parameter(Mandatory=$true,ParameterSetName="set1", Position=1)]
@@ -99,12 +129,26 @@ param(
     return $o
 }
 
-
+<#
+.Synopsis 
+Checks if current process is running with elevation 
+#>
 function Test-IsAdmin() {
     return ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 }
 
-function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wait = $trie) {	
+<#
+.Synopsis
+Start the given program as administrator (elevated)
+If the current process is elevated, just executes the command (using "start-process")
+.Parameter argumentlist
+Argument list for the started program
+.Parameter proc
+The program to start (default=powershell)
+.Parameter wait
+Wait for the elevated command to finish before continuing (default=true)
+#>
+function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wait = $true) {	
 	if (!(test-IsAdmin)) {
 		Start-Process $proc -Verb runAs -ArgumentList $ArgumentList -wait:$Wait
     } else {
