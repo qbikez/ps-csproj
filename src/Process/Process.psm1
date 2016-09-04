@@ -76,9 +76,12 @@ param(
     [parameter(Mandatory=$true,ParameterSetName="set1", Position=1)]
     [parameter(Mandatory=$true,ParameterSetName="in",Position=1)]
     $command,      
-    [parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1",Position=2)]
-    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="in",Position=2)]
-    $arguments, 
+    [parameter(ParameterSetName="set1",Position=2)]
+    [Parameter(ParameterSetName="in",Position=2)]
+    [Alias("arguments")]
+    [string[]]$argumentList, 
+    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
+    $remainingArguments,
     [switch][bool]$nothrow, 
     [switch][bool]$showoutput = $true,
     [switch][bool]$silent,
@@ -86,6 +89,15 @@ param(
     [Parameter(ParameterSetName="in")]
     $in
     ) 
+    write-verbose "argumentlist=$argumentList"
+    write-verbose "remainingargs=$remainingArguments"
+    $arguments = @()
+    if ($remainingArguments -ne $null) {
+        $arguments += @($remainingArguments)
+    }
+    if ($ArgumentList -ne $null) {
+        $arguments += @($ArgumentList)
+    }
     if ($silent) { $showoutput = $false }
     if ($arguments -ne $null) { 
         
