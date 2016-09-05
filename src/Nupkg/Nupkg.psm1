@@ -291,10 +291,7 @@ process {
                     $buildProperties.GetEnumerator() | % { $a += @("-p:$($_.Key)=$($_.Value)") }
                 }
                 write-host "building project: msbuild $nuspecorcsproj $a "
-                $o = msbuild $nuspecorcsproj $a | % { $_ | write-indented -level 4; $_ }
-                if ($lastexitcode -ne 0) {
-                throw "build failed! `r`n$($o | out-string)"
-                }
+                $o = invoke msbuild $nuspecorcsproj $a -passthru                
             }
         }
     

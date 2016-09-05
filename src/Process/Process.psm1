@@ -75,29 +75,32 @@ function Invoke {
 param(
     [parameter(Mandatory=$true,ParameterSetName="set1", Position=1)]
     [parameter(Mandatory=$true,ParameterSetName="in",Position=1)]
-    $command,      
+    [parameter(Mandatory=$true,ParameterSetName="directcall",Position=1)]
+    [string]$command,      
     [parameter(ParameterSetName="set1",Position=2)]
     [Parameter(ParameterSetName="in",Position=2)]
     [Alias("arguments")]
     [string[]]$argumentList, 
-    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
-    $remainingArguments,
     [switch][bool]$nothrow, 
     [switch][bool]$showoutput = $true,
     [switch][bool]$silent,
     [switch][bool]$passthru,
     [Parameter(ParameterSetName="in")]
-    $in
+    $in,
+    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
+    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="directcall")]
+    $remainingArguments
     ) 
     write-verbose "argumentlist=$argumentList"
     write-verbose "remainingargs=$remainingArguments"
     $arguments = @()
-    if ($remainingArguments -ne $null) {
-        $arguments += @($remainingArguments)
-    }
+
     if ($ArgumentList -ne $null) {
         $arguments += @($ArgumentList)
     }
+    if ($remainingArguments -ne $null) {
+        $arguments += @($remainingArguments)
+    }   
     if ($silent) { $showoutput = $false }
     if ($arguments -ne $null) { 
         
