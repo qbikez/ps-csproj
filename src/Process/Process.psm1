@@ -91,9 +91,18 @@ param(
     [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="directcall")]
     $remainingArguments
     ) 
-    write-verbose "argumentlist=$argumentList"
-    write-verbose "remainingargs=$remainingArguments"
+    #write-verbose "argumentlist=$argumentList"
+    #write-verbose "remainingargs=$remainingArguments"
     $arguments = @()
+
+    function Strip-SensitiveData {
+        param([Parameter(ValueFromPipeline=$true)]$str)
+        process {
+            return @($_) | % {
+                $_ -replace "password[:=]\s*(.*?)($|[\s;,])","password={password_removed_from_log}"
+            } 
+        }
+    }
 
     if ($ArgumentList -ne $null) {
         $arguments += @($ArgumentList)
@@ -106,7 +115,7 @@ param(
         
         $argstr = ""
         for($i = 0; $i -lt @($arguments).count; $i++) {
-            $argstr += "[$i] $($arguments[$i])`r`n"
+            $argstr += "[$i] $($arguments[$i] | Strip-SensitiveData)`r`n"
         } 
         write-verbose "Invoking: '$command' in '$($pwd.path)' arguments ($(@($arguments).count)):`r`n$argstr"
     }
