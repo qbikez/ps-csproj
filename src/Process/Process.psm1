@@ -132,14 +132,16 @@ param(
         }
     }
     if ($lastexitcode -ne 0) {
+        write-verbose "invoke: ErrorActionPreference = $ErrorActionPreference"
         if (!$nothrow) {
-            $o | out-string | write-error 
+            
+            write-error "Command $command returned $lastexitcode" 
+            #$o | out-string | write-error
+            throw "Command $command returned $lastexitcode" 
         } else {
            $o | out-string | write-host 
+           
         }
-    }
-    if (!$nothrow -and $lastexitcode -ne 0) {
-        throw "Command returned $lastexitcode"
     }
     return $o
 }
