@@ -71,7 +71,7 @@ Pass the command output to the output stream
 Input for the command (optional)
 #>
 function Invoke {
-[CmdletBinding(DefaultParameterSetName="set1")]
+[CmdletBinding(DefaultParameterSetName="set1",SupportsShouldProcess=$true)]
 param(
     [parameter(Mandatory=$true,ParameterSetName="set1", Position=1)]
     [parameter(Mandatory=$true,ParameterSetName="in",Position=1)]
@@ -89,7 +89,8 @@ param(
     $in,
     [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
     [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="directcall")]
-    $remainingArguments
+    $remainingArguments,
+    [System.Text.Encoding] $encoding = $null
     ) 
     #write-verbose "argumentlist=$argumentList"
     #write-verbose "remainingargs=$remainingArguments"
@@ -111,8 +112,7 @@ param(
         $arguments += @($remainingArguments)
     }   
     if ($silent) { $showoutput = $false }
-    if ($arguments -ne $null) { 
-        
+    if ($arguments -ne $null) {         
         $argstr = ""
         for($i = 0; $i -lt @($arguments).count; $i++) {
             $argstr += "[$i] $($arguments[$i] | Strip-SensitiveData)`r`n"
@@ -123,6 +123,17 @@ param(
         write-verbose "Invoking: '$command' with no args in '$($pwd.path)'"
     }
     
+    
+    if ($WhatIfPreference -eq $true) {
+        write-warning "WhatIf specified. Not doing anything."
+        return $null
+    }
+    try {
+    if ($encoding -ne $null) {
+        write-verbose "setting console encoding to $encoding"
+        $oldEnc = [System.Console]::OutputEncoding
+        [System.Console]::OutputEncoding = $encoding
+    }
     if ($showoutput) {
         write-host "  ===== $command ====="
         if ($in -ne $null) {
@@ -138,6 +149,11 @@ param(
         }
         else {
             $o = & $command $arguments 2>&1
+        }
+    }
+    } finally {
+        if ($encoding -ne $null) {
+            [System.Console]::OutputEncoding = $oldEnc
         }
     }
     if ($lastexitcode -ne 0) {
