@@ -27,8 +27,8 @@ Other usefull parameters:
 ### Create and push nugets for multiple projects
 
 ```powershell
-    PS> cd "reporoot"    
-    PS> push-nugets -project "My.Project","Other.Project" -build -source https://www.nuget.org/api/v2/package
+PS> cd "reporoot"    
+PS> push-nugets -project "My.Project","Other.Project" -build -source https://www.nuget.org/api/v2/package
 ```
 
 This will:
