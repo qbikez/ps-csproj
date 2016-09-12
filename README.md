@@ -15,6 +15,10 @@ PS> Install-Module csproj
 
 ## Usage
 
+```powershell
+PS> import-module csproj
+```
+
 ### Create and push nuget for a csproj
 
 ```powershell
