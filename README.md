@@ -1,13 +1,14 @@
 ## Installation
 
-    PS> Install-Module csproj
+PS> Install-Module csproj
+
 ## Usage
 
 ### Create and push nuget for a csproj
 
 ```powershell
-    PS> cd "src/myproject"
-    PS> Push-Nuget -build -source https://www.nuget.org/api/v2/package
+PS> cd "src/myproject"
+PS> Push-Nuget -build -source https://www.nuget.org/api/v2/package
 ```
 
 This will:
