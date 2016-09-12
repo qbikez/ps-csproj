@@ -1,6 +1,15 @@
 ## Installation
 
+If you're running Windows 10 or later:
+
 ```powershell
+PS> Install-Module csproj
+```
+
+On windows 8, you'll neeed to install PackageManagement manually (using [psbootstrap](https://github.com/qbikez/ps-bootstrap)) to be able to use `Install-Module`:
+
+```powershell
+PS> ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap')) | out-file "$env:localappdata/ps-bootstrap/bootstrap.ps1"; & "$env:localappdata/ps-bootstrap/bootstrap.ps1"
 PS> Install-Module csproj
 ```
 
