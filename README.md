@@ -1,6 +1,8 @@
 ## Installation
 
+```powershell
 PS> Install-Module csproj
+```
 
 ## Usage
 
