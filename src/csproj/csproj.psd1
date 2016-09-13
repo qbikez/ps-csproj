@@ -9,10 +9,10 @@
 @{
 
 # Script module or binary module file associated with this manifest.
-RootModule = 'Csproj.psm1'
+RootModule = 'csproj.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.17'
+ModuleVersion = '1.0.22.0'
 
 # ID used to uniquely identify this module
 GUID = 'ab338b65-83f7-441c-848b-d4f7c84d078e'
@@ -63,7 +63,7 @@ Description = 'csproj and sln files manipulation'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @( "Nupkg","AssemblyMeta","Newtonsoft.Json","Publishmap","PathUtils")
+NestedModules = @( "Nupkg","AssemblyMeta","newtonsoft.json","publishmap","PathUtils")
 
 # Functions to export from this module
 FunctionsToExport = '*'
@@ -117,6 +117,13 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+
+
+
+
+
+
+
 
 
 

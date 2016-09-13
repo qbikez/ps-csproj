@@ -31,7 +31,11 @@ param($file, $destination)
         foreach($item in $zip.items())
         {
             write-verbose "extracting $($item.Name) to $destination"
-            $shell.Namespace((get-item $destination).fullname).copyhere($item, 0x14)
+            if ($item.name -eq "lib") {                
+                $shell.Namespace((get-item $destination).fullname).copyhere($item, 0x14)
+            } else {
+                $shell.Namespace((get-item $destination).fullname).copyhere($item, 0x14)
+            }
         }
     } catch {
         throw (New-Object System.Exception "Failed to extract zip '$file' to '$destination'", $_.Exception)
@@ -80,7 +84,7 @@ function Get-InstalledNugets($packagesdir) {
 }
 
 function Get-AvailableNugets ($source) {
-    $l = nuget list -source $source
+    $l = invoke nuget list -source $source -passthru -silent
     $l = $l | % {
         $s = $_.split(" ")
          new-object -type pscustomobject -Property @{ 
@@ -102,6 +106,7 @@ function invoke-nugetpush {
     [switch][bool] $ForceDll,
     [switch][bool] $Stable,
     [switch][bool] $useDotnet,
+    [switch][bool] $incrementVersion,
     $suffix = $null,
     $buildProperties = @{}) 
 process {
@@ -113,7 +118,7 @@ process {
         }
     }
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties  $buildProperties -usedotnet:$usedotnet -suffix:$suffix
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties  $buildProperties -usedotnet:$usedotnet -suffix:$suffix -incrementVersion:$incrementVersion
     } else {
         $nupkg = $file
     }
@@ -134,30 +139,62 @@ process {
 
     }
 
+    if ($nupkg -eq $null) {
+        throw "no nupkg produced"
+    }
+
     $sources = @($source)
     foreach($source in $sources) {
-        Write-Host "pushing package $nupkg to $source"
+        Write-Host "pushing package '$nupkg' to '$source'"
         $p = @(
             $nupkg
         )
 
         # TODO: handle rolling updates for dotnet/dnx/nuget3 model
-        if ($source -eq "rolling") {
-            $packagesDir = find-packagesdir
-            if ($packagesDir -eq $null) { throw "packages dir not found" }
-            $packagename = (split-packagename (split-path -leaf $nupkg)).Name
-            $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir
-            $packagedir = $nuget.PackageDir
-            if ($packagedir -eq $null) {
-                throw "package dir for package '$packagename' not found in '$packagesdir'"
-            }
-            $zip = "$nupkg.zip"
-            copy-item $nupkg $zip
-
+        if ($source.startsWith("rolling")) {
             
-            Expand-ZIPFile -file $zip -destination $packageDir -verbose
-            copy-item $nupkg $packageDir -Verbose
+            pushd
+            try {
+                if ($source -match "rolling:(.*)") {
+                    cd $matches[1]
+                }
+                $packagesDirs = find-packagesdir -all
+                if ($packagesDirs -eq $null) { throw "packages dir not found" }
+                write-host "rolling source specified. Will extract to $packagesDirs"    
+                $packagename = (split-packagename (split-path -leaf $nupkg)).Name
+                
+                foreach($packagesDir in $packagesDirs) {        
+                    $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir
+                    $packagedir = $nuget.PackageDir
+                    if ($packagedir -eq $null) {
+                        write-warning "package dir for package '$packagename' not found in '$packagesdir'"
+                        continue
+                    }
+                    $zip = "$nupkg.zip"
+                    copy-item $nupkg $zip
 
+                    
+                    Expand-ZIPFile -file $zip -destination $packageDir -verbose
+                    copy-item $nupkg $packageDir -Verbose
+                    $lib = get-childitem $packageDir -Filter "lib"
+                    if($lib -ne $null) {
+                        $frameworks = get-childitem ($lib.FullName)
+                        foreach($f in $frameworks) {
+                            if ($f.name.contains("%")) {
+                                [Reflection.Assembly]::LoadWithPartialName("System.Web") | Out-Null
+                                $decoded = $([System.Web.HttpUtility]::UrlDecode($f.fullname))
+                                if ($decoded -ne $f.fullname) {
+                                    if (test-path $decoded) { rmdir $decoded -Force -Recurse }
+                                    Rename-Item -path $($f.fullname) -NewName $decoded -Verbose -Force
+                                }
+                            }
+                        }
+                    }
+
+                }
+            } finally {
+                popd
+            }
         }
         else {
             if ($source -ne $null) {
@@ -167,9 +204,9 @@ process {
                 $p += "-apikey",$apikey
             }
         
-            if ($PSCmdlet.ShouldProcess("pushing package $p")) {
+            if ($PSCmdlet.ShouldProcess("pushing package '$p'")) {
                 write-verbose "nuget push $p"
-                $o = nuget push $p | % { $_ | write-indented -level 4; $_ } 
+                $o = invoke nuget push @p -passthru -verbose
                 if ($lastexitcode -ne 0) {
                     throw "nuget command failed! `r`n$($o | out-string)"
                 }
@@ -191,6 +228,7 @@ function invoke-nugetpack {
     [switch][bool] $Stable,
     [switch][bool] $ForceDll,
     [switch][bool] $useDotnet,
+    [switch][bool] $incrementVersion,
     $suffix = $null,
     $buildProperties = @{}) 
 process {    
@@ -234,14 +272,15 @@ process {
                 $newver = update-buildversion -component Suffix -value $suffix
             }
             else {
-                $newver = update-buildversion 
+                if ($incrementVersion) { $newver = update-buildversion -component patch } 
+                else { $newver = update-buildversion } 
                 if ($stable) {
                     $newver = update-buildversion -stable:$stable
                 }
             }
             if ($nuspecorcsproj.endswith("project.json")) {
-                    $o = invoke $dotnet restore -verbose:$($verbosePreference="Continue")
-                    $o = invoke $dotnet build -verbose:$($verbosePreference="Continue")
+                    $o = invoke $dotnet restore -verbose:$($verbosePreference="Continue") -passthru
+                    $o = invoke $dotnet build -verbose:$($verbosePreference="Continue") -passthru
             }
             else {
                 $a = @()
@@ -252,23 +291,28 @@ process {
                     $buildProperties.GetEnumerator() | % { $a += @("-p:$($_.Key)=$($_.Value)") }
                 }
                 write-host "building project: msbuild $nuspecorcsproj $a "
-                $o = msbuild $nuspecorcsproj $a | % { $_ | write-indented -level 4; $_ }
-                if ($lastexitcode -ne 0) {
-                throw "build failed! `r`n$($o | out-string)"
-                }
+                $o = invoke msbuild $nuspecorcsproj $a -passthru                
             }
         }
     
         if ($nuspecorcsproj.endswith("project.json")) {
             $a = @() 
             
-            $o = invoke $dotnet pack $a -verbose:$($verbosePreference="Continue")
+            $o = invoke $dotnet pack @a -verbose -passthru
             $success = $o | % {
                     if ($_ -match "(?<project>.*) -> (?<nupkg>.*\.nupkg)") {
                         return $matches["nupkg"]
                     }
             }
-            return $success
+            
+            # for some reason, dotnet pack results are duplicated
+            <# 
+            write-host "success:"
+            foreach($l in $success) { write-host ": $l" }
+            write-host "output:"
+            foreach($l in $o) { write-host ": $l" }
+            #>
+            return $success | select -unique
         }
         else {
             $a = @() 
@@ -302,9 +346,9 @@ process {
                     }
                 }
             
-            write-host "packing nuget: nuget pack $a"
+            write-host "packing nuget"
             
-            $o = nuget pack $a | % { $_ | write-indented -level 4; $_ } 
+            $o = invoke nuget pack @a -passthru -verbose
             if (($tmpproj -ne $null) -and (test-path $tmpproj)) { 
                 remove-item $tmpproj
             }
@@ -316,7 +360,8 @@ process {
                         return $matches[1]
                     }
                 }
-                return $success
+             
+                return $success | select -unique
             }
         }
     } finally {

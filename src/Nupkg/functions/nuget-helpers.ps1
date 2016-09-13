@@ -1,12 +1,12 @@
 
 function  find-packagesdir  {
     [CmdletBinding()]
-    param ($path)
+    param ($path, [switch][bool]$all)
 
     if ($path -eq $null) {
         $path = "."
     }
-    
+    $result = @()
     if (!(get-item $path).PsIsContainer) {
             $dir = split-path -Parent (get-item $path).fullname
         }
@@ -21,18 +21,29 @@ function  find-packagesdir  {
                 if ($node -ne $null) {
                     $packagesdir = $node.node.value
                     if ([System.IO.Path]::IsPathRooted($packagesdir)) { 
-                        return $packagesdir 
+                        $result += @($packagesdir.Replace("/","\"))
+                        if (!$all) { return $result } 
                     }
                     else { 
-                        return (get-item (join-path $dir $packagesdir)).fullname 
+                        $result += @((get-item (join-path $dir $packagesdir)).fullname)
+                        if (!$all) { return $result}  
                     }
                 }
             }
             if ((test-path "$dir/packages") -or (Test-Path "$dir/packages")) {
                  write-verbose "found 'packages' in dir $dir"
-                 return "$dir/packages"
+                 $result += @("$dir\packages")
+                 if (!$all) { return $result }  
+            }
+            if ((test-path "$dir/dnx-packages") -or (Test-Path "$dir/dnx-packages")) {
+                 write-verbose "found 'dnx-packages' in dir $dir"
+                 $result += @("$dir\dnx-packages")
+                 if (!$all) { return $result }  
             }
             $dir = split-path -Parent $dir
+            if ($result.Count -gt 0) {
+             return $result | select -Unique
+             }
         }
         return $null
 }
@@ -100,14 +111,25 @@ function find-nugetPath {
             return $null 
         }        
     }
+
+    if ($versions.count -eq 0 -and @(get-childitem -Filter "*.nupkg" -path $packageDir).Count -eq 0) {
+          # new packages dir format?
+          $versions = get-childitem $packageDir | % { $_.name }
+          $latest = Get-LatestPackageVersion -packageVersions (Get-VersionsForComparison $versions)
+          $packageDir = join-path  $packageDir "$latest"
+    }
     
     # get correct framework and dll
     # check lib\*
     $libpath = join-path $packageDir "lib"
     if (!(test-path $libpath)) { 
         $toolspath = join-path $packageDir "tools"
-        if ((test-path $toolspath)) { return $toolspath }
-        else {return $null}
+        if ((test-path $toolspath)) { 
+            return $toolspath 
+        }
+        else { 
+            return $null
+        }
     }
 
     $dll = find-nugetdll $name $libpath
@@ -160,6 +182,7 @@ function split-packagename($package) {
     }
     
     $m = $package -match "(?<name>.*?)\.(?<fullversion>(?<version>[0-9]+(\.[0-9]+)*)+(?<suffix>-.*){0,1})$"
+    if (!$m) { throw "package name '$package' does not match pattern {name}.{0}.{0}.{0}-{suffix}"}
     return $Matches
 }
 
@@ -175,6 +198,15 @@ function get-packageName($package) {
 
 
 function get-packageversion($package) {
-   $m = split-packagename $package
-   return $m["fullversion"]
+    $r = @($package) | % {
+        try {
+            $p = $_
+            $m = split-packagename $p
+            return $m["fullversion"]
+        } catch {
+            throw "failed to extract package version from package '$p': $($_.Exception.Message)"
+        }
+    }
+
+    return $r
 }

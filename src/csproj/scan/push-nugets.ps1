@@ -93,7 +93,17 @@ process {
         
     }
 
-    foreach-project -project:$project -AllowNoNuspec:($AllowNoNuspec -or $force) -cmd { 
+    $a = @{
+        AllowNoNuspec = ($AllowNoNuspec -or $force)
+    }
+    if ($project -ne $null) {
+        $a += @{
+            project = $project
+        }
+    }
+
+
+    foreach-project @a -cmd { 
         try {
             push-project $_
         } catch {

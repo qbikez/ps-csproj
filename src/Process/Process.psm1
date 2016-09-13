@@ -1,70 +1,196 @@
-
-#todo: move this to logging module
-function write-indented ([Parameter(ValueFromPipeline=$true, Position=1)]$msg, [Parameter(Position=2)]$level, [Parameter(Position=3)]$mark = "> ", [Parameter(Position=4)]$maxlen) {
-    $pad = $mark.PadLeft($level)
-    if ($maxlen -eq $null) {
-        if ($host.UI.RawUI.WindowSize.Width -gt 0) {
-            $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
-        }
-        else {
-            $maxlen = 512
+<#
+.Synopsis 
+"Writes the input to host output (using write-host) with added indentation"
+.Parameter msg
+Message to output
+.Parameter level
+Indentation level (default=2)
+.Parameter mark
+The marker for indented lines (default="> ")
+.Parameter maxlen
+Maximum line length - after which lines will be wrapped (also with indentation)
+.Parameter passthru
+Pass the input to the output
+#>
+function Write-Indented 
+{
+    param(
+        [Parameter(ValueFromPipeline=$true, Position=1, Mandatory=$true)]$msg, 
+        [Parameter(Position=2)]$level = 2, 
+        [Parameter(Position=3)]$mark = "> ", 
+        [Parameter(Position=4)]$maxlen = $null, 
+        [switch][bool]$passthru
+    )
+    begin {
+        $pad = $mark.PadLeft($level)
+        if ($maxlen -eq $null) {
+            if ($host.UI.RawUI.WindowSize.Width -gt 0) {
+                $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
+            }
+            else {
+                $maxlen = 512
+            }
         }
     }
-    
-    $msgs = @($msg)
-    $msgs | % {        
-        @($_.ToString().split("`n")) | % {
-            $msg = $_
-            $idx = 0    
-            while($idx -lt $msg.length) {
-                $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
-                $chunk = [System.Math]::Max($chunk, 0)
-                write-host "$pad$($msg.substring($idx,$chunk))"
-                $idx += $chunk
+    process { 
+        $msgs = @($msg)
+        $msgs | % {        
+            @($_.ToString().split("`n")) | % {
+                $msg = $_
+                $idx = 0    
+                while($idx -lt $msg.length) {
+                    $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
+                    $chunk = [System.Math]::Max($chunk, 0)
+                    write-host "$pad$($msg.substring($idx,$chunk))" #[$($msg.GetType().Name)]
+                    $idx += $chunk
+                    if ($passthru) {
+                        write-output $msgs
+                    }
+                }
             }
         }
     }
 }
 
-function invoke {
-[CmdletBinding(DefaultParameterSetName="set1")]
+<#
+.Synopsis
+Invokes an external Command
+.Parameter command
+Command to invoke (either full path or filename)
+.Parameter arguments
+Arguments for the command
+.Parameter nothrow
+Do not throw if command's exit code != 0
+.Parameter showoutput 
+Write command output to host (default=true)
+.Parameter silent
+Do not rite command output to host (same as -showoutput:$false)
+.Parameter passthru
+Pass the command output to the output stream
+.Parameter in
+Input for the command (optional)
+#>
+function Invoke {
+[CmdletBinding(DefaultParameterSetName="set1",SupportsShouldProcess=$true)]
 param(
     [parameter(Mandatory=$true,ParameterSetName="set1", Position=1)]
     [parameter(Mandatory=$true,ParameterSetName="in",Position=1)]
-    $command,      
-    [parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
-    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="in")]
-    [string[]]$arguments, 
+    [parameter(Mandatory=$true,ParameterSetName="directcall",Position=1)]
+    [string]$command,      
+    [parameter(ParameterSetName="set1",Position=2)]
+    [Parameter(ParameterSetName="in",Position=2)]
+    [Alias("arguments")]
+    [string[]]$argumentList, 
     [switch][bool]$nothrow, 
-    [switch][bool]$showoutput,
+    [switch][bool]$showoutput = $true,
+    [switch][bool]$silent,
+    [switch][bool]$passthru,
     [Parameter(ParameterSetName="in")]
-    $in
+    $in,
+    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
+    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="directcall")]
+    $remainingArguments,
+    [System.Text.Encoding] $encoding = $null
     ) 
-    write-verbose "Invoking: $command $arguments in '$($pwd.path)'"
-    if ($showoutput) {
-        $o = $in | & $command $arguments 2>&1| write-indented -level 2
-    } else {
-        $o = $in | & $command $arguments 2>&1
-    }
-    if ($lastexitcode -ne 0) {
-        if (!$nothrow) {
-            $o | out-string | write-error 
-        } else {
-           $o | out-string | write-host 
+    #write-verbose "argumentlist=$argumentList"
+    #write-verbose "remainingargs=$remainingArguments"
+    $arguments = @()
+
+    function Strip-SensitiveData {
+        param([Parameter(ValueFromPipeline=$true)]$str)
+        process {
+            return @($_) | % {
+                $_ -replace "password[:=]\s*(.*?)($|[\s;,])","password={password_removed_from_log}"
+            } 
         }
     }
-    if (!$nothrow -and $lastexitcode -ne 0) {
-        throw "Command returned $lastexitcode"
+
+    if ($ArgumentList -ne $null) {
+        $arguments += @($ArgumentList)
+    }
+    if ($remainingArguments -ne $null) {
+        $arguments += @($remainingArguments)
+    }   
+    if ($silent) { $showoutput = $false }
+    if ($arguments -ne $null) {         
+        $argstr = ""
+        for($i = 0; $i -lt @($arguments).count; $i++) {
+            $argstr += "[$i] $($arguments[$i] | Strip-SensitiveData)`r`n"
+        } 
+        write-verbose "Invoking: '$command' in '$($pwd.path)' arguments ($(@($arguments).count)):`r`n$argstr"
+    }
+    else {
+        write-verbose "Invoking: '$command' with no args in '$($pwd.path)'"
+    }
+    
+    
+    if ($WhatIfPreference -eq $true) {
+        write-warning "WhatIf specified. Not doing anything."
+        return $null
+    }
+    try {
+    if ($encoding -ne $null) {
+        write-verbose "setting console encoding to $encoding"
+        $oldEnc = [System.Console]::OutputEncoding
+        [System.Console]::OutputEncoding = $encoding
+    }
+    if ($showoutput) {
+        write-host "  ===== $command ====="
+        if ($in -ne $null) {
+            $o = $in | & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
+        } else {
+            $o = & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
+        }
+        
+        write-host "  === END $command == ($lastexitcode)" 
+    } else {
+        if ($in -ne $null) {
+            $o = $in | & $command $arguments 2>&1
+        }
+        else {
+            $o = & $command $arguments 2>&1
+        }
+    }
+    } finally {
+        if ($encoding -ne $null) {
+            [System.Console]::OutputEncoding = $oldEnc
+        }
+    }
+    if ($lastexitcode -ne 0) {
+        write-verbose "invoke: ErrorActionPreference = $ErrorActionPreference"
+        if (!$nothrow) {
+            
+            write-error "Command $command returned $lastexitcode" 
+            #$o | out-string | write-error
+            throw "Command $command returned $lastexitcode" 
+        } else {
+           $o | out-string | write-host 
+           
+        }
     }
     return $o
 }
 
-
+<#
+.Synopsis 
+Checks if current process is running with elevation 
+#>
 function Test-IsAdmin() {
     return ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 }
 
-function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wait) {	
+<#
+.Synopsis
+Start the given program as administrator (elevated)
+If the current process is elevated, just executes the command (using "start-process")
+.Parameter argumentlist
+Argument list for the started program
+.Parameter proc
+The program to start (default=powershell)
+.Parameter wait
+Wait for the elevated command to finish before continuing (default=true)
+#>
+function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wait = $true) {	
 	if (!(test-IsAdmin)) {
 		Start-Process $proc -Verb runAs -ArgumentList $ArgumentList -wait:$Wait
     } else {
@@ -72,6 +198,7 @@ function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wai
     }
 }
 
-New-alias Run-AsAdmin Invoke-AsAdmin
+if ((get-alias Run-AsAdmin -ErrorAction ignore) -eq $null) { New-alias Run-AsAdmin Invoke-AsAdmin }
+if ((get-alias sudo -ErrorAction ignore) -eq $null) { New-alias sudo Invoke-AsAdmin }
 
 Export-ModuleMember -Function * -Alias *
