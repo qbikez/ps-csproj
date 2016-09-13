@@ -63,7 +63,7 @@ Description = 'Cmdlets for building, packing and pushing nugets'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @("AssemblyMeta","Process","SemVer","Newtonsoft.json")
+NestedModules = @("AssemblyMeta","Process","SemVer","Newtonsoft.json", "PathUtils")
 
 # Functions to export from this module
 FunctionsToExport = '*'
