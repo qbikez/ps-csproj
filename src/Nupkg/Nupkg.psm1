@@ -257,9 +257,11 @@ process {
                 throw "found multiple nuspec files in '$((gi .).FullName)'. please choose one."
             }
         }
-        $dotnet = get-dotnetcommand
-        if ($dotnet -eq $null) { $dotnet = "dotnet" }
-        if ($useDotnet) { $dotnet = "dotnet" }
+        if ($nuspecorcsproj.endswith("project.json")) {
+            $dotnet = get-dotnetcommand
+            if ($dotnet -eq $null) { $dotnet = "dotnet" }
+            if ($useDotnet) { $dotnet = "dotnet" }
+        }
         
         $dir = split-path -parent $nuspecorcsproj
         $nuspecorcsproj = split-path -Leaf $nuspecorcsproj
@@ -568,6 +570,7 @@ process {
 
 
 function find-globaljson($path = ".") {
+    ipmo pathutils
     return find-upwards "global.json" -path $path    
 }
 
