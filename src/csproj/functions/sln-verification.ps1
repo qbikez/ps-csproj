@@ -458,7 +458,25 @@ function repair-csprojpaths {
                 nuget\install-package -ProjectName $csproj.name -id $dep.id -version $dep.version -prerelease:$prerelease
             }
         } else {
-            "cannot verify if all references from packages.config are installed. run this script inside Visual Studio!"
+            $refs = get-nugetreferences $csproj
+            foreach($pkgref in $pkgs) {
+                $ref = $refs | ? { $_.ShortName -eq $pkgref.id }
+                if ($ref -eq $null) {
+                    write-warning "missing csproj reference for package $($pkgref.id)"
+                }
+                if ($ref.path -notmatch "$($pkgref.version)") {
+                    # bad reference in csproj? try to detect current version
+                    if ($ref.path -match "$($pkgref.id).(?<version>.*?)\\") {
+                        Write-Warning "version of package '$($pkgref.id)' in csproj: '$($matches["version"])' doesn't match packages.config version: '$($pkgref.version)'. Fixing"
+                        # fix it
+                        $ref.path = $ref.path -replace "$($pkgref.id).(?<version>.*?)\\","$($pkgref.id).$($pkgref.version)\"
+                        $ref.Node.HintPath = $ref.path
+
+                        $csproj.save()
+                    }
+                }
+            }
+            #write-warning "cannot verify if all references from packages.config are installed. run this script inside Visual Studio!"
         }
     }
     

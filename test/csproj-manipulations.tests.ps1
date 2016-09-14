@@ -10,20 +10,79 @@ Describe "project file manipulation" {
     copy-item "$inputdir\test.csproj" "testdrive:\input\"
     copy-item "$inputdir\packages.config" "testdrive:\input\"
     copy-item "$inputdir\packages" "testdrive:\packages" -Recurse
+    copy-item "$inputdir\test" "testdrive:\input\test" -Recurse
     $testdir = "testdrive:\input" 
     In $testdir {
+
+    Context "When project reference version differs from packages.config" {
+        $csproj = import-csproj "test\src\Core\Core.Lib3\Core.Lib3.csproj"
+        $pkgconfig =  $conf = get-packagesconfig "test\src\Core\Core.Lib3\packages.config"       
+
+        It "Should detect the difference" {
+            $refs = get-nugetreferences $csproj
+            $incorect = @()
+            foreach($pkgref in $pkgconfig.packages) {
+                $ref = $refs | ? { $_.ShortName -eq $pkgref.id }
+                if ($ref -eq $null) {
+                    write-warning "missing csproj reference for package $($pkgref.id)"
+                }
+                if ($ref.path -notmatch "$($pkgref.version)") {
+                    # bad reference in csproj? try to detect current version
+                    if ($ref.path -match "$($pkgref.id).(?<version>.*?)\\") {
+                        Write-Warning "version of package '$($pkgref.id)' in csproj: '$($matches["version"])' doesn't match packages.config version: '$($pkgref.version)'"
+                        #fix it
+                        #$ref.path = $ref.path -replace "$($pkgref.id).(?<version>.*?)\\","$($pkgref.id).$($pkgref.version)\"
+                        #$ref.Node.HintPath = $ref.path
+                        #$csproj.Save() 
+                        $incorect += @($pkgref.id)
+                    }
+                }
+            }
+
+            $incorect.length | Should Be 1
+            $incorect[0] | Should Be "log4net"
+        }
+
+        It "Should fix the difference" {
+            repair-csprojpaths $csproj -reporoot "testdrive:\"
+        }
+
+        It "difference should be fixed" {
+            $refs = get-nugetreferences $csproj
+            $incorect = @()
+            foreach($pkgref in $pkgconfig.packages) {
+                $ref = $refs | ? { $_.ShortName -eq $pkgref.id }
+                if ($ref -eq $null) {
+                    write-warning "missing csproj reference for package $($pkgref.id)"
+                }
+                if ($ref.path -notmatch "$($pkgref.version)") {
+                    # bad reference in csproj? try to detect current version
+                    if ($ref.path -match "$($pkgref.id).(?<version>.*?)\\") {
+                        Write-Warning "version of package '$($pkgref.id)' in csproj: '$($matches["version"])' doesn't match packages.config version: '$($pkgref.version)'"
+                        #fix it
+                        #$ref.path = $ref.path -replace "$($pkgref.id).(?<version>.*?)\\","$($pkgref.id).$($pkgref.version)\"
+                        #$ref.Node.HintPath = $ref.path
+                        #$csproj.Save() 
+                        $incorect += @($pkgref.id)
+                    }
+                }
+            }
+
+            $incorect.length | Should Be 0
+        }
+    }
+<#
     Context "When replacing projectreference" {        
         
         $csproj = import-csproj "test.csproj"
         $packagename = "Core.Boundaries"
-        <#
-        It "should build before replacing" {
-            Add-MsbuildPath
-            $msbuildout = & msbuild 
-            $lec = $lastexitcode
-            $lec | Should Be 0
-        }
-        #>
+        
+        #It "should build before replacing" {
+        #    Add-MsbuildPath
+        #    $msbuildout = & msbuild 
+        #    $lec = $lastexitcode
+        #    $lec | Should Be 0
+        #}
         
         It "csproj Should contain reference to project $packagename" {
             $refs = get-projectreferences $csproj
@@ -80,11 +139,12 @@ Describe "project file manipulation" {
             $lastexitcode | Should be 0
         }
         
-        <#
-        It "Should Still Compile" {
-            Set-TestInconclusive
-        }
-        #>
+        
+        # It "Should Still Compile" {
+        #     Set-TestInconclusive
+        # }
     }
+#>
+    
     }
 }
