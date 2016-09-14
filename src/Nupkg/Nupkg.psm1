@@ -158,13 +158,17 @@ process {
                 if ($source -match "rolling:(.*)") {
                     cd $matches[1]
                 }
+                $versionhint = $null
+                if ($source -match "rolling.(.*)") {
+                    $versionhint = $matches[1]
+                }
                 $packagesDirs = find-packagesdir -all
                 if ($packagesDirs -eq $null) { throw "packages dir not found" }
                 write-host "rolling source specified. Will extract to $packagesDirs"    
                 $packagename = (split-packagename (split-path -leaf $nupkg)).Name
                 
                 foreach($packagesDir in $packagesDirs) {        
-                    $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir
+                    $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir -versionhint $versionhint
                     $packagedir = $nuget.PackageDir
                     if ($packagedir -eq $null) {
                         write-warning "package dir for package '$packagename' not found in '$packagesdir'"
