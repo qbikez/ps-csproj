@@ -159,7 +159,10 @@ process {
                     cd $matches[1]
                 }
                 $versionhint = $null
-                if ($source -match "rolling.(.*)") {
+                if ($source -match "rolling:v(.*)") {
+                    $versionhint = $matches[1]
+                }
+                elseif ($source -match "rolling:.*:v(.*)") {
                     $versionhint = $matches[1]
                 }
                 $packagesDirs = find-packagesdir -all
