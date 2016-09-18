@@ -11,3 +11,4 @@ temp/
 obj/
 bin/
 test-results/
+.tools/
