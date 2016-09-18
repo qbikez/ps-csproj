@@ -43,7 +43,7 @@ Arg 1 is <-b>
 Arg 2 is <2>
 Arg 3 is <-e=1 2>
 Command line:
-"$echoargs" -a=1 -b 2 "-e=1 2" 
+"$echoargs" -a=1 -b 2 "-e=1 2"
 
 "@ | % { $_ -replace "`r`n","`n" }
         $r | Should Be $expected

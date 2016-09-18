@@ -99,11 +99,13 @@ param(
         $arguments += @($ArgumentList)
     }
     if ($silent) { $showoutput = $false }
-    if ($arguments -ne $null) { 
-        
-        $argstr = ""
+    
+    $argstr = ""        
+    $shortargstr = ""
+    if ($arguments -ne $null) {         
         for($i = 0; $i -lt @($arguments).count; $i++) {
             $argstr += "[$i] $($arguments[$i])`r`n"
+            $shortargstr += "$($arguments[$i]) "
         } 
         write-verbose "Invoking: '$command' in '$($pwd.path)' arguments ($(@($arguments).count)):`r`n$argstr"
     }
@@ -129,15 +131,13 @@ param(
         }
     }
     if ($lastexitcode -ne 0) {
-        if (!$nothrow) {
-            $o | out-string | write-error 
+        if ($nothrow) {
+            $o | out-string | write-host            
         } else {
-           $o | out-string | write-host 
+            $o | out-string | write-error 
+            throw "Command '$command $shortargstr' returned $lastexitcode"
         }
-    }
-    if (!$nothrow -and $lastexitcode -ne 0) {
-        throw "Command returned $lastexitcode"
-    }
+    }   
     return $o
 }
 
