@@ -5,6 +5,7 @@ import-module csproj
 import-module semver
 import-module nupkg 
 import-module assemblymeta -verbose
+import-module process
 
 Describe "find Nuget packages dir" {
     $targetdir = copy-samples
@@ -137,6 +138,10 @@ Describe "Generate nuget for project.json" {
                 $o = invoke dotnet restore
                 $o = invoke dotnet build 
             }    
+            It "Should find global.json" {
+                $g  = find-globaljson
+                $g | Should Not BeNullOrEmpty
+            }
             It "Should pack with build" {
                 $nuget = pack-nuget $project -build
                 $nuget | Should Not BeNullOrEmpty

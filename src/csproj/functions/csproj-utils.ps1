@@ -55,7 +55,7 @@ function import-csproj {
         $content = $file
     }
     else {
-        throw "file not found: '$file'"
+        throw "csproj file not found: '$file'"
     }
 
     try {

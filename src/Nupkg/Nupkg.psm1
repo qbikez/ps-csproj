@@ -158,13 +158,20 @@ process {
                 if ($source -match "rolling:(.*)") {
                     cd $matches[1]
                 }
+                $versionhint = $null
+                if ($source -match "rolling:v(.*)") {
+                    $versionhint = $matches[1]
+                }
+                elseif ($source -match "rolling:.*:v(.*)") {
+                    $versionhint = $matches[1]
+                }
                 $packagesDirs = find-packagesdir -all
                 if ($packagesDirs -eq $null) { throw "packages dir not found" }
                 write-host "rolling source specified. Will extract to $packagesDirs"    
                 $packagename = (split-packagename (split-path -leaf $nupkg)).Name
                 
                 foreach($packagesDir in $packagesDirs) {        
-                    $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir
+                    $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir -versionhint $versionhint
                     $packagedir = $nuget.PackageDir
                     if ($packagedir -eq $null) {
                         write-warning "package dir for package '$packagename' not found in '$packagesdir'"
@@ -267,9 +274,11 @@ process {
                 throw "found multiple nuspec files in '$((gi .).FullName)'. please choose one."
             }
         }
-        $dotnet = get-dotnetcommand
-        if ($dotnet -eq $null) { $dotnet = "dotnet" }
-        if ($useDotnet) { $dotnet = "dotnet" }
+        if ($nuspecorcsproj.endswith("project.json")) {
+            $dotnet = get-dotnetcommand
+            if ($dotnet -eq $null) { $dotnet = "dotnet" }
+            if ($useDotnet) { $dotnet = "dotnet" }
+        }
         
         $dir = split-path -parent $nuspecorcsproj
         $nuspecorcsproj = split-path -Leaf $nuspecorcsproj
@@ -301,10 +310,7 @@ process {
                     $buildProperties.GetEnumerator() | % { $a += @("-p:$($_.Key)=$($_.Value)") }
                 }
                 write-host "building project: msbuild $nuspecorcsproj $a "
-                $o = msbuild $nuspecorcsproj $a | % { $_ | write-indented -level 4; $_ }
-                if ($lastexitcode -ne 0) {
-                throw "build failed! `r`n$($o | out-string)"
-                }
+                $o = invoke msbuild $nuspecorcsproj $a -passthru                
             }
         }
     
@@ -581,6 +587,7 @@ process {
 
 
 function find-globaljson($path = ".") {
+    ipmo pathutils
     return find-upwards "global.json" -path $path    
 }
 

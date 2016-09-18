@@ -71,40 +71,52 @@ Pass the command output to the output stream
 Input for the command (optional)
 #>
 function Invoke {
-[CmdletBinding(DefaultParameterSetName="set1")]
+[CmdletBinding(DefaultParameterSetName="set1",SupportsShouldProcess=$true)]
 param(
     [parameter(Mandatory=$true,ParameterSetName="set1", Position=1)]
     [parameter(Mandatory=$true,ParameterSetName="in",Position=1)]
-    $command,      
+    [parameter(Mandatory=$true,ParameterSetName="directcall",Position=1)]
+    [string]$command,      
     [parameter(ParameterSetName="set1",Position=2)]
     [Parameter(ParameterSetName="in",Position=2)]
     [Alias("arguments")]
     [string[]]$argumentList, 
-    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
-    $remainingArguments,
     [switch][bool]$nothrow, 
     [switch][bool]$showoutput = $true,
     [switch][bool]$silent,
     [switch][bool]$passthru,
     [Parameter(ParameterSetName="in")]
-    $in
+    $in,
+    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
+    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="directcall")]
+    $remainingArguments,
+    [System.Text.Encoding] $encoding = $null
     ) 
-    write-verbose "argumentlist=$argumentList"
-    write-verbose "remainingargs=$remainingArguments"
+    #write-verbose "argumentlist=$argumentList"
+    #write-verbose "remainingargs=$remainingArguments"
     $arguments = @()
-    if ($remainingArguments -ne $null) {
-        $arguments += @($remainingArguments)
+
+    function Strip-SensitiveData {
+        param([Parameter(ValueFromPipeline=$true)]$str)
+        process {
+            return @($_) | % {
+                $_ -replace "password[:=]\s*(.*?)($|[\s;,])","password={password_removed_from_log}"
+            } 
+        }
     }
+
     if ($ArgumentList -ne $null) {
         $arguments += @($ArgumentList)
     }
+    if ($remainingArguments -ne $null) {
+        $arguments += @($remainingArguments)
+    }   
     if ($silent) { $showoutput = $false }
-    
     $argstr = ""        
     $shortargstr = ""
     if ($arguments -ne $null) {         
         for($i = 0; $i -lt @($arguments).count; $i++) {
-            $argstr += "[$i] $($arguments[$i])`r`n"
+            $argstr += "[$i] $($arguments[$i] | Strip-SensitiveData)`r`n"
             $shortargstr += "$($arguments[$i]) "
         } 
         write-verbose "Invoking: '$command' in '$($pwd.path)' arguments ($(@($arguments).count)):`r`n$argstr"
@@ -113,6 +125,17 @@ param(
         write-verbose "Invoking: '$command' with no args in '$($pwd.path)'"
     }
     
+    
+    if ($WhatIfPreference -eq $true) {
+        write-warning "WhatIf specified. Not doing anything."
+        return $null
+    }
+    try {
+    if ($encoding -ne $null) {
+        write-verbose "setting console encoding to $encoding"
+        $oldEnc = [System.Console]::OutputEncoding
+        [System.Console]::OutputEncoding = $encoding
+    }
     if ($showoutput) {
         write-host "  ===== $command ====="
         if ($in -ne $null) {
@@ -130,14 +153,22 @@ param(
             $o = & $command $arguments 2>&1
         }
     }
-    if ($lastexitcode -ne 0) {
-        if ($nothrow) {
-            $o | out-string | write-host            
-        } else {
-            $o | out-string | write-error 
-            throw "Command '$command $shortargstr' returned $lastexitcode"
+    } finally {
+        if ($encoding -ne $null) {
+            [System.Console]::OutputEncoding = $oldEnc
         }
-    }   
+    }
+    if ($lastexitcode -ne 0) {
+        write-verbose "invoke: ErrorActionPreference = $ErrorActionPreference"
+        if (!$nothrow) {            
+            write-error "Command $command returned $lastexitcode" 
+            #$o | out-string | write-error
+            throw "Command $command returned $lastexitcode" 
+        } else {
+           $o | out-string | write-host 
+           
+        }
+    }
     return $o
 }
 

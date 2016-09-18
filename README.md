@@ -1,13 +1,29 @@
 ## Installation
 
-    Install-Module csproj
+If you're running Windows 10 or later:
+
+```powershell
+PS> Install-Module csproj
+```
+
+On Windows 8, you'll neeed to install PackageManagement manually (using [psbootstrap](https://github.com/qbikez/ps-bootstrap)) to be able to use `Install-Module`:
+
+```powershell
+PS> ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap')) | out-file "$env:localappdata/ps-bootstrap/bootstrap.ps1"; & "$env:localappdata/ps-bootstrap/bootstrap.ps1"
+PS> Install-Module csproj
+```
+
 ## Usage
+
+```powershell
+PS> import-module csproj
+```
 
 ### Create and push nuget for a csproj
 
 ```powershell
-    cd "src/myproject"
-    Push-Nuget -build -source https://www.nuget.org/api/v2/package
+PS> cd "src/myproject"
+PS> Push-Nuget -build -source https://www.nuget.org/api/v2/package
 ```
 
 This will:
@@ -26,8 +42,8 @@ Other usefull parameters:
 ### Create and push nugets for multiple projects
 
 ```powershell
-    cd "reporoot"    
-    push-nugets -project "My.Project","Other.Project" -build -source https://www.nuget.org/api/v2/package
+PS> cd "reporoot"    
+PS> push-nugets -project "My.Project","Other.Project" -build -source https://www.nuget.org/api/v2/package
 ```
 
 This will:
@@ -44,14 +60,14 @@ Other usefull parameters:
 1. Make sure the project you're trying to convert is installed as a nuget:
 
 ```powershell
-       nuget install "Project.To.Convert" -out "packages"
+PS> nuget install "Project.To.Convert" -out "packages"
 ```       
 
 2. Convert all references to that projects:
 
 ```powershell
-       import-module csproj
-       tonuget "path\to\my\solution.sln" -projectName "Project.To.Convert" -packagesDir "packages"
+PS> import-module csproj
+PS> tonuget "path\to\my\solution.sln" -projectName "Project.To.Convert" -packagesDir "packages"
 ```
 
 This will:
