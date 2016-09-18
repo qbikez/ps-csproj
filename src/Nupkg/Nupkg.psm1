@@ -197,6 +197,16 @@ process {
             }
         }
         else {
+            if ($source -ne $null -and $apikey -eq $null) {
+                # try to get apikey from cache
+                if ($null -eq (gmo cache)) {
+                    ipmo cache -erroration ignore
+                }
+                if ($null -ne (gmo cache)) {
+                    $apikey = get-passwordcached $source
+                }
+            }
+
             if ($source -ne $null) {
                 $p += "-source",$source
             }
