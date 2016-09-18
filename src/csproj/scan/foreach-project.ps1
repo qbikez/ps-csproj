@@ -1,7 +1,7 @@
 import-module newtonsoft.json
     
 function Use-Projects {
-[CmdletBinding(DefaultParameterSetName="default")]
+[CmdletBinding(DefaultParameterSetName="default",SupportsShouldProcess=$true)]
 param(
     [Parameter(ParameterSetName="scan")]
     [switch][bool] $scan,
@@ -104,7 +104,9 @@ process {
     }
     #. ./pack-nugets.ps1 -Filter $Filter
     
-    function process-project($project) {
+    function process-project {
+        param($project)
+
         $path = $projects[$project].path
         $projects[$project].name = $project
         if ($projects[$project].hasNuspec -ne "true" -and !$force -and !$AllowNoNuspec) {

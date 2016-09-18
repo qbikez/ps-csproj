@@ -1,7 +1,7 @@
 import-module newtonsoft.json
 
 function Push-Nugets {
-[CmdletBinding()]
+[CmdletBinding(SupportsShouldProcess=$true)]
 param(
     [switch][bool] $scan,
     [switch][bool] $all,
@@ -89,7 +89,7 @@ process {
         }
         
         $p = filter-BoundParameters "push-nuget" -bound $b
-        return push-nuget @p        
+        return push-nuget @p
         
     }
 

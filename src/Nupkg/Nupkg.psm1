@@ -206,7 +206,7 @@ process {
         
             if ($PSCmdlet.ShouldProcess("pushing package '$p'")) {
                 write-verbose "nuget push $p"
-                $o = invoke nuget push @p -passthru -verbose
+                $o = invoke nuget push @p -passthru -verbose -WhatIf:($WhatIfPreference)
                 if ($lastexitcode -ne 0) {
                     throw "nuget command failed! `r`n$($o | out-string)"
                 }
