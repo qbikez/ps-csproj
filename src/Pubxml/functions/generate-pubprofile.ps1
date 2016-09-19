@@ -60,12 +60,33 @@ param(
             $addtionalProps["_DestinationType"] = "AzureWebSites"
             $addtionalProps["PublishProvider"] = "AzureWebSite"
         } else {       
-            if (!$isVnext) { $machine = "https://$machine/msdeploy.axd" }
-        }
-    }          
-    
+        if (!$isVnext) { $machine = "https://$machine/msdeploy.axd" }
+                
+    }
+	
+	$isAzure = $machine -match "(.*?)(\.scm){0,1}\.azurewebsites\.net"
+    if ($isAzure) {
+        $azureSite = $Matches[1]
+        $machine = "$azureSite.scm.azurewebsites.net"
+    }
+          
+    $addtionalProps = @{ }   
     $addtionalProps["subdir"] = ""    
-    $addtionalProps["Recycle"] = "True"
+    if (!$isAzure) {
+		$addtionalProps["Recycle"] = "True"        
+    } else {
+        $addtionalProps["Recycle"] = "False"
+    }
+
+
+    if ($isAzure -and $isVnext) {
+        $addtionalProps["WebRoot"] = "wwwroot"
+        $addtionalProps["WwwRootOut"] = "wwwroot"
+        $addtionalProps["IISCommand"] = "web"
+        $addtionalProps["_DefaultDNXVersion"] = "dnx-clr-win-x86.1.0.0-rc1-update1"
+        $addtionalProps["DeployIisAppPath"] = "$azureSite"
+    }
+
     $customParams.GetEnumerator() | % {    
         $key = $_.key
         $value =$_.value
