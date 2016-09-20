@@ -471,7 +471,12 @@ function repair-csprojpaths {
                         # fix it
                         $ref.path = $ref.path -replace "$($pkgref.id).(?<version>.*?)\\","$($pkgref.id).$($pkgref.version)\"
                         $ref.Node.HintPath = $ref.path
-
+                        $inc = $ref.Node.Include
+                        if ($inc -ne $null -and $inc -match "$($pkgref.id),\s*Version=(.*?),") {
+                            write-verbose "fixing include tag"
+                            $inc = $inc -replace "($($pkgref.id)),\s*Version=(.*?),","\1,"
+                            $ref.Node.Include = $inc
+                        }
                         $csproj.save()
                     }
                 }
