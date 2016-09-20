@@ -106,11 +106,14 @@ function invoke-nugetpush {
     [switch][bool] $ForceDll,
     [switch][bool] $Stable,
     [switch][bool] $useDotnet,
+    [Alias("newVersion")]
     [switch][bool] $incrementVersion,
     $suffix = $null,
     $buildProperties = @{}) 
 process {
-    
+    if ($stable -and $incrementVersion) {
+        throw "-Stable cannot be used with -incrementVersion"
+    }
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
         if ($files.length -gt 0){
@@ -118,7 +121,7 @@ process {
         }
     }
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties  $buildProperties -usedotnet:$usedotnet -suffix:$suffix -incrementVersion:$incrementVersion
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties:$buildProperties -usedotnet:$usedotnet -suffix:$suffix -incrementVersion:$incrementVersion
     } else {
         $nupkg = $file
     }
@@ -249,6 +252,7 @@ function invoke-nugetpack {
     [switch][bool] $Stable,
     [switch][bool] $ForceDll,
     [switch][bool] $useDotnet,
+    [Alias("newVersion")]
     [switch][bool] $incrementVersion,
     $suffix = $null,
     $buildProperties = @{}) 
