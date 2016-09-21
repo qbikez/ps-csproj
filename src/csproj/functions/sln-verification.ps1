@@ -491,8 +491,9 @@ function repair-csprojpaths {
 }
 
 function update-nuget {
-    param([Parameter(mandatory=$true)]$id, $version) 
+    param([Parameter(mandatory=$true,ValueFromPipeline=$true)]$id, $version) 
 
+process {
     write-verbose "checking packages.config"
     $pkgconfig = get-packagesconfig ("packages.config") 
     $pkgs = $pkgconfig.packages
@@ -528,6 +529,7 @@ function update-nuget {
             fix-csproj $_.FullName
         }
     }
+}
 }
 
 
