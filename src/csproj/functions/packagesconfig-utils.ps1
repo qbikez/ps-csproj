@@ -38,6 +38,21 @@ param(
     }
 }
 
+function set-packagesconfig {
+    param(
+    [Parameter(Mandatory=$true,ValueFromPipeline=$true)]$pkgconfig,    
+    [Parameter(Mandatory=$true)]$outfile
+    )
+
+    if ($pkgconfig.xml -eq $null) {
+        throw "please provide a pkgconfig object from get-packagesconfig"
+    }
+    if (!([system.io.path]::IsPathRooted($outfile))) {
+        $outfile = join-path (get-item ".").FullName $outfile
+    }
+    $pkgconfig.xml.Save($outfile)
+}
+
 function get-packagesconfig {
     param(
     [Parameter(Mandatory=$true)]$packagesconfig,

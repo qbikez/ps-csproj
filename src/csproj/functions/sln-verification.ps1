@@ -474,7 +474,7 @@ function repair-csprojpaths {
                         $inc = $ref.Node.Include
                         if ($inc -ne $null -and $inc -match "$($pkgref.id),\s*Version=(.*?),") {
                             write-verbose "fixing include tag"
-                            $inc = $inc -replace "($($pkgref.id)),\s*Version=(.*?),","\1,"
+                            $inc = $inc -replace "($($pkgref.id)),\s*Version=(.*?),",'$1,'
                             $ref.Node.Include = $inc
                         }
                         $csproj.save()
@@ -489,6 +489,47 @@ function repair-csprojpaths {
 #    $valid | Should Be $true
     
 }
+
+function update-nuget {
+    param([Parameter(mandatory=$true)]$id, $version) 
+
+    write-verbose "checking packages.config"
+    $pkgconfig = get-packagesconfig ("packages.config") 
+    $pkgs = $pkgconfig.packages
+    $changed = $false
+    foreach($pkgid in @($id)) {
+        $ver = $version
+        if ($pkgid -match "(?<id>.*)\.(?<version>[0-9]+\.[0-9]+\.[0-9]+.*)") {
+                $ver = $matches["version"]
+                $pkgid = $matches["id"]
+        }
+        else {
+            write-warning "please specify package version with -version or in package id (like '$pkgid.1.0.0')"
+            continue
+        }
+        if ($ver -eq $null) {            
+            
+        }
+
+        $ref = $pkgs | ? { $_.id -eq $pkgid }
+
+        if ($ref -ne $null) {
+            $changed = $true
+            $ref.version = $ver
+        } else {
+            write-warning "package $pkgid not found in packages.config"
+            continue
+        }
+    }
+
+    if ($changed) {
+        $pkgconfig | set-packagesconfig -outfile "packages.config"
+        get-childitem . -filter "*.csproj" | %{
+            fix-csproj $_.FullName
+        }
+    }
+}
+
 
 
 new-alias fix-sln repair-slnpaths
