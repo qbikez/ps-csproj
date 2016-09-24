@@ -50,7 +50,10 @@ function  find-packagesdir  {
 
 
 
-
+<#
+.Synopsis 
+Looks for a dll or exe file that matches $name in $path
+#>
 function find-nugetdll {
     param (
         [Parameter(Mandatory=$true)] $name, 
@@ -85,6 +88,11 @@ function get-nugetname {
     }
 }
 
+<#
+.Synopsis
+Looks for nuget with $name in $packagesRelPath.
+If $versionHint is given, tries to find specific version, else looks for the newest version
+#>
 function find-nugetPath {
     [CmdletBinding()]
     param(

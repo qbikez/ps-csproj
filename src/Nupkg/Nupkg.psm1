@@ -106,11 +106,14 @@ function invoke-nugetpush {
     [switch][bool] $ForceDll,
     [switch][bool] $Stable,
     [switch][bool] $useDotnet,
+    [Alias("newVersion")]
     [switch][bool] $incrementVersion,
     $suffix = $null,
     $buildProperties = @{}) 
 process {
-    
+    if ($stable -and $incrementVersion) {
+        throw "-Stable cannot be used with -incrementVersion"
+    }
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
         if ($files.length -gt 0){
@@ -118,7 +121,7 @@ process {
         }
     }
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties  $buildProperties -usedotnet:$usedotnet -suffix:$suffix -incrementVersion:$incrementVersion
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties:$buildProperties -usedotnet:$usedotnet -suffix:$suffix -incrementVersion:$incrementVersion
     } else {
         $nupkg = $file
     }
@@ -155,16 +158,20 @@ process {
             
             pushd
             try {
-                if ($source -match "rolling:(.*)") {
+                $versionhint = $null
+
+                if ($source -match "rolling:(.*):v(.*)") {
+                    cd $matches[1]
+                    $versionhint = $matches[2]
+                }
+                elseif ($source -match "rolling:v(.*)") {
+                    $versionhint = $matches[1]
+                }
+                elseif ($source -match "rolling:(.*)") {
                     cd $matches[1]
                 }
-                $versionhint = $null
-                if ($source -match "rolling:v(.*)") {
-                    $versionhint = $matches[1]
-                }
-                elseif ($source -match "rolling:.*:v(.*)") {
-                    $versionhint = $matches[1]
-                }
+            
+                
                 $packagesDirs = find-packagesdir -all
                 if ($packagesDirs -eq $null) { throw "packages dir not found" }
                 write-host "rolling source specified. Will extract to $packagesDirs"    
@@ -207,7 +214,7 @@ process {
             if ($source -ne $null -and $apikey -eq $null) {
                 # try to get apikey from cache
                 if ($null -eq (gmo cache)) {
-                    ipmo cache -erroration ignore
+                    ipmo cache -erroraction ignore
                 }
                 if ($null -ne (gmo cache)) {
                     $apikey = get-passwordcached $source
@@ -260,6 +267,7 @@ function invoke-nugetpack {
     [switch][bool] $Stable,
     [switch][bool] $ForceDll,
     [switch][bool] $useDotnet,
+    [Alias("newVersion")]
     [switch][bool] $incrementVersion,
     $suffix = $null,
     $buildProperties = @{}) 

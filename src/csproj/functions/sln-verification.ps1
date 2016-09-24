@@ -1,5 +1,6 @@
-import-module pathutils
-import-module publishmap 
+import-module pathutils 
+import-module publishmap
+import-module nupkg
 
 function get-slndependencies {
     [CmdletBinding(DefaultParameterSetName = "sln")]
@@ -38,13 +39,19 @@ function get-slndependencies {
                 if ($r.type -eq "project") {
                     $r.IsValid = $r.IsValid -and $existsInSln 
                 }
-                $props = [ordered]@{ project = $p.project; ref = $r; refType = $r.type; IsProjectValid = $true }
+                $version = $null
+                if ($r.type -eq "nuget") {
+                    if ($r.path -ne $null -and $r.path.replace("\","/") -match "/.*?(?<version>[0-9]+\.[0-9]+\.[0-9]+.*?)/") {                    
+                        $version = $Matches["version"]
+                    }
+                }
+                $props = [ordered]@{ project = $p.project; ref = $r; refType = $r.type; version = $version;  IsProjectValid = $true }
                 $result += new-object -type pscustomobject -property $props 
             }
         } else {
             $isvalid = $true
             if ($p.csproj -eq $null) { $isvalid = $false }
-            $props = [ordered]@{ project = $p.project; ref = $null; refType = $null; IsProjectValid = $isvalid }
+            $props = [ordered]@{ project = $p.project; ref = $null; refType = $null; version = $null; IsProjectValid = $isvalid }
             $result += new-object -type pscustomobject -property $props 
         }
     }
@@ -236,9 +243,14 @@ function repair-slnpaths {
         if ($slnfile -eq $null) { throw "no sln file given and no *.sln found in current directory" }
         $sln = import-sln $slnfile
     }
+   
+    if (!$incsproj.IsPresent -and !$insln.ispresent) {
+        $incsproj = $true
+        $insln = $true
+    }
 
   
-    if ($insln -or !$insln.IsPresent) {
+    if ($insln) {
         $valid,$missing = test-slndependencies $sln 
         
         write-verbose "SLN: found $($missing.length) missing projects"
@@ -268,9 +280,13 @@ function repair-slnpaths {
 
         $fixed = @{}
 
-        $missing | % {
+        foreach($_ in $missing) {
             if ($fixed.ContainsKey($_.ref.name)) {
                 write-verbose "skipping fixed reference $($_.ref.name)"
+                continue
+            }
+            if ($_.ref.Type -ne "project") {
+                write-verbose "skipping non-project reference  '$($_.ref.name)' of type '$($_.reftype)'"
                 continue
             }
             write-verbose "trying to fix missing SLN reference '$($_.ref.name)'"
@@ -323,50 +339,45 @@ function repair-slnpaths {
         write-host "saving sln"
         $sln.Save()
     }
-    if ($insln) {
-        return 
-    }
-    
-    write-host "Fixing CSPROJs..."
+    if ($incsproj) {
+        write-host "Fixing CSPROJs..."
 
-    $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
+        $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
     
-    ipmo nupkg
-    
-     if ($tonuget) {
-        $pkgdir =(find-packagesdir $reporoot)
-        if (!(test-path $pkgdir)) {
-            $null = new-item -type Directory $pkgdir
-        }
-        $missing = test-sln $sln -missing 
-        $missing = @($missing | ? { $_.ref.type -eq "project"})
-        $missing = $missing | % { $_.ref.name } | sort -Unique
+         if ($tonuget) {
+            $pkgdir =(find-packagesdir $reporoot)
+            if (!(test-path $pkgdir)) {
+                $null = new-item -type Directory $pkgdir
+            }
+            $missing = test-sln $sln -missing 
+            $missing = @($missing | ? { $_.ref.type -eq "project"})
+            $missing = $missing | % { $_.ref.name } | sort -Unique
         
-        $missing | % {
-            try {
-                write-host "replacing $_ with nuget"
-                $found = find-nugetPath $_ $pkgdir 
-                if ($found -eq $null) {
-                    write-host "installing package $_"
-                nuget install $_ -out $pkgdir -pre
-                }                    
-                convert-referencestonuget $sln -projectName $_ -packagesDir $pkgdir -filter $filer
-            } catch {
-                write-error $_
+            $missing | % {
+                try {
+                    write-host "replacing $_ with nuget"
+                    $found = find-nugetPath $_ $pkgdir 
+                    if ($found -eq $null) {
+                        write-host "installing package $_"
+                    nuget install $_ -out $pkgdir -pre
+                    }                    
+                    convert-referencestonuget $sln -projectName $_ -packagesDir $pkgdir -filter $filer
+                } catch {
+                    write-error $_
+                }
+            }
+        }
+    
+        foreach($_ in $projects) {
+            if (test-path $_.fullname) {
+                $csproj = import-csproj $_.fullname
+            
+                if (!$tonuget) {
+                    $null = repair-csprojpaths $csproj -reporoot $reporoot -prerelease:$prerelease
+                }            
             }
         }
     }
-    
-    $null = $projects | % {
-        if (test-path $_.fullname) {
-            $csproj = import-csproj $_.fullname
-            
-            if (!$tonuget) {
-                $null = repair-csprojpaths $csproj -reporoot $reporoot -prerelease:$prerelease
-            }            
-        }
-    }
-    
     
 #    $valid,$missing = test-slndependencies $sln
 #    $valid | Should Be $true
@@ -410,73 +421,93 @@ function repair-csprojpaths {
     $deps = get-csprojdependencies $csproj
     $missing = @($deps | ? { $_.ref.IsValid -eq $false })
      
-    write-verbose "CSPROJ $($csproj.Name) found $($missing.length) missing projects"
+    write-verbose "($($csproj.name)): CSPROJ found $($missing.length) missing projects"
     if ($reporoot -eq $null) {
         $reporoot = find-reporoot $csproj.fullname
         if ($reporoot -ne $null) {
-            write-verbose "auto-detected repo root at $reporoot"
+            write-verbose "($($csproj.name)): auto-detected repo root at $reporoot"
         }
     }
     
     if ($reporoot -eq $null) {
-        throw "No repository root given and none could be detected"
+        throw "($($csproj.name)): No repository root given and none could be detected"
     }
 
-    $missing = find-matchingprojects $missing $reporoot
+    if ($missing.length -gt 0) {
+        write-verbose "($($csproj.name)): looking for projects matching missing references"
+        $missing = find-matchingprojects $missing $reporoot
     
-    $missing | % {
-        if ($_.matching -eq $null -or $_.matching.length -eq 0) {
-            write-warning "no matching project found for CSPROJ reference $($_.ref.Path)"
-        }
-        else {
-            $relpath = get-relativepath $csproj.fullname $_.matching.fullname
-            
-            $_.ref.Path = $relpath
-            if ($_.ref.type -eq "project" -and $_.ref.Node.Include -ne $null) {
-                write-verbose "fixing CSPROJ reference in $($csproj.name): $($_.ref.Path) => $relpath"
-                $_.ref.Node.Include = $relpath
-            } 
-            if ($_.ref.type -eq "nuget" -and $_.ref.Node.HintPath -ne $null) {
-                write-verbose "fixing NUGET reference in $($csproj.name): $($_.ref.Path) => $relpath"
-                $_.ref.Node.HintPath = $relpath                
+        $missing | % {
+            if ($_.matching -eq $null -or $_.matching.length -eq 0) {
+                write-warning "($($csproj.name)): no matching project found for CSPROJ reference $($_.ref.Path)"
             }
+            else {
+                $relpath = get-relativepath $csproj.fullname $_.matching.fullname
+            
+                $_.ref.Path = $relpath
+                if ($_.ref.type -eq "project" -and $_.ref.Node.Include -ne $null) {
+                    write-verbose "($($csproj.name)): fixing CSPROJ reference in $($csproj.name): $($_.ref.Path) => $relpath"
+                    $_.ref.Node.Include = $relpath
+                } 
+                if ($_.ref.type -eq "nuget" -and $_.ref.Node.HintPath -ne $null) {
+                    write-verbose "($($csproj.name)): fixing NUGET reference in $($csproj.name): $($_.ref.Path) => $relpath"
+                    $_.ref.Node.HintPath = $relpath                
+                }
+            }
+
         }
-
+        $csproj.Save()
+        write-verbose "($($csproj.name)): missing references done"
     }
-
-    $csproj.Save()
-
+   
+    $pkgdir = find-packagesdir $reporoot
     $dir = split-path -parent $csproj.FullName
     if (test-path (Join-Path $dir "packages.config")) {
-        write-verbose "checking packages.config"
+        write-verbose "($($csproj.name)): checking packages.config"
         $pkgs = get-packagesconfig (Join-Path $dir "packages.config") 
         $pkgs = $pkgs.packages
         
         if ((get-command "install-package" -Module nuget -errorAction Ignore) -ne $null) {
-            write-verbose "detected Nuget module. using Nuget/install-package"
+            write-verbose "($($csproj.name)): detected Nuget module. using Nuget/install-package"
             foreach($dep in $pkgs) {
                 nuget\install-package -ProjectName $csproj.name -id $dep.id -version $dep.version -prerelease:$prerelease
             }
         } else {
-            $refs = get-nugetreferences $csproj
+            $refs = get-nugetreferences $csproj 
             foreach($pkgref in $pkgs) {
                 $ref = $refs | ? { $_.ShortName -eq $pkgref.id }
                 if ($ref -eq $null) {
-                    write-warning "missing csproj reference for package $($pkgref.id)"
+                    
+                    $nugetpath = find-nugetpath $pkgref.id $pkgdir -versionhint $pkgref.version
+                    if ($nugetpath -ne $null) {
+                        $dllname = [System.IO.Path]::GetFileNameWithoutExtension($nugetpath.PAth)
+                        $ref = $refs | ? { $_.ShortName -eq $dllname }
+                        if ($ref -ne $null) {
+                            #write-verbose "$($pkgref.id) maps to $($nugetpath.PAth)"
+                        }
+                    }
+                    if ($ref -eq $null) {
+                        write-warning "($($csproj.name)): missing csproj reference for package $($pkgref.id)"
+                    }
                 }
                 if ($ref.path -notmatch "$($pkgref.version)") {
                     # bad reference in csproj? try to detect current version
                     if ($ref.path -match "$($pkgref.id).(?<version>.*?)\\") {
-                        Write-Warning "version of package '$($pkgref.id)' in csproj: '$($matches["version"])' doesn't match packages.config version: '$($pkgref.version)'. Fixing"
+                        Write-Warning "($($csproj.name)): version of package '$($pkgref.id)' in csproj: '$($matches["version"])' doesn't match packages.config version: '$($pkgref.version)'. Fixing"
                         # fix it
                         $ref.path = $ref.path -replace "$($pkgref.id).(?<version>.*?)\\","$($pkgref.id).$($pkgref.version)\"
                         $ref.Node.HintPath = $ref.path
-
+                        $inc = $ref.Node.Include
+                        if ($inc -ne $null -and $inc -match "$($pkgref.id),\s*Version=(.*?),") {
+                            write-verbose "($($csproj.name)): fixing include tag"
+                            $inc = $inc -replace "($($pkgref.id)),\s*Version=(.*?),",'$1,'
+                            $ref.Node.Include = $inc
+                        }
                         $csproj.save()
                     }
                 }
             }
-            #write-warning "cannot verify if all references from packages.config are installed. run this script inside Visual Studio!"
+            write-warning "cannot verify if all references from packages.config are installed. run this script inside Visual Studio!"
         }
     }
     
@@ -484,6 +515,49 @@ function repair-csprojpaths {
 #    $valid | Should Be $true
     
 }
+
+function update-nuget {
+    param([Parameter(mandatory=$true,ValueFromPipeline=$true)]$id, $version) 
+
+process {
+    write-verbose "checking packages.config"
+    $pkgconfig = get-packagesconfig ("packages.config") 
+    $pkgs = $pkgconfig.packages
+    $changed = $false
+    foreach($pkgid in @($id)) {
+        $ver = $version
+        if ($pkgid -match "(?<id>.*)\.(?<version>[0-9]+\.[0-9]+\.[0-9]+.*)") {
+                $ver = $matches["version"]
+                $pkgid = $matches["id"]
+        }
+        else {
+            write-warning "please specify package version with -version or in package id (like '$pkgid.1.0.0')"
+            continue
+        }
+        if ($ver -eq $null) {            
+            
+        }
+
+        $ref = $pkgs | ? { $_.id -eq $pkgid }
+
+        if ($ref -ne $null) {
+            $changed = $true
+            $ref.version = $ver
+        } else {
+            write-warning "package $pkgid not found in packages.config"
+            continue
+        }
+    }
+
+    if ($changed) {
+        $pkgconfig | set-packagesconfig -outfile "packages.config"
+        get-childitem . -filter "*.csproj" | %{
+            fix-csproj $_.FullName
+        }
+    }
+}
+}
+
 
 
 new-alias fix-sln repair-slnpaths

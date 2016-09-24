@@ -107,8 +107,8 @@ process {
         try {
             push-project $_
         } catch {
-            Write-Error $_.ScriptStackTrace
-            throw $_
+            #Write-Error "$($_.Exception.Message) $($_.ScriptStackTrace)"
+            throw "$($_.Exception.Message) $($_.ScriptStackTrace)"
         } 
     }   
 }

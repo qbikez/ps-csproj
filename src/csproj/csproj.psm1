@@ -23,7 +23,7 @@ Export-ModuleMember -function `
     find-RepoRoot, Find-GlobalJson, Get-InstalledNugets, Get-AvailableNugets, `
     Get-PackageVersion, Get-PackageName, `
     import-csproj, get-nodes, get-projectreferences, get-externalreferences, get-nugetreferences, get-systemreferences,  get-allreferences, add-projectItem, convertto-nuget, convert-reference, `
-    get-packagesconfig, add-packagetoconfig, remove-packagefromconfig, `
+    get-packagesconfig, set-packagesconfig, add-packagetoconfig, remove-packagefromconfig, `
     convert-referencestonuget, get-referencesTo, convertto-projectreference, convertto-nugetreference, convert-nugetToProjectReference, `
     set-assemblymeta, get-assemblymeta, `
     get-slndependencies, test-sln, test-slndependencies, repair-slnpaths, get-csprojdependencies, repair-csprojpaths, `
