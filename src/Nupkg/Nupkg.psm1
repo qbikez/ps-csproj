@@ -211,6 +211,21 @@ process {
                 }
                 if ($null -ne (gmo cache)) {
                     $apikey = get-passwordcached $source
+                    if ($apikey -ne $null) { write-verbose "found cached api key for source $source" }
+                }                
+
+                #try to get api key from global settings
+                if ($null -eq (gmo oneliners)) {
+                    ipmo oneliners -erroration ignore
+                }
+                if ($null -ne (gmo oneliners)) {
+                    $settings = import-settings
+                    $apikey = $settings["$source.apikey"]
+                    if ($apikey -ne $null) {
+                        $cred = new-object "system.management.automation.pscredential" "dummy",$apikey
+                        $apikey = $cred.GetNetworkCredential().Password
+                        if ($apikey -ne $null) { write-verbose "found api key in globalsettings for source $source" }
+                    }
                 }
             }
 
