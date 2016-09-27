@@ -285,8 +285,8 @@ function repair-slnpaths {
                 write-verbose "skipping fixed reference $($_.ref.name)"
                 continue
             }
-            if ($_.ref.Type -ne "project") {
-                write-verbose "skipping non-project reference  '$($_.ref.name)' of type '$($_.reftype)'"
+            if ($_.ref.Type -ne "project" -and $_.ref.Type -ne "csproj") {
+                write-verbose "skipping non-project reference  '$($_.ref.name)' of type '$($_.ref.type)'"
                 continue
             }
             write-verbose "trying to fix missing SLN reference '$($_.ref.name)'"
