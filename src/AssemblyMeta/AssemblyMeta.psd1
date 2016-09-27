@@ -12,7 +12,7 @@
 RootModule = 'AssemblyMeta.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.2'
+ModuleVersion = '1.0.4.0'
 
 # ID used to uniquely identify this module
 GUID = '1131511f-1058-49d3-825f-aa83a61404d1'
@@ -117,6 +117,10 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+
+
+
+
 
 
 
