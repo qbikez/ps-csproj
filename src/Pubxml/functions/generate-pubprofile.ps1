@@ -60,8 +60,8 @@ param(
             $addtionalProps["_DestinationType"] = "AzureWebSites"
             $addtionalProps["PublishProvider"] = "AzureWebSite"
         } else {       
-        if (!$isVnext) { $machine = "https://$machine/msdeploy.axd" }
-                
+            if (!$isVnext) { $machine = "https://$machine/msdeploy.axd" }
+        }
     }
 	
 	$isAzure = $machine -match "(.*?)(\.scm){0,1}\.azurewebsites\.net"

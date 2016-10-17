@@ -56,7 +56,20 @@ for($dir = (gi .).FullName; $dir = split-path $dir -parent; $dir -ne $null) {
         }
     }
 }
-
+if ($publishModulePath -eq $null) {
+    ipmo pubxml -ErrorAction Ignore
+    if ((gmo pubxml -ErrorAction Ignore) -ne $null) {
+        $testDir = (gmo pubxml).path
+        $testDir = split-path -Parent $testDir
+        $testDir = join-path $testDir "functions"
+        write-verbose "testing dir for scripts: $testDir"
+        $testfile = join-path $testDir "publish-module.psm1"
+        if (Test-Path $testFile) {
+	            write-verbose "found scripts dir at $(get-item $testDir)"
+                $publishModulePath = (get-item $testDir).FullName
+			}
+    }
+}
 if ($publishModulePath -eq $null) {
     write-error "publish module not found in any of paths: $($scriptDirs | % { (get-item $_).FullName })"
 }
