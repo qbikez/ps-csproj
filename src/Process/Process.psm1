@@ -87,10 +87,12 @@ param(
     [switch][bool]$passthru,
     [Parameter(ParameterSetName="in")]
     $in,
+    [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="in")]
     [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="set1")]
     [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="directcall")]
     $remainingArguments,
-    [System.Text.Encoding] $encoding = $null
+    [System.Text.Encoding] $encoding = $null,
+    [switch][bool]$useShellExecute
     ) 
     #write-verbose "argumentlist=$argumentList"
     #write-verbose "remainingargs=$remainingArguments"
@@ -100,7 +102,7 @@ param(
         param([Parameter(ValueFromPipeline=$true)]$str)
         process {
             return @($_) | % {
-                $_ -replace "password[:=]\s*(.*?)($|[\s;,])","password={password_removed_from_log}"
+                $_ -replace "password[:=]\s*(.*?)($|[\s;,])","password={password_removed_from_log}`$2"
             } 
         }
     }
@@ -119,10 +121,10 @@ param(
             $argstr += "[$i] $($arguments[$i] | Strip-SensitiveData)`r`n"
             $shortargstr += "$($arguments[$i]) "
         } 
-        write-verbose "Invoking: '$command' in '$($pwd.path)' arguments ($(@($arguments).count)):`r`n$argstr"
+        write-verbose "Invoking: ""$command"" $shortargstr `r`nin '$($pwd.path)' arguments ($(@($arguments).count)):`r`n$argstr"
     }
     else {
-        write-verbose "Invoking: '$command' with no args in '$($pwd.path)'"
+        write-verbose "Invoking: ""$command"" with no args in '$($pwd.path)'"
     }
     
     
@@ -133,29 +135,43 @@ param(
     try {
     if ($encoding -ne $null) {
         write-verbose "setting console encoding to $encoding"
-        $oldEnc = [System.Console]::OutputEncoding
-        [System.Console]::OutputEncoding = $encoding
+        try {
+            $oldEnc = [System.Console]::OutputEncoding
+            [System.Console]::OutputEncoding = $encoding
+        } catch {
+            write-warning "failed to set encoding to $encoding : $($_.Exception.Message)"
+        }
     }
     if ($showoutput) {
         write-host "  ===== $command ====="
         if ($in -ne $null) {
+            if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
             $o = $in | & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
         } else {
-            $o = & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
+            if ($useShellExecute) {
+                $o = cmd /c """$command"" $shortargstr 2>&1" | write-indented -level 2 -passthru:$passthru
+            } else {
+                $o = & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
+            }
         }
         
         write-host "  === END $command == ($lastexitcode)" 
     } else {
         if ($in -ne $null) {
+            if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
             $o = $in | & $command $arguments 2>&1
         }
         else {
-            $o = & $command $arguments 2>&1
+            if ($useShellExecute) {
+                $o = cmd /c """$command"" $shortargstr 2>&1"
+            } else {
+                $o = & $command $arguments 2>&1
+            }
         }
     }
     } finally {
         if ($encoding -ne $null) {
-            [System.Console]::OutputEncoding = $oldEnc
+            if ($oldEnc -ne $null) { [System.Console]::OutputEncoding = $oldEnc }
         }
     }
     if ($lastexitcode -ne 0) {
@@ -165,7 +181,7 @@ param(
             #$o | out-string | write-error
             throw "Command $command returned $lastexitcode" 
         } else {
-           $o | out-string | write-host 
+           # $o | out-string | write-host 
            
         }
     }
