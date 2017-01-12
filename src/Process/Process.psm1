@@ -31,7 +31,7 @@ function Write-Indented
             }            
         }
         if (!$([Environment]::UserInteractive)) {
-			write-warning "Write-Indented: non-UserInteractive console. will user verbose instead"
+			write-warning "Write-Indented: non-UserInteractive console. will use verbose stream instead"
         }
     }
     process { 
@@ -46,7 +46,7 @@ function Write-Indented
                     if ($([Environment]::UserInteractive)) {
                         write-host "$pad$($msg.substring($idx,$chunk))" #[$($msg.GetType().Name)]
                     } else {
-                        write-verbose "$pad$($msg.substring($idx,$chunk))" #[$($msg.GetType().Name)]
+                        write-verbose "$pad$($msg.substring($idx,$chunk))" -verbose #[$($msg.GetType().Name)]
                     }
                     $idx += $chunk
                     if ($passthru) {
