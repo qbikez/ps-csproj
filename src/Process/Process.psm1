@@ -12,6 +12,7 @@ Maximum line length - after which lines will be wrapped (also with indentation)
 .Parameter passthru
 Pass the input to the output
 #>
+
 function Write-Indented 
 {
     param(
@@ -24,12 +25,13 @@ function Write-Indented
     begin {
         $pad = $mark.PadLeft($level)
         if ($maxlen -eq $null) {
-            if ($host.UI.RawUI.WindowSize.Width -gt 0) {
+            $maxlen = 512
+            if (([Environment]::UserInteractive) -and $host.UI.RawUI.WindowSize.Width -ne $null -and $host.UI.RawUI.WindowSize.Width -gt 0) {
                 $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
-            }
-            else {
-                $maxlen = 512
-            }
+            }            
+        }
+        if (!$([Environment]::UserInteractive)) {
+			write-warning "Write-Indented: non-UserInteractive console. will user verbose instead"
         }
     }
     process { 
@@ -41,7 +43,11 @@ function Write-Indented
                 while($idx -lt $msg.length) {
                     $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
                     $chunk = [System.Math]::Max($chunk, 0)
-                    write-host "$pad$($msg.substring($idx,$chunk))" #[$($msg.GetType().Name)]
+                    if ($([Environment]::UserInteractive)) {
+                        write-host "$pad$($msg.substring($idx,$chunk))" #[$($msg.GetType().Name)]
+                    } else {
+                        write-verbose "$pad$($msg.substring($idx,$chunk))" #[$($msg.GetType().Name)]
+                    }
                     $idx += $chunk
                     if ($passthru) {
                         write-output $msgs
