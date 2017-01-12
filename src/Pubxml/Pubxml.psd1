@@ -12,7 +12,7 @@
 RootModule = 'Pubxml.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.1'
+ModuleVersion = '1.0.5'
 
 # ID used to uniquely identify this module
 GUID = 'ce956b98-6214-42a1-92ff-d6914bf2a40d'
@@ -117,6 +117,18 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
