@@ -138,6 +138,7 @@ param(
         write-warning "WhatIf specified. Not doing anything."
         return $null
     }
+
     try {
     if ($encoding -ne $null) {
         write-verbose "setting console encoding to $encoding"
@@ -155,7 +156,8 @@ param(
             $o = $in | & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
         } else {
             if ($useShellExecute) {
-                $o = cmd /c """$command"" $shortargstr 2>&1" | write-indented -level 2 -passthru:$passthru
+                if ([System.IO.Path]::IsPathRooted($command) -or $command.Contains(" ")) { $command = """$command""" }
+                $o = cmd /c "$command $shortargstr" 2>&1 | write-indented -level 2 -passthru:$passthru
             } else {
                 $o = & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
             }
@@ -165,11 +167,12 @@ param(
     } else {
         if ($in -ne $null) {
             if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
-            $o = $in | & $command $arguments 2>&1
+            $o = $in | & $command $arguments  2>&1
         }
         else {
             if ($useShellExecute) {
-                $o = cmd /c """$command"" $shortargstr 2>&1"
+                if ([System.IO.Path]::IsPathRooted($command) -or $command.Contains(" ")) { $command = """$command""" }
+                $o = cmd /c "$command $shortargstr" 2>&1
             } else {
                 $o = & $command $arguments 2>&1
             }
