@@ -6,7 +6,7 @@ param(
     [switch][bool] $scan,
     [switch][bool] $all,
     [switch][bool] $AllowNoNuspec,
-    [switch][bool] $force
+    [switch][bool] $force    
 )
 
 
@@ -37,7 +37,7 @@ DynamicParam
         
         $paramDictionary.Add($paramname, $dynParam1)
     }
-    import-module nupkg
+    
     $c = get-command "push-nuget"
     $cmdlet = $pscmdlet
     foreach($p in $c.Parameters.GetEnumerator()) {
@@ -46,6 +46,7 @@ DynamicParam
             continue 
         }
         $dynParam1 = new-object -Type System.Management.Automation.RuntimeDefinedParameter($p.Key, $p.Value.ParameterType, $p.Value.Attributes)
+        
         $paramDictionary.Add($p.key, $dynParam1)
     }
 
@@ -80,7 +81,7 @@ process {
     function push-project($project) {
         $path = $project.path
         if ($project.hasNuspec -ne "true" -and !$force -and !$AllowNoNuspec) {
-            write-host "skipping project '$($project.name)' with no nuspec"
+            write-host "skipping project '$($project.name)' with no nuspec. use -AllowNoNuspec to override"
             continue
         }
         if ($project.path.startswith("test\")) { 

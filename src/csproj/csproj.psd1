@@ -12,7 +12,7 @@
 RootModule = 'csproj.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.22.0'
+ModuleVersion = '1.0.23.0'
 
 # ID used to uniquely identify this module
 GUID = 'ab338b65-83f7-441c-848b-d4f7c84d078e'
@@ -117,6 +117,10 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+
+
+
+
 
 
 

@@ -2,7 +2,6 @@
 
 import-module pester
 import-module csproj
-import-module nupkg
 import-module publishmap
 import-module pathutils
 

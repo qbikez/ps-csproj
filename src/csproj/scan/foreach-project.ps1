@@ -1,4 +1,3 @@
-import-module newtonsoft.json
     
 function Use-Projects {
 [CmdletBinding(DefaultParameterSetName="default",SupportsShouldProcess=$true)]
@@ -43,7 +42,6 @@ DynamicParam
         
         $paramDictionary.Add($paramname, $dynParam1)
     }
-    import-module nupkg
     $c = get-command "push-nuget"
     $cmdlet = $pscmdlet
     foreach($p in $c.Parameters.GetEnumerator()) {
@@ -81,8 +79,7 @@ process {
         if ($scan) { return }
     }
 
-    ipmo nupkg
-
+    
     $project =  $PSBoundParameters["Project"]
     if ($script:projects -eq $null) { $projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft  }
     

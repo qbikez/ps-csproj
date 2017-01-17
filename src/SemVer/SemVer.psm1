@@ -242,4 +242,4 @@ function Join-Version([SemVer] $version) {
     return $version.ToString()
 }
 
-new-alias increment-version update-version
+new-alias increment-version update-version -force

@@ -1,8 +1,8 @@
-ipmo process
-ipmo assemblymeta -Global
-ipmo semver -Global
-ipmo newtonsoft.json
-ipmo pathutils
+# ipmo process
+# ipmo assemblymeta -Global
+# ipmo semver -Global
+# ipmo newtonsoft.json
+# ipmo pathutils
 
 $root = "."
 if (![string]::IsNullOrEmpty($PSScriptRoot)) {
@@ -108,6 +108,7 @@ function invoke-nugetpush {
     [switch][bool] $useDotnet,
     [Alias("newVersion")]
     [switch][bool] $incrementVersion,
+    [switch][bool] $keepVersion,
     $suffix = $null,
     $buildProperties = @{}) 
 process {
@@ -121,7 +122,7 @@ process {
         }
     }
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties:$buildProperties -usedotnet:$usedotnet -suffix:$suffix -incrementVersion:$incrementVersion
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties:$buildProperties -usedotnet:$usedotnet -keepVersion:$keepVersion -suffix:$suffix -incrementVersion:$incrementVersion
     } else {
         $nupkg = $file
     }
@@ -145,6 +146,8 @@ process {
     if ($nupkg -eq $null) {
         throw "no nupkg produced"
     }
+
+    $nupkg = (get-item $nupkg).FullName
 
     $sources = @($source)
     foreach($source in $sources) {
@@ -181,7 +184,7 @@ process {
                     $nuget = find-nugetPath $packagename -packagesRelPath $packagesDir -versionhint $versionhint
                     $packagedir = $nuget.PackageDir
                     if ($packagedir -eq $null) {
-                        write-warning "package dir for package '$packagename' not found in '$packagesdir'"
+                        write-warning "package dir for package '$packagename' (version=$versionhint) not found in '$packagesdir'"
                         continue
                     }
                     $zip = "$nupkg.zip"
@@ -270,6 +273,7 @@ function invoke-nugetpack {
     [Alias("newVersion")]
     [switch][bool] $incrementVersion,
     $suffix = $null,
+    [switch][bool] $keepVersion,
     $buildProperties = @{}) 
 process {    
     pushd
@@ -297,6 +301,10 @@ process {
                 throw "found multiple nuspec files in '$((gi .).FullName)'. please choose one."
             }
         }
+
+        if ($incrementVersion -and !$build) {
+            throw "-incrementVersion has no meaning when used without -build"
+        }
         if ($nuspecorcsproj.endswith("project.json")) {
             $dotnet = get-dotnetcommand
             if ($dotnet -eq $null) { $dotnet = "dotnet" }
@@ -315,7 +323,7 @@ process {
             }
             else {
                 if ($incrementVersion) { $newver = update-buildversion -component patch } 
-                else { $newver = update-buildversion } 
+                elseif (!$keepversion) { $newver = update-buildversion } 
                 if ($stable) {
                     $newver = update-buildversion -stable:$stable
                 }
@@ -630,9 +638,9 @@ function get-dotnetcommand {
     }
 }
 
-new-alias generate-nugetmeta update-nugetmeta
-new-alias push-nuget invoke-nugetpush
-new-alias pack-nuget invoke-nugetpack
-new-alias generate-nuspec new-nuspec
+new-alias generate-nugetmeta update-nugetmeta -Force
+new-alias push-nuget invoke-nugetpush -Force
+new-alias pack-nuget invoke-nugetpack -Force
+new-alias generate-nuspec new-nuspec -Force
 
 export-modulemember -function * -alias *
