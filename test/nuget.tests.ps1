@@ -5,6 +5,7 @@ import-module csproj
 import-module semver
 import-module assemblymeta -verbose
 import-module process
+import-module nupkg
 
 Describe "find Nuget packages dir" {
     $targetdir = copy-samples
