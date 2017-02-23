@@ -1,6 +1,6 @@
 import-module pathutils 
 import-module publishmap
-import-module nupkg
+
 
 function get-slndependencies {
     [CmdletBinding(DefaultParameterSetName = "sln")]
@@ -466,8 +466,8 @@ function repair-csprojpaths {
         write-verbose "($($csproj.name)): checking packages.config"
         $pkgs = get-packagesconfig (Join-Path $dir "packages.config") 
         $pkgs = $pkgs.packages
-        
-        if ((get-command "install-package" -Module nuget -errorAction Ignore) -ne $null) {
+        $isInsideVS = (get-command "install-package" -Module nuget -errorAction Ignore) -ne $null 
+        if ($isInsideVS) {
             write-verbose "($($csproj.name)): detected Nuget module. using Nuget/install-package"
             foreach($dep in $pkgs) {
                 nuget\install-package -ProjectName $csproj.name -id $dep.id -version $dep.version -prerelease:$prerelease
@@ -490,7 +490,7 @@ function repair-csprojpaths {
                         write-warning "($($csproj.name)): missing csproj reference for package $($pkgref.id)"
                     }
                 }
-                if ($ref.path -notmatch "$($pkgref.version)") {
+                if ($ref.path -notmatch "$($pkgref.version)\\") {
                     # bad reference in csproj? try to detect current version
                     if ($ref.path -match "$($pkgref.id).(?<version>.*?)\\") {
                         Write-Warning "($($csproj.name)): version of package '$($pkgref.id)' in csproj: '$($matches["version"])' doesn't match packages.config version: '$($pkgref.version)'. Fixing"
@@ -507,7 +507,7 @@ function repair-csprojpaths {
                     }
                 }
             }
-            write-warning "cannot verify if all references from packages.config are installed. run this script inside Visual Studio!"
+            
         }
     }
     

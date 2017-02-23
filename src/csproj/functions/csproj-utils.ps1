@@ -310,8 +310,7 @@ param(
     [Parameter(Mandatory=$true)]
     [string ]$packagesRelPath
 ) 
-    ipmo nupkg
-
+    
     $node = get-asnode $ref
     $projectPath = $node.Include
     $projectId = $node.Project
