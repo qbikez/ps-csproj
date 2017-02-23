@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/7rlfl6ur1uny4449?svg=true)](https://ci.appveyor.com/project/qbikez/csproj)
+
 ## Installation
 
 If you're running Windows 10 or later, install from [PowerShell Gallery](https://www.powershellgallery.com/packages/csproj/):
