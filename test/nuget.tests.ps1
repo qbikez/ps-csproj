@@ -5,6 +5,7 @@ import-module csproj
 import-module semver
 import-module assemblymeta -verbose
 import-module process
+import-module nupkg
 
 Describe "find Nuget packages dir" {
     $targetdir = copy-samples
@@ -142,15 +143,31 @@ Describe "Generate nuget for project.json" {
                 $g | Should Not BeNullOrEmpty
             }
             It "Should pack with build" {
-                $nuget = pack-nuget $project -build
-                $nuget | Should Not BeNullOrEmpty
-                test-path $nuget | Should Be $true  
+                $nugets = pack-nuget $project -build
+                @($nugets) | % {
+                    $_ | Should Not BeNullOrEmpty
+                    test-path $_ | Should Be $true  
+                } 
             }
                    
             It "Should pack without build" {
-                $nuget = pack-nuget $project
-                $nuget | Should Not BeNullOrEmpty
-                test-path $nuget | Should Be $true  
+                $nugets = pack-nuget $project
+
+                write-host "nugets:"
+                $nugets | format-table | out-string | write-host
+
+                @($nugets) | % {
+                    $_ | Should Not BeNullOrEmpty
+                    test-path $_ | Should Be $true  
+                }
+
+                # expect two files: one with symbols, one without 
+                @($nugets).Length | Should Be 2
+
+                # symbol package should always be second
+                $nugets[0].EndsWith(".nupkg") | Should Be $True
+                $nugets[1].EndsWith("symbols.nupkg") | Should Be $True
+                
                 #$ver = Get-AssemblyMeta "AssemblyInformationalVersion"
                 #$pkgver = get-packageversion $nuget
                 #$pkgver | Should Be $ver

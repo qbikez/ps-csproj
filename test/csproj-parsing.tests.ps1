@@ -45,8 +45,9 @@ Describe "Basic reference parsing" {
    
    Context "when parsing csproj string" {
         $csproj = import-csproj $xml
-         It "should return a valid object" {
-            $csproj | Should Not BeNullOrEmpty
+        It "should return a valid object" {
+            $xml | Should Not BeNullOrEmpty
+            $csproj | Should Not Be $null
         }
         It "should have 2 package references" {
             $refs = get-nugetreferences $csproj

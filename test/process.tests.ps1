@@ -6,10 +6,14 @@ Describe "Process module tests" {
     # init - download echoargs
     if ((get-command echoargs -erroraction "Ignore") -eq $null) {
         nuget install echoargs -version 3.2.0 -source https://chocolatey.org/api/v2/ -outputdirectory .tools
-        $env:Path = "$((get-item '.tools/echoargs.3.2.0/tools').FullName);" + $env:Path 
+        $echoargs_path = "$((get-item '.tools/echoargs.3.2.0/tools').FullName)"
+        write-host "echoargs installed at: $echoargs_path"
+        $env:Path = $echoargs_path + ";" + $env:Path 
+        write-host "PATH:"
+        write-host $env:Path
     }
     $echoargs = (get-command echoargs).Source -replace "chocolatey\\bin\\EchoArgs.exe","chocolatey\lib\echoargs\tools\EchoArgs.exe"
-    It "Should invoke process" {
+    It "Should invoke echoargs" {
         invoke echoargs
     }
     <#It "Should throw on missing command" {
