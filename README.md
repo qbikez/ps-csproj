@@ -1,4 +1,5 @@
 [![Build status](https://ci.appveyor.com/api/projects/status/7rlfl6ur1uny4449/branch/master?svg=true)](https://ci.appveyor.com/project/qbikez/csproj/branch/master)
+[![Gitter Chat](https://badges.gitter.im/qbikez/ps-csproj.png)](https://gitter.im/heavymetaldev/Lobby)
 
 ## Installation
 
