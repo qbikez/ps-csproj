@@ -1,6 +1,7 @@
 . $PSScriptRoot\includes.ps1
 
-ipmo csproj
+Import-Module csproj
+Import-Module nupkg
 
 $xml = invoke-command { @'
 <?xml version="1.0" encoding="utf-8"?>
@@ -58,7 +59,7 @@ Describe "Reference conversion" {
         It "Should Convert properly" {
             $nugetref = convertto-nuget $projref -packagesRelPath $packagesdir
             $nugetref | Should Not BeNullOrEmpty
-            $nugetref.GetType() | Should Be "ReferenceMeta"
+            $nugetref.GetType().Name | Should Be "ReferenceMeta"
             $nugetref.Node.HintPath | Should Not BeNullOrEmpty
             $nugetref.Node.Hintpath.Contains($packagesdir) | Should Be $true        
         }
