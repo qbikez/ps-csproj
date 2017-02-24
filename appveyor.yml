@@ -49,5 +49,5 @@ deploy_script:
     if ($branch -eq "master") { 
         scripts/lib/push.ps1 . -buildno $env:APPVEYOR_BUILD_NUMBER; 
     } else { 
-        write-host "not deploying from branch $branch";
+        write-warning "not deploying from branch $branch";
     }
