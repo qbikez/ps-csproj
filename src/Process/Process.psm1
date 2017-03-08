@@ -233,7 +233,15 @@ function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wai
 	if (!(test-IsAdmin)) {
 		Start-Process $proc -Verb runAs -ArgumentList $ArgumentList -wait:$Wait
     } else {
-		& $proc $argumentlist | out-default
+        # this is a workaround  for doublequote problem
+        if ($false -and ($proc -eq "powershell") -and ($ArgumentList.Length -eq 2) -and ($ArgumentList[0] -eq "-Command")) {
+            $tmppath = "$env:TEMP\tmp.ps1"
+            $argumentList[1] | Out-File $tmppath -Encoding utf8 -Force 
+            & $proc $tmppath | out-default
+        }
+        else { 
+            & $proc $ArgumentList | out-default
+        }
     }
 }
 

@@ -9,8 +9,8 @@ os:
 
 install:
 - git submodule update --init --recursive
-- ps: scripts/lib/init.ps1
-- ps: scripts/restore.ps1
+- ps: scripts/lib/init.ps1 
+- ps: scripts/restore.ps1 -pesterVersion 4.0.2
 
 #assembly_info:
 #  patch: true
@@ -49,5 +49,5 @@ deploy_script:
     if ($branch -eq "master") { 
         scripts/lib/push.ps1 . -buildno $env:APPVEYOR_BUILD_NUMBER; 
     } else { 
-        write-host "not deploying from branch $branch";
+        write-warning "not deploying from branch $branch";
     }

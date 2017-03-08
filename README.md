@@ -1,16 +1,19 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/7rlfl6ur1uny4449/branch/master?svg=true)](https://ci.appveyor.com/project/qbikez/csproj/branch/master)
+[![Gitter Chat](https://badges.gitter.im/qbikez/ps-csproj.png)](https://gitter.im/heavymetaldev/Lobby)
+
 ## Installation
 
-If you're running Windows 10 or later:
+If you're running Windows 10 or later, install from [PowerShell Gallery](https://www.powershellgallery.com/packages/csproj/):
 
 ```powershell
-PS> Install-Module csproj
+PS> PowerShellGet\Install-Module csproj
 ```
 
 On Windows 8, you'll neeed to install PackageManagement manually (using [psbootstrap](https://github.com/qbikez/ps-bootstrap)) to be able to use `Install-Module`:
 
 ```powershell
 PS> ((New-Object System.Net.WebClient).DownloadString('https://bit.ly/psbootstrap')) | out-file "$env:localappdata/ps-bootstrap/bootstrap.ps1"; & "$env:localappdata/ps-bootstrap/bootstrap.ps1"
-PS> Install-Module csproj
+PS> PowerShellGet\Install-Module csproj
 ```
 
 ## Usage

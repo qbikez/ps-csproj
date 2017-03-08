@@ -147,8 +147,9 @@ Describe "fix a solution with missing references" {
             $valid,$missing = test-slndependencies $sln
             $valid | Should Be $false
             $missing.length | Should Be 3
-            $missing.In | Should Be $sln.Fullname
-            
+            foreach($m in $missing) {
+                $m.In | Should Be $sln.Fullname
+            }
             fixsln $slnfile -reporoot "$targetdir/test" 
             
             $deps = get-slndependencies $slnfile
