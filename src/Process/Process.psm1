@@ -98,17 +98,24 @@ param(
     [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="directcall")]
     $remainingArguments,
     [System.Text.Encoding] $encoding = $null,
-    [switch][bool]$useShellExecute
+    [switch][bool]$useShellExecute,
+    [string[]]$stripFromLog
     ) 
     #write-verbose "argumentlist=$argumentList"
     #write-verbose "remainingargs=$remainingArguments"
     $arguments = @()
 
     function Strip-SensitiveData {
-        param([Parameter(ValueFromPipeline=$true)]$str)
+        param([Parameter(ValueFromPipeline=$true)]$str, [string[]]$tostrip)
         process {
             return @($_) | % {
-                $_ -replace "password[:=]\s*(.*?)($|[\s;,])","password={password_removed_from_log}`$2"
+                $r = $_ -replace "password[:=]\s*(.*?)($|[\s;,])","password={password_removed_from_log}`$2"
+                if ($tostrip -ne $null) {
+                    foreach($s in $tostrip) {
+                        $r = $r.Replace($s,"{password_removed_from_log}")
+                    }
+                }
+                $r
             } 
         }
     }
@@ -124,7 +131,7 @@ param(
     $shortargstr = ""
     if ($arguments -ne $null) {         
         for($i = 0; $i -lt @($arguments).count; $i++) {
-            $argstr += "[$i] $($arguments[$i] | Strip-SensitiveData)`r`n"
+            $argstr += "[$i] $($arguments[$i] | Strip-SensitiveData -tostrip $stripFromLog)`r`n"
             $shortargstr += "$($arguments[$i]) "
         } 
         write-verbose "Invoking: ""$command"" $shortargstr `r`nin '$($pwd.path)' arguments ($(@($arguments).count)):`r`n$argstr"
