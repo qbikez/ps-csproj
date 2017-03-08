@@ -180,7 +180,13 @@ param(
     }
     } finally {
         if ($encoding -ne $null) {
-            if ($oldEnc -ne $null) { [System.Console]::OutputEncoding = $oldEnc }
+            if ($oldEnc -ne $null) { 
+                try {
+                    [System.Console]::OutputEncoding = $oldEnc
+                } catch {
+                    write-warning "failed to set encoding back to $oldEnc : $($_.Exception.Message)"
+                }
+            }
         }
     }
     if ($lastexitcode -ne 0) {
