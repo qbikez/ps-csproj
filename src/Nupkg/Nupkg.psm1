@@ -117,9 +117,15 @@ process {
     }
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
-        if ($files.length -gt 0){
-            $file = $files[0].name
+        if ($Symbols) {
+            $files = $files | ? { $_ -match "\.symbols\." }
         }
+        if ($files.length -gt 0) {
+            $file = $files[0].name
+        } else {
+           # will build
+        }
+        
     }
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
         $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties:$buildProperties -usedotnet:$usedotnet -keepVersion:$keepVersion -suffix:$suffix -incrementVersion:$incrementVersion
@@ -128,7 +134,7 @@ process {
     }
     #in case multiple nupkgs are created
     if ($symbols) {
-        $symbolpkg = @($nupkg) | ? { $_ -match "-symbols\." } | select -last 1
+        $symbolpkg = @($nupkg) | ? { $_ -match "\.symbols\." } | select -last 1
         $nupkg = $symbolpkg
         $nosymbolspkg = $nupkg -replace "\.symbols\.","."
         if (test-path $nosymbolspkg) {
@@ -154,6 +160,7 @@ process {
         Write-Host "pushing package '$nupkg' to '$source'"
         $p = @(
             $nupkg
+            "-NonInteractive"
         )
 
         # TODO: handle rolling updates for dotnet/dnx/nuget3 model
@@ -248,9 +255,11 @@ process {
         
             if ($PSCmdlet.ShouldProcess("pushing package '$p'")) {
                 write-verbose "nuget push $p"
-                $o = invoke nuget push @p -passthru -verbose -WhatIf:($WhatIfPreference)
+                $o = invoke nuget push @p -passthru -verbose -nothrow -WhatIf:($WhatIfPreference)
                 if ($lastexitcode -ne 0) {
-                    throw "nuget command failed! `r`n$($o | out-string)"
+                    $summary = $o | select -last 1
+                    if ($summary -is [System.Management.Automation.ErrorRecord]) { $summary = $summary.Exception.Message }
+                    throw "nuget command failed! `r`n$summary"
                 }
                 write-output $nupkg
             }
