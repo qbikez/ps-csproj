@@ -1,4 +1,4 @@
-function generate-pubprofile {
+function new-pubprofile {
 param(
     [parameter(mandatory = $true)]$machine,
     $projectroot = ".", 
@@ -116,3 +116,5 @@ param(
 
     update-pubprofile $profilePath -serverUrl $machine -appPath $appPath -username $username  -Verbose -properties $addtionalProps
 }
+
+new-alias Generate-PubProfile New-PubProfile -force

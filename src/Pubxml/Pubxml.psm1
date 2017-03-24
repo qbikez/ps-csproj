@@ -10,4 +10,5 @@ Resolve-Path $helpersPath\functions\*.ps1 |
 
 Export-ModuleMember -Function `
     update-pubprofile, `
-    generate-pubprofile
+    new-pubprofile `
+    -Alias *
