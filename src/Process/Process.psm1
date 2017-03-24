@@ -20,10 +20,12 @@ function Write-Indented
         [Parameter(Position=2)]$level = 2, 
         [Parameter(Position=3)]$mark = "> ", 
         [Parameter(Position=4)]$maxlen = $null, 
-        [switch][bool]$passthru
+        [switch][bool]$passthru,
+        [switch][bool]$timestamp,
+        $timestampFormat = "yyyy-MM-dd HH:mm:ss.ff"
     )
     begin {
-        $pad = $mark.PadLeft($level)
+        $base_padding = $mark.PadLeft($level)
         if ($maxlen -eq $null) {
             $maxlen = 512
             if (([Environment]::UserInteractive) -and $host.UI.RawUI.WindowSize.Width -ne $null -and $host.UI.RawUI.WindowSize.Width -gt 0) {
@@ -36,6 +38,10 @@ function Write-Indented
     }
     process { 
         $msgs = @($msg)
+        $pad = $base_padding
+        if ($timestamp) {
+            $pad = "[$(get-date -format)] $base_padding"
+        }
         $msgs | % {        
             @($_.ToString().split("`n")) | % {
                 $msg = $_
@@ -124,7 +130,9 @@ param(
         $arguments += @($ArgumentList)
     }
     if ($remainingArguments -ne $null) {
-        $arguments += @($remainingArguments)
+        @($remainingArguments) | % {            
+            $arguments += $_
+        }
     }   
     if ($silent) { $showoutput = $false }
     $argstr = ""        
@@ -132,7 +140,7 @@ param(
     if ($arguments -ne $null) {         
         for($i = 0; $i -lt @($arguments).count; $i++) {
             $argstr += "[$i] $($arguments[$i] | Strip-SensitiveData -tostrip $stripFromLog)`r`n"
-            $shortargstr += "$($arguments[$i]) "
+            $shortargstr += "$($arguments[$i] | Strip-SensitiveData -tostrip $stripFromLog) "
         } 
         write-verbose "Invoking: ""$command"" $shortargstr `r`nin '$($pwd.path)' arguments ($(@($arguments).count)):`r`n$argstr"
     }
@@ -150,9 +158,11 @@ param(
     if ($encoding -ne $null) {
         write-verbose "setting console encoding to $encoding"
         try {
+            
             $oldEnc = [System.Console]::OutputEncoding
             [System.Console]::OutputEncoding = $encoding
         } catch {
+            # caution: catching will still cause exception message to be logged to Error Stream
             write-warning "failed to set encoding to $encoding : $($_.Exception.Message)"
         }
     }
