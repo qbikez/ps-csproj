@@ -121,9 +121,10 @@ process {
             return $o
         } 
         catch {
-            write-error $_
+            #write-error $_
             #return $_
-            throw $_
+            #throw $_
+            throw 
         }
         finally {
             popd

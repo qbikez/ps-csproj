@@ -109,6 +109,7 @@ process {
             push-project $_
         } catch {
             #Write-Error "$($_.Exception.Message) $($_.ScriptStackTrace)"
+            #throw
             throw "$($_.Exception.Message) $($_.ScriptStackTrace)"
         } 
     }   
