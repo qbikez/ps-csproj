@@ -134,6 +134,9 @@ Describe "Generate nuget for project.json" {
     $project = split-path -leaf $csproj
     #remove-item "$targetdir/test/nuget.config" 
      In $dir { 
+            $dn = get-dotnetcommand -verbose
+            $o = invoke dotnet -verbose -nothrow
+            $o = invoke dotnet "--info" -verbose -nothrow
             It "Should build" {
                 $o = invoke dotnet restore
                 $o = invoke dotnet build 

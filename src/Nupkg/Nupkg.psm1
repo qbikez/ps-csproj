@@ -633,16 +633,20 @@ function find-globaljson($path = ".") {
 
 
 function get-dotnetcommand {
+    [CmdletBinding()]
+    param()
     $global = find-globaljson
-    if ($global -eq $null) { return $null }
+    if ($global -eq $null) { write-verbose "dotnet: no global.json found for dir $((get-item .).FullName)"; return $null }
     $json = get-content $global | out-string | ConvertFrom-JsonNewtonsoft
     $default = "dotnet"
-    if ($json.sdk -eq $null) { return $default }
-    if ($json.sdk.version -eq $null) { return $default }
+    if ($json.sdk -eq $null) { write-verbose "dotnet: no sdk version specified in '$global'"; return $default }
+    if ($json.sdk.version -eq $null) { write-verbose "dotnet: no sdk version specified in '$global'"; return $default }
     if ($json.sdk.version.startswith("1.0.0-beta") -or $json.sdk.version.startswith("1.0.0-rc2")) {
+        write-verbose "dotnet: sdk version='$($json.sdk.version)'. using dnu"
         return "dnu"
     } 
     else {
+        write-verbose "dotnet: sdk version='$($json.sdk.version)'. using dotnet"
         return "dotnet"
     }
 }
