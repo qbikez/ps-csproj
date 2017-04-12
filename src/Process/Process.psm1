@@ -31,7 +31,8 @@ function Write-Indented
         [Parameter(Position=4)]$maxlen = $null, 
         [switch][bool]$passthru,
         [switch][bool]$timestamp,
-        $timestampFormat = "yyyy-MM-dd HH:mm:ss.ff"
+        $timestampFormat = "yyyy-MM-dd HH:mm:ss.ff",
+        [switch][bool]$passErrorStream
     )
     begin {
         $base_padding = $mark.PadLeft($level)
@@ -54,7 +55,7 @@ function Write-Indented
         $msgs | % {     
             $PassToOutput = $passthru
 			if ($_ -is [System.Management.Automation.ErrorRecord]) {
-				$passToOutput = $false
+				$passToOutput = $passErrorStream
 			}
             @($_.ToString().split("`n")) | % {
                 $msg = $_
@@ -106,6 +107,7 @@ param(
     [switch][bool]$showoutput = $true,
     [switch][bool]$silent,
     [switch][bool]$passthru,
+    [switch][bool]$passErrorStream,
     [Parameter(ParameterSetName="in")]
     $in,
     [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="in")]
@@ -179,13 +181,13 @@ param(
         write-host "  ===== $command ====="
         if ($in -ne $null) {
             if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
-            $o = $in | & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
+            $o = $in | & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru -passErrorStream:$passErrorStream
         } else {
             if ($useShellExecute) {
                 if ([System.IO.Path]::IsPathRooted($command) -or $command.Contains(" ")) { $command = """$command""" }
-                $o = cmd /c "$command $shortargstr" 2>&1 | write-indented -level 2 -passthru:$passthru
+                $o = cmd /c "$command $shortargstr" 2>&1 | write-indented -level 2 -passthru:$passthru -passErrorStream:$passErrorStream
             } else {
-                $o = & $command $arguments 2>&1	 | write-indented -level 2 -passthru:$passthru
+                $o = & $command $arguments 2>&1	 | write-indented -level 2 -passthru:$passthru -passErrorStream:$passErrorStream
             }
         }
         
@@ -193,14 +195,26 @@ param(
     } else {
         if ($in -ne $null) {
             if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
-            $o = $in | & $command $arguments  2>&1
+            if ($passErrorStream) {
+                $o = $in | & $command $arguments  2>&1
+            } else {
+                $o = $in | & $command $arguments
+            }
         }
         else {
             if ($useShellExecute) {
                 if ([System.IO.Path]::IsPathRooted($command) -or $command.Contains(" ")) { $command = """$command""" }
-                $o = cmd /c "$command $shortargstr" 2>&1
+                if ($passErrorStream) {
+                    $o = cmd /c "$command $shortargstr" 2>&1
+                } else {
+                    $o = cmd /c "$command $shortargstr"
+                }
             } else {
-                $o = & $command $arguments 2>&1
+                if ($passErrorStream) {
+                    $o = & $command $arguments 2>&1
+                } else {
+                    $o = & $command $arguments
+                }
             }
         }
     }
