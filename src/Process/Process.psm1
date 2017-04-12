@@ -198,7 +198,8 @@ param(
             if ($passErrorStream) {
                 $o = $in | & $command $arguments  2>&1
             } else {
-                $o = $in | & $command $arguments
+                # swallow error stream
+                $o = $in | & $command $arguments 2>&1 | % { if ($_ -is [System.Management.Automation.ErrorRecord]) { } else { $_ } }
             }
         }
         else {
@@ -207,13 +208,13 @@ param(
                 if ($passErrorStream) {
                     $o = cmd /c "$command $shortargstr" 2>&1
                 } else {
-                    $o = cmd /c "$command $shortargstr"
+                    $o = cmd /c "$command $shortargstr" 2>&1 | % { if ($_ -is [System.Management.Automation.ErrorRecord]) { } else { $_ } }
                 }
             } else {
                 if ($passErrorStream) {
                     $o = & $command $arguments 2>&1
                 } else {
-                    $o = & $command $arguments
+                    $o = & $command $arguments 2>&1 | % { if ($_ -is [System.Management.Automation.ErrorRecord]) { } else { $_ } }
                 }
             }
         }

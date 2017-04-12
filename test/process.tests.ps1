@@ -21,6 +21,23 @@ Describe "Processing output from invoke" {
         $r = invoke $echoargs "--return" $msg --log stderr -passthru
         $r | Should Be $msg
     }
+    It "Should fill error stream when showoutput=false" {
+        $error.clear()
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$false
+        $r | Should Be $msg
+        if ($error.count -gt 0) {
+            $error | % { write-verbose $_ -Verbose }
+        }
+        $error.count | Should Be 3
+    }
+      It "Should not write errors to console when showoutput=false" {
+        $error.clear()
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$false
+        $r | Should Be $msg
+        # HOW to test this??
+    }
 }
 
 Describe "Passing arguments from invoke" {
