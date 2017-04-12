@@ -215,6 +215,7 @@ param(
             }
         }
     }
+    write-output $o
     if ($lastexitcode -ne 0) {
         write-verbose "invoke: ErrorActionPreference = $ErrorActionPreference"
         if (!$nothrow) {            
@@ -226,7 +227,6 @@ param(
            
         }
     }
-    return $o
 }
 
 <#
