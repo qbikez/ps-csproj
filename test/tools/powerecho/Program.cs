@@ -9,7 +9,7 @@ namespace powerecho
     {
         static System.IO.TextWriter logOutput = null;
         static int? exitCode = null;
-        static List<string> result = new List<string>();
+        static List<string> outResult = new List<string>();
         static bool returnArgs = true;
         static int Main(string[] args)
         {
@@ -22,7 +22,7 @@ namespace powerecho
 
         private static void WriteResultToOutput()
         {
-            foreach (var r in result)
+            foreach (var r in outResult)
             {
                 System.Console.Out.WriteLine(r);
             }
@@ -89,7 +89,8 @@ namespace powerecho
                         returnArgs = true;
                         Log($"will return 'args list to output'");
                     } else {
-                        result.Add(val);
+                        returnArgs = false;
+                        outResult.Add(val);
                         Log($"will return '{val}'");
                     }
                 }

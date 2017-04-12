@@ -2,16 +2,35 @@
 if ((gmo process) -ne $null) { rmo process }
 import-module process
 
-Describe "Process module tests" {
-    # init - download echoargs
-    $echoargs = "$psscriptroot\tools\powerecho\bin\Debug\netcoreapp1.1\win10-x64\powerecho.exe"
-    $echoargs = [System.IO.Path]::GetFullPath($echoargs)
-    It "Should invoke echoargs" {
-        invoke $echoargs
+$echoargs = "$psscriptroot\tools\powerecho\bin\Debug\netcoreapp1.1\win10-x64\powerecho.exe"
+$echoargs = [System.IO.Path]::GetFullPath($echoargs)
+
+Describe "Processing output from invoke" {
+    It "Should ignore command output when passthru=false" {
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log null
+        $r | Should BeNullOrEmpty
     }
-    <#It "Should throw on missing command" {
-        { invoke "not-found.exe" } | should throw
-    }#>
+    It "Should return only stdout when logging to null" {
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log null -passthru
+        $r | Should Be $msg
+    }
+    It "Should return only stdout when logging to stderr" {
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru
+        $r | Should Be $msg
+    }
+}
+
+Describe "Passing arguments from invoke" {
+    # init - download echoargs
+    
+   
+    #It "Should throw on missing command" {
+    #    { invoke "not-found.exe" } | should throw
+    # }
+
     It "Should pass all direct arguments quoted 1" {
         $r = invoke $echoargs test -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
         $expected = @"
@@ -131,3 +150,10 @@ Command line:
 
     }
 }
+
+Describe "check echoargs" {
+    It "Should invoke echoargs" {
+        invoke $echoargs
+    }
+}
+

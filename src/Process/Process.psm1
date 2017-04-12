@@ -13,6 +13,15 @@ Maximum line length - after which lines will be wrapped (also with indentation)
 Pass the input to the output
 #>
 
+function Write-Console {
+    param($msg)
+    if ($([Environment]::UserInteractive)) {
+        write-host $msg #[$($msg.GetType().Name)]
+    } else {
+        write-verbose $msg -verbose #[$($msg.GetType().Name)]
+    }
+}
+
 function Write-Indented 
 {
     param(
@@ -42,20 +51,20 @@ function Write-Indented
         if ($timestamp) {
             $pad = "[$(get-date -format)] $base_padding"
         }
-        $msgs | % {        
+        $msgs | % {     
+            $PassToOutput = $passthru
+			if ($_ -is [System.Management.Automation.ErrorRecord]) {
+				$passToOutput = $false
+			}
             @($_.ToString().split("`n")) | % {
                 $msg = $_
                 $idx = 0    
                 while($idx -lt $msg.length) {
                     $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
                     $chunk = [System.Math]::Max($chunk, 0)
-                    if ($([Environment]::UserInteractive)) {
-                        write-host "$pad$($msg.substring($idx,$chunk))" #[$($msg.GetType().Name)]
-                    } else {
-                        write-verbose "$pad$($msg.substring($idx,$chunk))" -verbose #[$($msg.GetType().Name)]
-                    }
+                    write-console "$pad$($msg.substring($idx,$chunk))"                        
                     $idx += $chunk
-                    if ($passthru) {
+                    if ($PassToOutput) {
                         write-output $msgs
                     }
                 }
@@ -176,7 +185,7 @@ param(
                 if ([System.IO.Path]::IsPathRooted($command) -or $command.Contains(" ")) { $command = """$command""" }
                 $o = cmd /c "$command $shortargstr" 2>&1 | write-indented -level 2 -passthru:$passthru
             } else {
-                $o = & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
+                $o = & $command $arguments 2>&1	 | write-indented -level 2 -passthru:$passthru
             }
         }
         
