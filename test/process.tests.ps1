@@ -4,23 +4,16 @@ import-module process
 
 Describe "Process module tests" {
     # init - download echoargs
-    if ((get-command echoargs -erroraction "Ignore") -eq $null) {
-        nuget install echoargs -version 3.2.0 -source https://chocolatey.org/api/v2/ -outputdirectory .tools
-        $echoargs_path = "$((get-item '.tools/echoargs.3.2.0/tools').FullName)"
-        write-host "echoargs installed at: $echoargs_path"
-        $env:Path = $echoargs_path + ";" + $env:Path 
-        write-host "PATH:"
-        write-host $env:Path
-    }
-    $echoargs = (get-command echoargs).Source -replace "chocolatey\\bin\\EchoArgs.exe","chocolatey\lib\echoargs\tools\EchoArgs.exe"
+    $echoargs = "$psscriptroot\tools\powerecho\bin\Debug\netcoreapp1.1\win10-x64\powerecho.exe"
+    $echoargs = [System.IO.Path]::GetFullPath($echoargs)
     It "Should invoke echoargs" {
-        invoke echoargs
+        invoke $echoargs
     }
     <#It "Should throw on missing command" {
         { invoke "not-found.exe" } | should throw
     }#>
     It "Should pass all direct arguments quoted 1" {
-        $r = invoke echoargs test -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs test -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <test>
 Arg 1 is <-a=1>
@@ -36,7 +29,7 @@ Command line:
     }
 
      It "Should pass all direct arguments quoted 2" {
-        $r = invoke echoargs -a=1 -b=2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -a=1 -b=2 -e="1 2" -passthru  -verbose | out-string | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b=2>
@@ -50,7 +43,7 @@ Command line:
     }
 
      It "Should pass all direct arguments quoted 3" {
-        $r = invoke echoargs -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-e=1 2>
 Arg 1 is <-a=1>
@@ -65,7 +58,7 @@ Command line:
     }
 
      It "Should pass all direct arguments" {
-        $r = invoke echoargs -a=1 -b 2 -e=1 -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -a=1 -b 2 -e=1 -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
@@ -86,7 +79,7 @@ Command line:
             "2"
             "-e=1 2"
         )
-        $r = invoke echoargs -argumentList $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -argumentList $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
@@ -106,14 +99,14 @@ Command line:
             "2"
             "-e=`"1 2`""
         )
-        $r = invoke echoargs -arguments $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -arguments $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
 Arg 2 is <2>
 Arg 3 is <-e=1 2>
 Command line:
-"$echoargs" -a=1 -b 2 -e="1 2"
+"$echoargs" -a=1 -b 2 "-e=1 2"
 
 "@  | % { $_ -replace "`r`n","`n" }
         $r | Should Be $expected
@@ -125,7 +118,7 @@ Command line:
             "-b"
             "2"
         )
-        $r = invoke echoargs $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
