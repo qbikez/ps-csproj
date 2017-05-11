@@ -110,6 +110,7 @@ function invoke-nugetpush {
     [switch][bool] $incrementVersion,
     [switch][bool] $keepVersion,
     $suffix = $null,
+    $branch = $null,
     $buildProperties = @{}) 
 process {
     if ($stable -and $incrementVersion) {
@@ -128,7 +129,7 @@ process {
         
     }
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties:$buildProperties -usedotnet:$usedotnet -keepVersion:$keepVersion -suffix:$suffix -incrementVersion:$incrementVersion
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties:$buildProperties -usedotnet:$usedotnet -keepVersion:$keepVersion -suffix:$suffix -incrementVersion:$incrementVersion -branch:$branch
     } else {
         $nupkg = $file
     }
@@ -282,6 +283,7 @@ function invoke-nugetpack {
     [Alias("newVersion")]
     [switch][bool] $incrementVersion,
     $suffix = $null,
+    $branch = $null,
     [switch][bool] $keepVersion,
     $buildProperties = @{}) 
 process {    
@@ -333,6 +335,9 @@ process {
             else {
                 if ($incrementVersion) { $newver = update-buildversion -component patch } 
                 elseif (!$keepversion) { $newver = update-buildversion } 
+                if ($branch -ne $null) {
+                    $newver = update-buildversion -component SuffixBranch -value $branch
+                }
                 if ($stable) {
                     $newver = update-buildversion -stable:$stable
                 }
