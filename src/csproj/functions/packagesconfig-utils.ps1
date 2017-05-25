@@ -1,3 +1,35 @@
+function Copy-BindingRedirects {
+    [CmdletBinding()]
+    param($from = "app.config", $to = "app.orig.config")
+        $fromXml = [xml](get-content $from)
+        $toXml = [xml](get-content $to)
+
+        $src = $fromxml.configuration.runtime.assemblyBinding
+        
+        $runtime = $toxml.SelectNodes('//configuration/runtime') | select -first 1
+        if ($runtime -eq $null) {
+            write-verbose "adding 'runtime' node to $to"
+            $node = [System.Xml.XmlElement]$toxml.CreateElement("runtime")            
+            $null = $toxml.configuration.AppendChild($node) 
+            $runtime = $toxml.SelectNodes('//configuration/runtime') | select -first 1
+        }
+        if ($toxml.configuration.runtime.assemblyBinding -ne $null) {
+            write-verbose "removing old assemblyBinding section from $to"
+            $null = $toxml.configuration.runtime.RemoveChild($toxml.configuration.runtime.assemblyBinding)
+        }
+
+        write-verbose "copying assemblyBinding section from $from to $to"
+        
+        $node = $toxml.ImportNode($src, $true)
+        $null = $runtime.AppendChild($node)
+
+        $toXml.OuterXml | out-string | write-verbose 
+    
+        write-verbose "saving $to"
+        $null = $toXml.Save((get-item $to).FullName)
+
+}
+
 function add-packagetoconfig {
 param(
     [Parameter(Mandatory=$true,ValueFromPipeline=$true)]$packagesconfig,
