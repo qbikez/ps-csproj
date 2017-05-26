@@ -158,6 +158,7 @@ function find-matchingprojects {
         )
     if (test-path (join-path $reporoot ".projects.json")) {
         $script:projects = get-content (join-path $reporoot ".projects.json") | out-string | convertfrom-jsonnewtonsoft 
+        write-verbose "getting csproj from cached file .projects.json"
         $csprojs = $script:projects.GetEnumerator() | ? {
                 #ignore non-existing projects from ".projects.json" 
                 test-path (join-path $reporoot $_.value.path) 

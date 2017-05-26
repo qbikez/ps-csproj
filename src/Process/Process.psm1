@@ -64,10 +64,10 @@ function Write-Indented
                     $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
                     $chunk = [System.Math]::Max($chunk, 0)
                     write-console "$pad$($msg.substring($idx,$chunk))"                        
-                    $idx += $chunk
-                    if ($PassToOutput) {
-                        write-output $msgs
-                    }
+                    $idx += $chunk                    
+                }
+                if ($PassToOutput) {
+                       write-output $msg
                 }
             }
         }

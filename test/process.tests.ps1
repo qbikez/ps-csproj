@@ -6,6 +6,19 @@ $echoargs = "$psscriptroot\tools\powerecho\bin\Debug\netcoreapp1.1\win10-x64\pow
 $echoargs = [System.IO.Path]::GetFullPath($echoargs)
 
 Describe "Processing output from invoke" {
+    It "long messages does not break output" {
+        $msg = "this is my very long line afsdfggert345v w35 34tesw23523r w4fgset q25r tsdfgzsw5312rfsdf awer sef ser waq324 123rfwefszer t235r 312gergt324w5 fsdf ds f sdf sdf sdf dsf esf sdf ds"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$true
+        $r | Should Be $msg
+    }
+    It "newline should cause result split" {
+        $error.clear()
+        $msg = "this is my `nresult"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$true
+        $r.count | should be 2
+        $r[0] | Should Be "this is my "
+        $r[1] | Should Be "result"
+    }
     It "Should ignore command output when passthru=false" {
         $msg = "this is my result"
         $r = invoke $echoargs "--return" $msg --log null
@@ -31,6 +44,12 @@ Describe "Processing output from invoke" {
         }
         $error.count | Should Be 3
     }
+    It "Should not duplicate output when showoutput=true" {
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$true
+        $r | Should Be $msg
+    }
+ 
       It "Should not write errors to console when showoutput=false" {
         $error.clear()
         $msg = "this is my result"
