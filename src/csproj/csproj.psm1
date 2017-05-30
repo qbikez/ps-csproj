@@ -28,5 +28,6 @@ Export-ModuleMember -function `
     set-assemblymeta, get-assemblymeta, `
     get-slndependencies, test-sln, test-slndependencies, repair-slnpaths, get-csprojdependencies, repair-csprojpaths, `
     convert-packagestoprojectjson, repair-ProjectJSonProjectReferences, `
-    initialize-projects, push-nugets, use-projects `
+    initialize-projects, push-nugets, use-projects, `
+    Copy-BindingRedirects `
     -Alias *
