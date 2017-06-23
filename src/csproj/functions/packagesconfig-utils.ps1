@@ -1,7 +1,25 @@
 function Copy-BindingRedirects {
     [CmdletBinding()]
-    param($from = "app.config", $to = "app.orig.config")
+    param($from = "app.config", $to = $null)
         $fromXml = [xml](get-content $from)
+
+        if ([System.IO.Directory]::Exists($from)) {
+            $webconfig = get-childitems $from -filter "web.config"
+            if ($webconfig -ne $null) {
+                $from = $webconfig.FullName
+            } else {
+                $appconfig = get-childitems $from -filter "app.config"
+                if ($appconfig -ne $null) {
+                    $from = $appconfig.FullName
+                }
+            }
+        }
+        if ($to -eq $null) {
+            $from_file = [System.io.path]::GetFileNameWithoutExtension($from)
+            $from_file_ext = [System.io.path]::GetExtension($from)
+            $to_file = "$from_file.orig$from_file_ext"
+            $to = join-path (split-path -Parent $from) $to_file 
+        }
         $toXml = [xml](get-content $to)
 
         $src = $fromxml.configuration.runtime.assemblyBinding
