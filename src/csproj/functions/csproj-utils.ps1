@@ -306,7 +306,7 @@ function convertto-nugetreference {
 [OutputType([ReferenceMeta])]    
 param(
     [Parameter(Mandatory=$true)]
-    [ReferenceMeta] $ref, 
+    [ReferenceMeta] $ref,
     [Parameter(Mandatory=$true)]
     [string ]$packagesRelPath
 ) 

@@ -343,7 +343,9 @@ process {
                 }
             }
             if ($nuspecorcsproj.endswith("project.json")) {
-                    $o = invoke $dotnet restore -verbose:$($verbosePreference="Continue") -passthru
+                    # don't restore - if user has just built the project, it is already restored
+                    # if not, dotnet will detect out-of-date project.lock.json and build will fail
+                    #$o = invoke $dotnet restore -verbose:$($verbosePreference="Continue") -passthru
                     $o = invoke $dotnet build -verbose:$($verbosePreference="Continue") -passthru
             }
             else {
