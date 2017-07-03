@@ -227,16 +227,16 @@ process {
                 if ($null -eq (gmo cache)) {
                     ipmo cache -erroraction ignore
                 }
-                if ($null -ne (gmo cache)) {
+                if ($null -eq $apikey -and $null -ne (gmo cache)) {
                     $apikey = get-passwordcached $source
                     if ($apikey -ne $null) { write-verbose "found cached api key for source $source" }
                 }                
 
                 #try to get api key from global settings
                 if ($null -eq (gmo oneliners)) {
-                    ipmo oneliners -erroration ignore
+                    ipmo oneliners -erroraction ignore
                 }
-                if ($null -ne (gmo oneliners)) {
+                if ($null -eq $apikey -and $null -ne (gmo oneliners)) {
                     $settings = import-settings
                     $apikey = $settings["$source.apikey"]
                     if ($apikey -ne $null) {
@@ -251,7 +251,10 @@ process {
                 $p += "-source",$source
             }
             if ($apikey -ne $null) {
+                write-verbose "using apikey $apikey"
                 $p += "-apikey",$apikey
+            } else {
+                write-verbose "no apikey found"
             }
         
             if ($PSCmdlet.ShouldProcess("pushing package '$p'")) {
