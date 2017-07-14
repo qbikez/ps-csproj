@@ -61,7 +61,17 @@ function Write-Indented
         if (!$([Environment]::UserInteractive)) {
             write-warning "Write-Indented: non-UserInteractive console. will use verbose stream instead."
             if ($env:BUILD_ID -ne $null) {
+                # https://johanleino.wordpress.com/2013/10/09/powershell-write-verbose-and-write-debug-without-annoying-word-wrap/
                 Write-Warning "env:BUILD_ID is set - CI detected. Disabling line wrap"
+                try {
+                  $max = $host.UI.RawUI.MaxPhysicalWindowSize
+                  if($max) {
+                        $host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size(9999, $host.UI.RawUI.BufferSize.Height)
+                        $host.UI.RawUI.WindowSize = New-Object System.Management.Automation.Host.Size($max.Width,$host.UI.RawUI.WindowSize.Height)
+                    }
+                } catch {
+                    write-warning "failed to set `$host.UI.RawUI.BufferSize: $_"
+                }
                 $maxlen = $null
             }
         }
