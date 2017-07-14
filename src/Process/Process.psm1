@@ -59,7 +59,11 @@ function Write-Indented
             }            
         }
         if (!$([Environment]::UserInteractive)) {
-			write-warning "Write-Indented: non-UserInteractive console. will use verbose stream instead"
+            write-warning "Write-Indented: non-UserInteractive console. will use verbose stream instead."
+            if ($env:BUILD_ID -ne $null) {
+                Write-Warning "env:BUILD_ID is set - CI detected. Disabling line wrap"
+                $maxlen = $null
+            }
         }
     }
     process { 
@@ -77,8 +81,12 @@ function Write-Indented
                 $msg = $_
                 $idx = 0    
                 while($idx -lt $msg.length) {
-                    $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
-                    $chunk = [System.Math]::Max($chunk, 0)
+                    if ($maxlen -ne $null) {
+                        $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
+                        $chunk = [System.Math]::Max($chunk, 0)
+                    } else {
+                        $chunk = $msg.length - $idx
+                    }
                     write-console "$pad$($msg.substring($idx,$chunk))"                        
                     $idx += $chunk                    
                 }
