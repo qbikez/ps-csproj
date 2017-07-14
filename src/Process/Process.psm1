@@ -65,9 +65,12 @@ function Write-Indented
                 Write-Warning "env:BUILD_ID is set - CI detected. Disabling line wrap"
                 try {
                   $max = $host.UI.RawUI.MaxPhysicalWindowSize
-                  if($max) {
-                        $host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size(9999, $host.UI.RawUI.BufferSize.Height)
-                        $host.UI.RawUI.WindowSize = New-Object System.Management.Automation.Host.Size($max.Width,$host.UI.RawUI.WindowSize.Height)
+                  $bufferWidth = 9999
+                  $windowWidth = 9999
+                  Write-Warning "max phys window width = $max. setting max width: buffer=$bufferWidth window=$windowWidth"
+                  if($max) {                        
+                        $host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($bufferWidth, $host.UI.RawUI.BufferSize.Height)
+                        $host.UI.RawUI.WindowSize = New-Object System.Management.Automation.Host.Size($windowWidth,$host.UI.RawUI.WindowSize.Height)
                     }
                 } catch {
                     write-warning "failed to set `$host.UI.RawUI.BufferSize: $_"
