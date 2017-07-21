@@ -142,4 +142,4 @@ process {
 }
 }
 
-new-alias Foreach-Project Use-Projects
+new-alias Foreach-Project Use-Projects -Force

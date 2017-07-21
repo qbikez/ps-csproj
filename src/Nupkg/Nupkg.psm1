@@ -116,6 +116,9 @@ process {
     if ($stable -and $incrementVersion) {
         throw "-Stable cannot be used with -incrementVersion"
     }
+    if (!$build.ispresent) {
+        if (!$stable) { $build = $true }
+    }
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
         if ($Symbols) {
@@ -155,6 +158,15 @@ process {
     }
 
     $nupkg = (get-item $nupkg).FullName
+
+    if ($source -eq $null) {
+        $source = $env:NUGET_PUSH_SOURCE
+        if ($source -ne $null) {
+            write-warning "pushing to default source from `$env:NUGET_PUSH_SOURCE=$env:NUGET_PUSH_SOURCE"
+        } else {
+            Write-Warning "If you want to push to nuget, set `$env:NUGET_PUSH_SOURCE variable to target feed"
+        }
+    }
 
     $sources = @($source)
     foreach($source in $sources) {
