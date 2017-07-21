@@ -225,7 +225,7 @@ process {
             if ($source -ne $null -and $apikey -eq $null) {
                 # try to get apikey from cache
                 if ($null -eq (gmo cache)) {
-                    ipmo cache -erroraction ignore
+                    ipmo cache -erroraction ignore -MinimumVersion 1.1.0
                 }
                 if ($null -eq $apikey -and $null -ne (gmo cache)) {
                     $apikey = get-passwordcached $source
@@ -234,7 +234,7 @@ process {
 
                 #try to get api key from global settings
                 if ($null -eq (gmo cache)) {
-                    ipmo cache -erroraction ignore
+                    ipmo cache -erroraction ignore -MinimumVersion 1.1.0
                 }
                 if ($null -eq $apikey -and $null -ne (gmo cache)) {
                     $settings = cache\import-settings
