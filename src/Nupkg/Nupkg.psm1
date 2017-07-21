@@ -233,11 +233,11 @@ process {
                 }                
 
                 #try to get api key from global settings
-                if ($null -eq (gmo oneliners)) {
-                    ipmo oneliners -erroraction ignore
+                if ($null -eq (gmo cache)) {
+                    ipmo cache -erroraction ignore
                 }
-                if ($null -eq $apikey -and $null -ne (gmo oneliners)) {
-                    $settings = import-settings
+                if ($null -eq $apikey -and $null -ne (gmo cache)) {
+                    $settings = cache\import-settings
                     $apikey = $settings["$source.apikey"]
                     if ($apikey -ne $null) {
                         $cred = new-object "system.management.automation.pscredential" "dummy",$apikey

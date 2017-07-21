@@ -12,7 +12,7 @@
 RootModule = 'Nupkg.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.6.0'
+ModuleVersion = '1.0.7'
 
 # ID used to uniquely identify this module
 GUID = '4c503cbf-5ccc-4b9a-8146-db54365767ef'
