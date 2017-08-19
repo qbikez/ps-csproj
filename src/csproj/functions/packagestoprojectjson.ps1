@@ -166,4 +166,4 @@ Get-ChildItem -path '.' -Recurse -Include '*.csproj' | ForEach {
   
  }
  
- new-alias fix-ProjectJSon repair-ProjectJSonProjectReferences
+ new-alias fix-ProjectJSon repair-ProjectJSonProjectReferences -Force

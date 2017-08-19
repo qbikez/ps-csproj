@@ -1,4 +1,4 @@
-function sort-frameworks([Parameter(ValueFromPipeline=$true)] $frameworks, $frameworkhint) {
+function get-frameworkssorted([Parameter(ValueFromPipeline=$true)] $frameworks, $frameworkhint) {
 begin {
     $ordered = @()
 }
@@ -19,3 +19,6 @@ end {
     return $ordered | select -ExpandProperty dir
     }
 }
+
+
+New-Alias sort-frameworks get-frameworkssorted -Force

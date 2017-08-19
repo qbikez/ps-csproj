@@ -185,7 +185,7 @@ function get-externalreferences([Parameter(ValueFromPipeline=$true, Mandatory=$t
 function get-nugetreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
     $refs = get-allexternalreferences $csproj
     $refs = $refs | ? {
-        $_.Node.HintPath -match "[""\\/]packages[/\\]"
+        $_.Node.HintPath -match "([\""\\/]|^)packages[/\\]"
     }
     $refs = $refs | % {
         $_.type = "nuget"
@@ -235,6 +235,9 @@ function new-projectReferenceNode([System.Xml.xmldocument]$document) {
     return $projectRef
 }
 
+
+
+
 function new-referenceNode([System.Xml.xmldocument]$document) {
 
     $nugetref = [System.Xml.XmlElement]$document.CreateNode([System.Xml.XmlNodeType]::Element, "", "Reference", $ns)
@@ -251,7 +254,7 @@ function new-referenceNode([System.Xml.xmldocument]$document) {
 
 function add-projectItem {
 [CmdletBinding()]
-param ([Parameter(Mandatory=$true)] $csproj, [Parameter(Mandatory=$true)] $file)
+param ([Parameter(Mandatory=$true)] $csproj, [Parameter(Mandatory=$true)][string] $file)
 
     ipmo pathutils
 
@@ -306,7 +309,7 @@ function convertto-nugetreference {
 [OutputType([ReferenceMeta])]    
 param(
     [Parameter(Mandatory=$true)]
-    [ReferenceMeta] $ref, 
+    [ReferenceMeta] $ref,
     [Parameter(Mandatory=$true)]
     [string ]$packagesRelPath
 ) 
@@ -425,5 +428,5 @@ function get-project($name, [switch][bool]$all) {
     return $projs
 }
 
-new-alias replace-reference convert-reference
-new-alias convertto-nuget convertto-nugetreference
+new-alias replace-reference convert-reference -Force
+new-alias convertto-nuget convertto-nugetreference -Force

@@ -12,7 +12,7 @@
 RootModule = 'Process.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.1.7.0'
+ModuleVersion = '1.2.2.309'
 
 # ID used to uniquely identify this module
 GUID = 'a13f1555-d514-456a-abe8-5ee9ca3aa5d7'
@@ -117,6 +117,10 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+
+
+
+
 
 
 

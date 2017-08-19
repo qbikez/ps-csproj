@@ -158,6 +158,7 @@ function find-matchingprojects {
         )
     if (test-path (join-path $reporoot ".projects.json")) {
         $script:projects = get-content (join-path $reporoot ".projects.json") | out-string | convertfrom-jsonnewtonsoft 
+        write-verbose "getting csproj from cached file .projects.json"
         $csprojs = $script:projects.GetEnumerator() | ? {
                 #ignore non-existing projects from ".projects.json" 
                 test-path (join-path $reporoot $_.value.path) 
@@ -476,8 +477,7 @@ function repair-csprojpaths {
             $refs = get-nugetreferences $csproj 
             foreach($pkgref in $pkgs) {
                 $ref = $refs | ? { $_.ShortName -eq $pkgref.id }
-                if ($ref -eq $null) {
-                    
+                if ($ref -eq $null) {                    
                     $nugetpath = find-nugetpath $pkgref.id $pkgdir -versionhint $pkgref.version
                     if ($nugetpath -ne $null) {
                         $dllname = [System.IO.Path]::GetFileNameWithoutExtension($nugetpath.PAth)
@@ -496,11 +496,13 @@ function repair-csprojpaths {
                         Write-Warning "($($csproj.name)): version of package '$($pkgref.id)' in csproj: '$($matches["version"])' doesn't match packages.config version: '$($pkgref.version)'. Fixing"
                         # fix it
                         $ref.path = $ref.path -replace "$($pkgref.id).(?<version>.*?)\\","$($pkgref.id).$($pkgref.version)\"
+                        write-verbose "corrected path: $($ref.path)"
                         $ref.Node.HintPath = $ref.path
                         $inc = $ref.Node.Include
                         if ($inc -ne $null -and $inc -match "$($pkgref.id),\s*Version=(.*?),") {
                             write-verbose "($($csproj.name)): fixing include tag"
                             $inc = $inc -replace "($($pkgref.id)),\s*Version=(.*?),",'$1,'
+                            write-verbose "corrected include: $($ref.path)"
                             $ref.Node.Include = $inc
                         }
                         $csproj.save()
@@ -560,7 +562,7 @@ process {
 
 
 
-new-alias fix-sln repair-slnpaths
-new-alias fixsln fix-sln
-new-alias fix-csproj repair-csprojpaths
-new-alias fixcsproj fix-csproj 
+new-alias fix-sln repair-slnpaths -Force
+new-alias fixsln fix-sln -Force
+new-alias fix-csproj repair-csprojpaths -Force
+new-alias fixcsproj fix-csproj -Force

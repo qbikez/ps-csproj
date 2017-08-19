@@ -101,7 +101,7 @@ function invoke-nugetpush {
     [Parameter(ValueFromPipeline=$true,Position=0)] $file = $null, 
     [Parameter(Mandatory=$false)] $source,
     [Parameter(Mandatory=$false)] $apikey,
-    [switch][bool]$Symbols,
+    [switch][bool] $Symbols,
     [switch][bool] $Build,
     [switch][bool] $ForceDll,
     [switch][bool] $Stable,
@@ -110,10 +110,19 @@ function invoke-nugetpush {
     [switch][bool] $incrementVersion,
     [switch][bool] $keepVersion,
     $suffix = $null,
+    $branch = $null,
     $buildProperties = @{}) 
 process {
     if ($stable -and $incrementVersion) {
         throw "-Stable cannot be used with -incrementVersion"
+    }
+<<<<<<< HEAD
+    if (!$Symbols.IsPresent) {
+        $Symbols = !$stable
+=======
+    if (!$build.ispresent) {
+        if (!$stable) { $build = $true }
+>>>>>>> cad228b1878a22995b277068fdfb0dc0a1922ffd
     }
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
@@ -128,7 +137,7 @@ process {
         
     }
     if ($file -eq $null -or !($file.EndsWith(".nupkg"))){
-        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties:$buildProperties -usedotnet:$usedotnet -keepVersion:$keepVersion -suffix:$suffix -incrementVersion:$incrementVersion
+        $nupkg = invoke-nugetpack $file -Build:$build -symbols:$symbols -stable:$stable -forceDll:$forceDll -buildProperties:$buildProperties -usedotnet:$usedotnet -keepVersion:$keepVersion -suffix:$suffix -incrementVersion:$incrementVersion -branch:$branch
     } else {
         $nupkg = $file
     }
@@ -154,6 +163,15 @@ process {
     }
 
     $nupkg = (get-item $nupkg).FullName
+
+    if ($source -eq $null) {
+        $source = $env:NUGET_PUSH_SOURCE
+        if ($source -ne $null) {
+            write-warning "pushing to default source from `$env:NUGET_PUSH_SOURCE=$env:NUGET_PUSH_SOURCE"
+        } else {
+            Write-Warning "If you want to push to nuget, set `$env:NUGET_PUSH_SOURCE variable to target feed"
+        }
+    }
 
     $sources = @($source)
     foreach($source in $sources) {
@@ -224,19 +242,19 @@ process {
             if ($source -ne $null -and $apikey -eq $null) {
                 # try to get apikey from cache
                 if ($null -eq (gmo cache)) {
-                    ipmo cache -erroraction ignore
+                    ipmo cache -erroraction ignore -MinimumVersion 1.1.0
                 }
-                if ($null -ne (gmo cache)) {
+                if ($null -eq $apikey -and $null -ne (gmo cache)) {
                     $apikey = get-passwordcached $source
                     if ($apikey -ne $null) { write-verbose "found cached api key for source $source" }
                 }                
 
                 #try to get api key from global settings
-                if ($null -eq (gmo oneliners)) {
-                    ipmo oneliners -erroration ignore
+                if ($null -eq (gmo cache)) {
+                    ipmo cache -erroraction ignore -MinimumVersion 1.1.0
                 }
-                if ($null -ne (gmo oneliners)) {
-                    $settings = import-settings
+                if ($null -eq $apikey -and $null -ne (gmo cache)) {
+                    $settings = cache\import-settings
                     $apikey = $settings["$source.apikey"]
                     if ($apikey -ne $null) {
                         $cred = new-object "system.management.automation.pscredential" "dummy",$apikey
@@ -250,7 +268,10 @@ process {
                 $p += "-source",$source
             }
             if ($apikey -ne $null) {
+                write-verbose "using apikey $apikey"
                 $p += "-apikey",$apikey
+            } else {
+                write-verbose "no apikey found"
             }
         
             if ($PSCmdlet.ShouldProcess("pushing package '$p'")) {
@@ -282,6 +303,7 @@ function invoke-nugetpack {
     [Alias("newVersion")]
     [switch][bool] $incrementVersion,
     $suffix = $null,
+    $branch = $null,
     [switch][bool] $keepVersion,
     $buildProperties = @{}) 
 process {    
@@ -333,12 +355,17 @@ process {
             else {
                 if ($incrementVersion) { $newver = update-buildversion -component patch } 
                 elseif (!$keepversion) { $newver = update-buildversion } 
+                if ($branch -ne $null) {
+                    $newver = update-buildversion -component SuffixBranch -value $branch
+                }
                 if ($stable) {
                     $newver = update-buildversion -stable:$stable
                 }
             }
             if ($nuspecorcsproj.endswith("project.json")) {
-                    $o = invoke $dotnet restore -verbose:$($verbosePreference="Continue") -passthru
+                    # don't restore - if user has just built the project, it is already restored
+                    # if not, dotnet will detect out-of-date project.lock.json and build will fail
+                    #$o = invoke $dotnet restore -verbose:$($verbosePreference="Continue") -passthru
                     $o = invoke $dotnet build -verbose:$($verbosePreference="Continue") -passthru
             }
             else {

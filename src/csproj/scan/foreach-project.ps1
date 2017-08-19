@@ -107,7 +107,7 @@ process {
         $path = $projects[$project].path
         $projects[$project].name = $project
         if ($projects[$project].hasNuspec -ne "true" -and !$force -and !$AllowNoNuspec) {
-            write-host "skipping project '$project' with no nuspec"
+            write-host "skipping project '$project' with no nuspec. Use -AllowNoNuspec to override"
             continue
         }
         pushd 
@@ -142,4 +142,4 @@ process {
 }
 }
 
-new-alias Foreach-Project Use-Projects
+new-alias Foreach-Project Use-Projects -Force

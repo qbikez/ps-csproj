@@ -1,3 +1,19 @@
+$root = "."
+if (![string]::IsNullOrEmpty($PSScriptRoot)) {
+    $root = $PSScriptRoot
+}
+#if ($MyInvocation.MyCommand.Definition -ne $null) {
+#    $root = $MyInvocation.MyCommand.Definition
+#}
+$helpersPath = $root
+@("Invoke-AsAdmin.ps1") |
+    % { 
+        $p = get-item "$root/functions/$_"
+        . $p.fullname
+    }
+
+
+
 <#
 .Synopsis 
 "Writes the input to host output (using write-host) with added indentation"
@@ -13,6 +29,15 @@ Maximum line length - after which lines will be wrapped (also with indentation)
 Pass the input to the output
 #>
 
+function Write-Console {
+    param($msg)
+    if ($([Environment]::UserInteractive)) {
+        write-host $msg #[$($msg.GetType().Name)]
+    } else {
+        write-verbose $msg -verbose #[$($msg.GetType().Name)]
+    }
+}
+
 function Write-Indented 
 {
     param(
@@ -22,7 +47,8 @@ function Write-Indented
         [Parameter(Position=4)]$maxlen = $null, 
         [switch][bool]$passthru,
         [switch][bool]$timestamp,
-        $timestampFormat = "yyyy-MM-dd HH:mm:ss.ff"
+        $timestampFormat = "yyyy-MM-dd HH:mm:ss.ff",
+        [switch][bool]$passErrorStream
     )
     begin {
         $base_padding = $mark.PadLeft($level)
@@ -33,7 +59,24 @@ function Write-Indented
             }            
         }
         if (!$([Environment]::UserInteractive)) {
-			write-warning "Write-Indented: non-UserInteractive console. will use verbose stream instead"
+            write-warning "Write-Indented: non-UserInteractive console. will use verbose stream instead."
+            if ($env:BUILD_ID -ne $null) {
+                # https://johanleino.wordpress.com/2013/10/09/powershell-write-verbose-and-write-debug-without-annoying-word-wrap/
+                Write-Warning "env:BUILD_ID is set - CI detected. Disabling line wrap"
+                try {
+                  $max = $host.UI.RawUI.MaxPhysicalWindowSize
+                  $bufferWidth = 9999
+                  $windowWidth = 9999
+                  Write-Warning "max phys window width = $max. setting max width: buffer=$bufferWidth window=$windowWidth"
+                  if($max) {                        
+                        $host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($bufferWidth, $host.UI.RawUI.BufferSize.Height)
+                        $host.UI.RawUI.WindowSize = New-Object System.Management.Automation.Host.Size($windowWidth,$host.UI.RawUI.WindowSize.Height)
+                    }
+                } catch {
+                    write-warning "failed to set `$host.UI.RawUI.BufferSize: $_"
+                }
+                $maxlen = $null
+            }
         }
     }
     process { 
@@ -42,22 +85,26 @@ function Write-Indented
         if ($timestamp) {
             $pad = "[$(get-date -format)] $base_padding"
         }
-        $msgs | % {        
+        $msgs | % {     
+            $PassToOutput = $passthru
+			if ($_ -is [System.Management.Automation.ErrorRecord]) {
+				$passToOutput = $passErrorStream
+			}
             @($_.ToString().split("`n")) | % {
                 $msg = $_
                 $idx = 0    
                 while($idx -lt $msg.length) {
-                    $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
-                    $chunk = [System.Math]::Max($chunk, 0)
-                    if ($([Environment]::UserInteractive)) {
-                        write-host "$pad$($msg.substring($idx,$chunk))" #[$($msg.GetType().Name)]
+                    if ($maxlen -ne $null) {
+                        $chunk = [System.Math]::Min($msg.length - $idx, $maxlen)
+                        $chunk = [System.Math]::Max($chunk, 0)
                     } else {
-                        write-verbose "$pad$($msg.substring($idx,$chunk))" -verbose #[$($msg.GetType().Name)]
+                        $chunk = $msg.length - $idx
                     }
-                    $idx += $chunk
-                    if ($passthru) {
-                        write-output $msgs
-                    }
+                    write-console "$pad$($msg.substring($idx,$chunk))"                        
+                    $idx += $chunk                    
+                }
+                if ($PassToOutput) {
+                       write-output $msg
                 }
             }
         }
@@ -97,6 +144,7 @@ param(
     [switch][bool]$showoutput = $true,
     [switch][bool]$silent,
     [switch][bool]$passthru,
+    [switch][bool]$passErrorStream,
     [Parameter(ParameterSetName="in")]
     $in,
     [Parameter(ValueFromRemainingArguments=$true,ParameterSetName="in")]
@@ -105,8 +153,16 @@ param(
     $remainingArguments,
     [System.Text.Encoding] $encoding = $null,
     [switch][bool]$useShellExecute,
+    [switch][bool]$asAdmin,
     [string[]]$stripFromLog
     ) 
+
+
+    if ($asAdmin) {
+        $a = $PSBoundParameters
+        $a.remove("asAdmin")
+        sudo { param($a) ipmo process; process\invoke @a } -ArgumentList $a -Wait
+    }
     #write-verbose "argumentlist=$argumentList"
     #write-verbose "remainingargs=$remainingArguments"
     $arguments = @()
@@ -170,13 +226,13 @@ param(
         write-host "  ===== $command ====="
         if ($in -ne $null) {
             if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
-            $o = $in | & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
+            $o = $in | & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru -passErrorStream:$passErrorStream
         } else {
             if ($useShellExecute) {
                 if ([System.IO.Path]::IsPathRooted($command) -or $command.Contains(" ")) { $command = """$command""" }
-                $o = cmd /c "$command $shortargstr" 2>&1 | write-indented -level 2 -passthru:$passthru
+                $o = cmd /c "$command $shortargstr" 2>&1 | write-indented -level 2 -passthru:$passthru -passErrorStream:$passErrorStream
             } else {
-                $o = & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru
+                $o = & $command $arguments 2>&1	 | write-indented -level 2 -passthru:$passthru -passErrorStream:$passErrorStream
             }
         }
         
@@ -184,14 +240,27 @@ param(
     } else {
         if ($in -ne $null) {
             if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
-            $o = $in | & $command $arguments  2>&1
+            if ($passErrorStream) {
+                $o = $in | & $command $arguments  2>&1
+            } else {
+                # swallow error stream
+                $o = $in | & $command $arguments 2>&1 | % { if ($_ -is [System.Management.Automation.ErrorRecord]) { } else { $_ } }
+            }
         }
         else {
             if ($useShellExecute) {
                 if ([System.IO.Path]::IsPathRooted($command) -or $command.Contains(" ")) { $command = """$command""" }
-                $o = cmd /c "$command $shortargstr" 2>&1
+                if ($passErrorStream) {
+                    $o = cmd /c "$command $shortargstr" 2>&1
+                } else {
+                    $o = cmd /c "$command $shortargstr" 2>&1 | % { if ($_ -is [System.Management.Automation.ErrorRecord]) { } else { $_ } }
+                }
             } else {
-                $o = & $command $arguments 2>&1
+                if ($passErrorStream) {
+                    $o = & $command $arguments 2>&1
+                } else {
+                    $o = & $command $arguments 2>&1 | % { if ($_ -is [System.Management.Automation.ErrorRecord]) { } else { $_ } }
+                }
             }
         }
     }
@@ -206,6 +275,7 @@ param(
             }
         }
     }
+    write-output $o
     if ($lastexitcode -ne 0) {
         write-verbose "invoke: ErrorActionPreference = $ErrorActionPreference"
         if (!$nothrow) {            
@@ -217,7 +287,6 @@ param(
            
         }
     }
-    return $o
 }
 
 <#
@@ -257,5 +326,6 @@ function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wai
 
 if ((get-alias Run-AsAdmin -ErrorAction ignore) -eq $null) { New-alias Run-AsAdmin Invoke-AsAdmin }
 if ((get-alias sudo -ErrorAction ignore) -eq $null) { New-alias sudo Invoke-AsAdmin }
+new-alias Is-Admin Test-IsAdmin -force
 
 Export-ModuleMember -Function * -Alias *

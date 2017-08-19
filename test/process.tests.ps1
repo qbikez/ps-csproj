@@ -2,25 +2,73 @@
 if ((gmo process) -ne $null) { rmo process }
 import-module process
 
-Describe "Process module tests" {
+$echoargs = "$psscriptroot\tools\powerecho\bin\Debug\netcoreapp1.1\win10-x64\powerecho.exe"
+$echoargs = [System.IO.Path]::GetFullPath($echoargs)
+
+Describe "Processing output from invoke" {
+    It "long messages does not break output" {
+        $msg = "this is my very long line afsdfggert345v w35 34tesw23523r w4fgset q25r tsdfgzsw5312rfsdf awer sef ser waq324 123rfwefszer t235r 312gergt324w5 fsdf ds f sdf sdf sdf dsf esf sdf ds"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$true
+        $r | Should Be $msg
+    }
+    It "newline should cause result split" {
+        $error.clear()
+        $msg = "this is my `nresult"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$true
+        $r.count | should be 2
+        $r[0] | Should Be "this is my "
+        $r[1] | Should Be "result"
+    }
+    It "Should ignore command output when passthru=false" {
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log null
+        $r | Should BeNullOrEmpty
+    }
+    It "Should return only stdout when logging to null" {
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log null -passthru
+        $r | Should Be $msg
+    }
+    It "Should return only stdout when logging to stderr" {
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru
+        $r | Should Be $msg
+    }
+    It "Should fill error stream when showoutput=false" {
+        $error.clear()
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$false
+        $r | Should Be $msg
+        if ($error.count -gt 0) {
+            $error | % { write-verbose $_ -Verbose }
+        }
+        $error.count | Should Be 3
+    }
+    It "Should not duplicate output when showoutput=true" {
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$true
+        $r | Should Be $msg
+    }
+ 
+      It "Should not write errors to console when showoutput=false" {
+        $error.clear()
+        $msg = "this is my result"
+        $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$false
+        $r | Should Be $msg
+        # HOW to test this??
+    }
+}
+
+Describe "Passing arguments from invoke" {
     # init - download echoargs
-    if ((get-command echoargs -erroraction "Ignore") -eq $null) {
-        nuget install echoargs -version 3.2.0 -source https://chocolatey.org/api/v2/ -outputdirectory .tools
-        $echoargs_path = "$((get-item '.tools/echoargs.3.2.0/tools').FullName)"
-        write-host "echoargs installed at: $echoargs_path"
-        $env:Path = $echoargs_path + ";" + $env:Path 
-        write-host "PATH:"
-        write-host $env:Path
-    }
-    $echoargs = (get-command echoargs).Source -replace "chocolatey\\bin\\EchoArgs.exe","chocolatey\lib\echoargs\tools\EchoArgs.exe"
-    It "Should invoke echoargs" {
-        invoke echoargs
-    }
-    <#It "Should throw on missing command" {
-        { invoke "not-found.exe" } | should throw
-    }#>
+    
+   
+    #It "Should throw on missing command" {
+    #    { invoke "not-found.exe" } | should throw
+    # }
+
     It "Should pass all direct arguments quoted 1" {
-        $r = invoke echoargs test -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs test -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <test>
 Arg 1 is <-a=1>
@@ -36,7 +84,7 @@ Command line:
     }
 
      It "Should pass all direct arguments quoted 2" {
-        $r = invoke echoargs -a=1 -b=2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -a=1 -b=2 -e="1 2" -passthru  -verbose | out-string | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b=2>
@@ -50,7 +98,7 @@ Command line:
     }
 
      It "Should pass all direct arguments quoted 3" {
-        $r = invoke echoargs -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-e=1 2>
 Arg 1 is <-a=1>
@@ -65,7 +113,7 @@ Command line:
     }
 
      It "Should pass all direct arguments" {
-        $r = invoke echoargs -a=1 -b 2 -e=1 -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -a=1 -b 2 -e=1 -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
@@ -86,7 +134,7 @@ Command line:
             "2"
             "-e=1 2"
         )
-        $r = invoke echoargs -argumentList $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -argumentList $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
@@ -106,14 +154,14 @@ Command line:
             "2"
             "-e=`"1 2`""
         )
-        $r = invoke echoargs -arguments $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -arguments $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
 Arg 2 is <2>
 Arg 3 is <-e=1 2>
 Command line:
-"$echoargs" -a=1 -b 2 -e="1 2"
+"$echoargs" -a=1 -b 2 "-e=1 2"
 
 "@  | % { $_ -replace "`r`n","`n" }
         $r | Should Be $expected
@@ -125,7 +173,7 @@ Command line:
             "-b"
             "2"
         )
-        $r = invoke echoargs $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
@@ -138,3 +186,10 @@ Command line:
 
     }
 }
+
+Describe "check echoargs" {
+    It "Should invoke echoargs" {
+        invoke $echoargs
+    }
+}
+
