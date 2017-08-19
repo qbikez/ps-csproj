@@ -101,7 +101,7 @@ function invoke-nugetpush {
     [Parameter(ValueFromPipeline=$true,Position=0)] $file = $null, 
     [Parameter(Mandatory=$false)] $source,
     [Parameter(Mandatory=$false)] $apikey,
-    [switch][bool]$Symbols,
+    [switch][bool] $Symbols,
     [switch][bool] $Build,
     [switch][bool] $ForceDll,
     [switch][bool] $Stable,
@@ -115,6 +115,9 @@ function invoke-nugetpush {
 process {
     if ($stable -and $incrementVersion) {
         throw "-Stable cannot be used with -incrementVersion"
+    }
+    if (!$Symbols.IsPresent) {
+        $Symbols = !$stable
     }
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)

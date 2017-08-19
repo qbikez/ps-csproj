@@ -153,8 +153,16 @@ param(
     $remainingArguments,
     [System.Text.Encoding] $encoding = $null,
     [switch][bool]$useShellExecute,
+    [switch][bool]$asAdmin,
     [string[]]$stripFromLog
     ) 
+
+
+    if ($asAdmin) {
+        $a = $PSBoundParameters
+        $a.remove("asAdmin")
+        sudo { param($a) ipmo process; process\invoke @a } -ArgumentList $a -Wait
+    }
     #write-verbose "argumentlist=$argumentList"
     #write-verbose "remainingargs=$remainingArguments"
     $arguments = @()
