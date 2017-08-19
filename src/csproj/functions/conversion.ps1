@@ -178,5 +178,5 @@ function convert-nugetToProjectReference {
         }
 }
 
-new-alias convert-ReferencesToNugets convert-ReferencesToNuget
-new-alias tonuget convert-ReferencesToNuget
+new-alias convert-ReferencesToNugets convert-ReferencesToNuget -Force
+new-alias tonuget convert-ReferencesToNuget -Force

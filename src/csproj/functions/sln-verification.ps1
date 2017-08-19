@@ -562,7 +562,7 @@ process {
 
 
 
-new-alias fix-sln repair-slnpaths
-new-alias fixsln fix-sln
-new-alias fix-csproj repair-csprojpaths
-new-alias fixcsproj fix-csproj 
+new-alias fix-sln repair-slnpaths -Force
+new-alias fixsln fix-sln -Force
+new-alias fix-csproj repair-csprojpaths -Force
+new-alias fixcsproj fix-csproj -Force

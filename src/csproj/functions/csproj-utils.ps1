@@ -428,5 +428,5 @@ function get-project($name, [switch][bool]$all) {
     return $projs
 }
 
-new-alias replace-reference convert-reference
-new-alias convertto-nuget convertto-nugetreference
+new-alias replace-reference convert-reference -Force
+new-alias convertto-nuget convertto-nugetreference -Force

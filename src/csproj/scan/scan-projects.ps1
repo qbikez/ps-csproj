@@ -7,13 +7,22 @@ function Initialize-Projects {
 $_path = $path
 
 ipmo pathutils
-$projectFiles = Get-Listing -Path $_path -files -include "*.csproj","*.xproj" -Recursive `
+$projectFiles = Get-Listing -Path $_path -files -include "*.csproj","*.xproj","*.nuspec","project.json" -Recursive `
     -Excludes "node_modules/","artifacts/","bin/","obj/",".hg/","dnx-packages/","packages/","/common/","bower_components/","reader-content/","publish/","^\..*/"
 
 $projects = @{}
 
+$projectFiles = $projectFiles | ? {
+    !$_.Name.EndsWith(".user")
+}
+
 $projectFiles | % {
-    $name = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+    if ($_.Name -eq "project.json") {
+        $name = [System.IO.Path]::GetDirectoryName($_.Fullname)
+    }
+    else {
+        $name = [System.IO.Path]::GetFileNameWithoutExtension($_.Name)
+    }
     $path =  Get-RelativePath (gi .).fullname $_.fullname
 
     # $false and $true cause trouble when serializing with newtonsoft
@@ -44,4 +53,4 @@ write-host "Found $($projects.Count) projects"
 
 }
 
-New-Alias Scan-Projects Initialize-Projects
+New-Alias Scan-Projects Initialize-Projects -Force

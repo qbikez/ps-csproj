@@ -116,8 +116,13 @@ process {
     if ($stable -and $incrementVersion) {
         throw "-Stable cannot be used with -incrementVersion"
     }
+<<<<<<< HEAD
     if (!$Symbols.IsPresent) {
         $Symbols = !$stable
+=======
+    if (!$build.ispresent) {
+        if (!$stable) { $build = $true }
+>>>>>>> cad228b1878a22995b277068fdfb0dc0a1922ffd
     }
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
@@ -158,6 +163,15 @@ process {
     }
 
     $nupkg = (get-item $nupkg).FullName
+
+    if ($source -eq $null) {
+        $source = $env:NUGET_PUSH_SOURCE
+        if ($source -ne $null) {
+            write-warning "pushing to default source from `$env:NUGET_PUSH_SOURCE=$env:NUGET_PUSH_SOURCE"
+        } else {
+            Write-Warning "If you want to push to nuget, set `$env:NUGET_PUSH_SOURCE variable to target feed"
+        }
+    }
 
     $sources = @($source)
     foreach($source in $sources) {
@@ -228,7 +242,7 @@ process {
             if ($source -ne $null -and $apikey -eq $null) {
                 # try to get apikey from cache
                 if ($null -eq (gmo cache)) {
-                    ipmo cache -erroraction ignore
+                    ipmo cache -erroraction ignore -MinimumVersion 1.1.0
                 }
                 if ($null -eq $apikey -and $null -ne (gmo cache)) {
                     $apikey = get-passwordcached $source
@@ -236,11 +250,11 @@ process {
                 }                
 
                 #try to get api key from global settings
-                if ($null -eq (gmo oneliners)) {
-                    ipmo oneliners -erroraction ignore
+                if ($null -eq (gmo cache)) {
+                    ipmo cache -erroraction ignore -MinimumVersion 1.1.0
                 }
-                if ($null -eq $apikey -and $null -ne (gmo oneliners)) {
-                    $settings = import-settings
+                if ($null -eq $apikey -and $null -ne (gmo cache)) {
+                    $settings = cache\import-settings
                     $apikey = $settings["$source.apikey"]
                     if ($apikey -ne $null) {
                         $cred = new-object "system.management.automation.pscredential" "dummy",$apikey
