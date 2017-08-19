@@ -241,7 +241,7 @@ Wait for the elevated command to finish before continuing (default=true)
 #>
 function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wait = $true) {	
 	if (!(test-IsAdmin)) {
-		Start-Process $proc -Verb runAs -ArgumentList $ArgumentList -wait:$Wait
+		Start-Process $proc -Verb runAs -ArgumentList $ArgumentList -wait:$Wait -WorkingDirectory $pwd.path -Verbose
     } else {
         # this is a workaround  for doublequote problem
         if ($false -and ($proc -eq "powershell") -and ($ArgumentList.Length -eq 2) -and ($ArgumentList[0] -eq "-Command")) {
