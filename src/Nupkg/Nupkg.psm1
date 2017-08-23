@@ -116,13 +116,11 @@ process {
     if ($stable -and $incrementVersion) {
         throw "-Stable cannot be used with -incrementVersion"
     }
-<<<<<<< HEAD
     if (!$Symbols.IsPresent) {
         $Symbols = !$stable
-=======
+    }
     if (!$build.ispresent) {
         if (!$stable) { $build = $true }
->>>>>>> cad228b1878a22995b277068fdfb0dc0a1922ffd
     }
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
