@@ -66,7 +66,18 @@ begin {
         $r = @{}
         foreach($p in $c.Parameters.GetEnumerator()) {
             if ($p.key -in $bound.Keys) {
-                $r += @{ $p.key = $bound[$p.key] }
+                if ($bound[$p.Key].IsPresent -ne $null) {
+                    # this is a switch
+                    if ($bound[$p.Key].IsPresent -eq $true) {
+                        $r += @{ $p.key = $true }
+                    } else {
+                        # switch should be set to false
+                        $r += @{ $p.key = $false }
+                    }
+                }
+                else {
+                    $r += @{ $p.key = $bound[$p.key] }
+                }
             }
         }
 

@@ -116,10 +116,12 @@ process {
     if ($stable -and $incrementVersion) {
         throw "-Stable cannot be used with -incrementVersion"
     }
-    if (!$Symbols.IsPresent) {
+
+    $bound = $PSBoundParameters
+    if ($bound.stable -eq $null) {
         $Symbols = !$stable
     }
-    if (!$build.ispresent) {
+    if ($bound.build -eq $null) {
         if (!$stable) { $build = $true }
     }
     if ($file -eq $null -and !$build) {
