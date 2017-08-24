@@ -26,8 +26,9 @@ public class SlnProject {
   
 }
 "@
-
-add-type -TypeDefinition $types
+if (-not ([System.Management.Automation.PSTypeName]'Sln').Type) {
+    add-type -TypeDefinition $types
+}
 
 function import-sln {
     [OutputType([Sln])]
