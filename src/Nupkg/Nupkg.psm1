@@ -144,15 +144,20 @@ process {
     #in case multiple nupkgs are created
     if ($symbols) {
         $symbolpkg = @($nupkg) | ? { $_ -match "\.symbols\." } | select -last 1
-        $nupkg = $symbolpkg
-        $nosymbolspkg = $nupkg -replace "\.symbols\.","."
-        if (test-path $nosymbolspkg) {
-            write-verbose "copying '$nosymbolspkg' to '$($nupkg -replace "\.symbols\.",".nosymbols.")'"
-            copy-item $nosymbolspkg "$($nupkg -replace "\.symbols\.",".nosymbols.")" 
+        if ($symbolpkg -ne $null) {
+            $nupkg = $symbolpkg
+            $nosymbolspkg = $nupkg -replace "\.symbols\.","."
+            if (test-path $nosymbolspkg) {
+                write-verbose "copying '$nosymbolspkg' to '$($nupkg -replace "\.symbols\.",".nosymbols.")'"
+                copy-item $nosymbolspkg "$($nupkg -replace "\.symbols\.",".nosymbols.")" 
+            }
+            write-host "push Symbols package: replacing $nosymbolspkg with $symbolpkg"
+            copy-item $symbolpkg $nosymbolspkg -Force
+            $nupkg = $nosymbolspkg
+        } else {
+            write-warning "did not find a matching .symbols.nupkg package"
+            $nupkg = @($nupkg)| ? { $_ -notmatch "\.symbols\." }  | select -last 1
         }
-        write-host "push Symbols package: replacing $nosymbolspkg with $symbolpkg"
-        copy-item $symbolpkg $nosymbolspkg -Force
-        $nupkg = $nosymbolspkg
     } else {
         $nupkg = @($nupkg)| ? { $_ -notmatch "\.symbols\." }  | select -last 1
 
