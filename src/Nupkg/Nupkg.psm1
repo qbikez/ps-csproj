@@ -260,11 +260,13 @@ process {
                 }
                 if ($null -eq $apikey -and $null -ne (gmo cache)) {
                     $settings = cache\import-settings
-                    $apikey = $settings["$source.apikey"]
-                    if ($apikey -ne $null) {
-                        $cred = new-object "system.management.automation.pscredential" "dummy",$apikey
-                        $apikey = $cred.GetNetworkCredential().Password
-                        if ($apikey -ne $null) { write-verbose "found api key in globalsettings for source $source" }
+                    if ($settings -ne $null) {
+                        $apikey = $settings["$source.apikey"]
+                        if ($apikey -ne $null) {
+                            $cred = new-object "system.management.automation.pscredential" "dummy",$apikey
+                            $apikey = $cred.GetNetworkCredential().Password
+                            if ($apikey -ne $null) { write-verbose "found api key in globalsettings for source $source" }
+                        }
                     }
                 }
             }
