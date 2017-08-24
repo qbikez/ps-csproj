@@ -440,6 +440,9 @@ process {
                     if ($_ -match "Successfully created package '(.*)'") {
                         return $matches[1]
                     }
+                    if ($_ -match "utworzono pakiet '(.*)'") {
+                        return $matches[1]
+                    }
                 }
              
                 return $success | select -unique
