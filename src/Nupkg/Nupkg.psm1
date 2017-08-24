@@ -447,10 +447,10 @@ process {
                 throw "nuget command failed! `r`n$($o | out-string)"
             } else {
                 $success = $o | % {
-                    if ($_ -match "Successfully created package '(.*)'") {
+                    if ($_ -match "Successfully created package ['\`"](.*)['\`"]") {
                         return $matches[1]
                     }
-                    if ($_ -match "utworzono pakiet '(.*)'") {
+                    if ($_ -match "utworzono pakiet ['\`"](.*)['\`"]") {
                         return $matches[1]
                     }
                 }
