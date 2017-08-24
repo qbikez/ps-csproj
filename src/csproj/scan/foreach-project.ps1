@@ -33,6 +33,7 @@ DynamicParam
         if ((test-path ".projects.json")) {
             $script:projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft 
             $validvalues = $projects.Keys
+            $validvalues += "*"
             $validateset = new-object System.Management.Automation.ValidateSetAttribute -ArgumentList @($validvalues)
             $attributeCollection.Add($validateset)
             $attributeCollection.Add((new-object System.Management.Automation.AllowEmptyStringAttribute))
@@ -82,7 +83,7 @@ process {
     
     $project =  $PSBoundParameters["Project"]
     if ($script:projects -eq $null) { $projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft  }
-    
+    if ($project -eq "*") { $all = $true }
     if ($all) {
         $project = $projects.Keys
     } 

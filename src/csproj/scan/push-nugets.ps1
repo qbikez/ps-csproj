@@ -28,6 +28,7 @@ DynamicParam
          if ((test-path ".projects.json")) {
             $script:projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft 
             $validvalues = $projects.Keys
+            $validvalues += "*"
             $validateset = new-object System.Management.Automation.ValidateSetAttribute -ArgumentList @($validvalues)
             $attributeCollection.Add($validateset)
         }
