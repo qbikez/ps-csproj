@@ -134,6 +134,8 @@ Describe "Generate nuget for project.json" {
     $project = split-path -leaf $csproj
     #remove-item "$targetdir/test/nuget.config" 
      In $dir { 
+            # OK: dotnet 1.0.0-preview2-1-003177
+            # FAILS: 1.0.1
             $dn = get-dotnetcommand -verbose
             $o = invoke dotnet -verbose -nothrow
             $o = invoke dotnet "--info" -verbose -nothrow

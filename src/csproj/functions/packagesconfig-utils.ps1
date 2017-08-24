@@ -150,3 +150,6 @@ function new-packageNode([Parameter(Mandatory=$true, ValueFromPipeline=$true)][S
     return $package
 }
 
+
+
+new-alias Import-PackagesConfig Get-PackagesConfig -force
