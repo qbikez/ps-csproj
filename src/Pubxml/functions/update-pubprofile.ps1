@@ -1,5 +1,8 @@
 
-function update-profileproperty($profile, $propName, $propValue) {
+function update-profileproperty {
+    [CmdletBinding()]
+    param($profile, $propName, $propValue) 
+
     write-verbose "setting $propName to '$propValue'"
     if ($profile.Project.PropertyGroup."$propName" -eq $null) {
         #$profile.Project.PropertyGroup | Add-Member -MemberType NoteProperty -Name $propName -Value $propValue

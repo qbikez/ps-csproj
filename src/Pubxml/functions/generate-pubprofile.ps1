@@ -1,4 +1,5 @@
 function new-pubprofile {
+[CmdletBinding()]
 param(
     [parameter(mandatory = $true)]$machine,
     $projectroot = ".", 
@@ -50,7 +51,9 @@ param(
         else {
             Copy-Item $defaultprofle.old $profilePath
         }
-    }     
+    } else {
+        "profile $profilepath already exists."
+    }    
     if ([string]::IsNullOrEmpty($machine)) {
         throw "Machine property is not set!"
     }      
