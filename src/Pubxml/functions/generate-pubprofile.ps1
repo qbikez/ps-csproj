@@ -39,7 +39,7 @@ param(
         if (test-path $pubscriptPath) { remove-item $pubscriptPath }
     }
     if (!(test-path $profilePath)) {
-        write-host "profile $profilepath not found. creating..."
+        write-host "profile '$profilepath' not found. creating..."
         $profileDir = Split-Path -Parent $profilePath
         if (!(test-path $profileDir)) { new-item $profileDir -type directory }
         if ($isVnext) {
@@ -52,7 +52,7 @@ param(
             Copy-Item $defaultprofle.old $profilePath
         }
     } else {
-        "profile $profilepath already exists."
+        write-host "profile '$profilepath' already exists."
     }    
     if ([string]::IsNullOrEmpty($machine)) {
         throw "Machine property is not set!"
@@ -109,7 +109,7 @@ param(
             #should we add this?
             $addtionalProps[$key] = "$value"
         }
-    }
+    } 
            
     
     if ($isVnext -and $appPath -ne $null -and $appPath -notmatch "-deploy" -and $vnextRc1) {
