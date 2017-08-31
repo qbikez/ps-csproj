@@ -116,10 +116,12 @@ process {
     if ($stable -and $incrementVersion) {
         throw "-Stable cannot be used with -incrementVersion"
     }
-    if (!$Symbols.IsPresent) {
+
+    $bound = $PSBoundParameters
+    if ($bound.stable -eq $null) {
         $Symbols = !$stable
     }
-    if (!$build.ispresent) {
+    if ($bound.build -eq $null) {
         if (!$stable) { $build = $true }
     }
     if ($file -eq $null -and !$build) {
@@ -142,15 +144,20 @@ process {
     #in case multiple nupkgs are created
     if ($symbols) {
         $symbolpkg = @($nupkg) | ? { $_ -match "\.symbols\." } | select -last 1
-        $nupkg = $symbolpkg
-        $nosymbolspkg = $nupkg -replace "\.symbols\.","."
-        if (test-path $nosymbolspkg) {
-            write-verbose "copying '$nosymbolspkg' to '$($nupkg -replace "\.symbols\.",".nosymbols.")'"
-            copy-item $nosymbolspkg "$($nupkg -replace "\.symbols\.",".nosymbols.")" 
+        if ($symbolpkg -ne $null) {
+            $nupkg = $symbolpkg
+            $nosymbolspkg = $nupkg -replace "\.symbols\.","."
+            if (test-path $nosymbolspkg) {
+                write-verbose "copying '$nosymbolspkg' to '$($nupkg -replace "\.symbols\.",".nosymbols.")'"
+                copy-item $nosymbolspkg "$($nupkg -replace "\.symbols\.",".nosymbols.")" 
+            }
+            write-host "push Symbols package: replacing $nosymbolspkg with $symbolpkg"
+            copy-item $symbolpkg $nosymbolspkg -Force
+            $nupkg = $nosymbolspkg
+        } else {
+            write-warning "did not find a matching .symbols.nupkg package"
+            $nupkg = @($nupkg)| ? { $_ -notmatch "\.symbols\." }  | select -last 1
         }
-        write-host "push Symbols package: replacing $nosymbolspkg with $symbolpkg"
-        copy-item $symbolpkg $nosymbolspkg -Force
-        $nupkg = $nosymbolspkg
     } else {
         $nupkg = @($nupkg)| ? { $_ -notmatch "\.symbols\." }  | select -last 1
 
@@ -253,11 +260,13 @@ process {
                 }
                 if ($null -eq $apikey -and $null -ne (gmo cache)) {
                     $settings = cache\import-settings
-                    $apikey = $settings["$source.apikey"]
-                    if ($apikey -ne $null) {
-                        $cred = new-object "system.management.automation.pscredential" "dummy",$apikey
-                        $apikey = $cred.GetNetworkCredential().Password
-                        if ($apikey -ne $null) { write-verbose "found api key in globalsettings for source $source" }
+                    if ($settings -ne $null) {
+                        $apikey = $settings["$source.apikey"]
+                        if ($apikey -ne $null) {
+                            $cred = new-object "system.management.automation.pscredential" "dummy",$apikey
+                            $apikey = $cred.GetNetworkCredential().Password
+                            if ($apikey -ne $null) { write-verbose "found api key in globalsettings for source $source" }
+                        }
                     }
                 }
             }
@@ -440,7 +449,10 @@ process {
                 throw "nuget command failed! `r`n$($o | out-string)"
             } else {
                 $success = $o | % {
-                    if ($_ -match "Successfully created package '(.*)'") {
+                    if ($_ -match "Successfully created package ['\`"](.*)['\`"]") {
+                        return $matches[1]
+                    }
+                    if ($_ -match "utworzono pakiet ['\`"](.*)['\`"]") {
                         return $matches[1]
                     }
                 }

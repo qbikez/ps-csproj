@@ -1,6 +1,6 @@
 {
     "version": "0.1.0",
-    "command": "c:/windows/sysnative/WindowsPowerShell/v1.0/powershell.exe",
+    "command": "powershell.exe",
     "isShellCommand": true,
     //	"args": ["Invoke-Pester ${file}"],
     "showOutput": "always",

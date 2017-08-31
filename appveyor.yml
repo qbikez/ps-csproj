@@ -46,8 +46,9 @@ deploy_script:
 - ps: $branch = $env:APPVEYOR_REPO_BRANCH; write-host "Branch=$branch"
 - ps: >-
     $branch = $env:APPVEYOR_REPO_BRANCH;
-    if ($branch -eq "master") { 
+    $image = $env:APPVEYOR_BUILD_WORKER_IMAGE;
+    if ($branch -eq "master" -and $image -eq 'Visual Studio 2015') { 
         scripts/lib/push.ps1 . -buildno $env:APPVEYOR_BUILD_NUMBER; 
     } else { 
-        write-warning "not deploying from branch $branch";
+        write-warning "not deploying from branch $branch image $image";
     }

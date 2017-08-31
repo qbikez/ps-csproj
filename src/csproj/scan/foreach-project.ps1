@@ -33,6 +33,7 @@ DynamicParam
         if ((test-path ".projects.json")) {
             $script:projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft 
             $validvalues = $projects.Keys
+            $validvalues += "*"
             $validateset = new-object System.Management.Automation.ValidateSetAttribute -ArgumentList @($validvalues)
             $attributeCollection.Add($validateset)
             $attributeCollection.Add((new-object System.Management.Automation.AllowEmptyStringAttribute))
@@ -65,7 +66,18 @@ begin {
         $r = @{}
         foreach($p in $c.Parameters.GetEnumerator()) {
             if ($p.key -in $bound.Keys) {
-                $r += @{ $p.key = $bound[$p.key] }
+                if ($bound[$p.Key].IsPresent -ne $null) {
+                    # this is a switch
+                    if ($bound[$p.Key].IsPresent -eq $true) {
+                        $r += @{ $p.key = $true }
+                    } else {
+                        # switch should be set to false
+                        $r += @{ $p.key = $false }
+                    }
+                }
+                else {
+                    $r += @{ $p.key = $bound[$p.key] }
+                }
             }
         }
 
@@ -82,7 +94,7 @@ process {
     
     $project =  $PSBoundParameters["Project"]
     if ($script:projects -eq $null) { $projects = get-content ".projects.json" | out-string | convertfrom-jsonnewtonsoft  }
-    
+    if ($project -eq "*") { $all = $true }
     if ($all) {
         $project = $projects.Keys
     } 

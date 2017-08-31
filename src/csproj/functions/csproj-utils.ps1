@@ -39,7 +39,9 @@ public class ReferenceMeta {
 }
 "@
 
-add-type -TypeDefinition $types -ReferencedAssemblies "System.Xml"
+if (-not ([System.Management.Automation.PSTypeName]'Csproj').Type) {
+    add-type -TypeDefinition $types -ReferencedAssemblies "System.Xml"
+}
 
 
 function import-csproj {
