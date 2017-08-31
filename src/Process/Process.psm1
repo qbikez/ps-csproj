@@ -59,15 +59,15 @@ function Write-Indented
             }            
         }
         if (!$([Environment]::UserInteractive)) {
-            write-warning "Write-Indented: non-UserInteractive console. will use verbose stream instead."
+            if ($env:PS_PROCESS_DEBUG) { write-warning "Write-Indented: non-UserInteractive console. will use verbose stream instead." }
             if ($env:BUILD_ID -ne $null) {
                 # https://johanleino.wordpress.com/2013/10/09/powershell-write-verbose-and-write-debug-without-annoying-word-wrap/
-                Write-Warning "env:BUILD_ID is set - CI detected. Disabling line wrap"
+                if ($env:PS_PROCESS_DEBUG) { Write-Warning "env:BUILD_ID is set - CI detected. Disabling line wrap" }
                 try {
                   $max = $host.UI.RawUI.MaxPhysicalWindowSize
                   $bufferWidth = 9999
                   $windowWidth = 9999
-                  Write-Warning "max phys window width = $max. setting max width: buffer=$bufferWidth window=$windowWidth"
+                  if ($env:PS_PROCESS_DEBUG) { Write-Warning "max phys window width = $max. setting max width: buffer=$bufferWidth window=$windowWidth" }
                   if($max) {                        
                         $host.UI.RawUI.BufferSize = New-Object System.Management.Automation.Host.Size($bufferWidth, $host.UI.RawUI.BufferSize.Height)
                         $host.UI.RawUI.WindowSize = New-Object System.Management.Automation.Host.Size($windowWidth,$host.UI.RawUI.WindowSize.Height)
