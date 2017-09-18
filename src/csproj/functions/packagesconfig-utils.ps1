@@ -1,51 +1,92 @@
 function Copy-BindingRedirects {
-    [CmdletBinding()]
-    param($from = "app.config", $to = $null)
-        $fromXml = [xml](get-content $from)
+    [CmdletBinding(DefaultParameterSetName="file")]
+    param(
+        [Parameter(ParameterSetName="project")]
+        $project,
+        [Parameter(ParameterSetName="file")]
+        [Parameter(ParameterSetName="project")]
+        $from = $null, 
+        [Parameter(ParameterSetName="file")]
+        [Parameter(ParameterSetName="project")]
+        $to = $null        
+        )
+
+        if ($project -ne $null) {
+            $slnfile = get-childitem . -Filter "*.sln" | select -first 1
+            if ($slnfile -eq $null) { throw "no solutions found in current directory" }
+            $sln = import-sln $slnfile
+            $projects = get-slnprojects $sln
+            $proj = $sln.projects | ? { $_.Name -eq $project }
+            if ($proj -eq $null) { throw "project $project not found in sln $slnfile" }
+            if ($from -eq $null) {
+                $from = (split-path -parent $proj.fullname) 
+            }
+            else {
+                $from = join-path (split-path -parent $proj.fullname) $from
+            }
+            if ($to -ne $null) {
+                $to = join-path (split-path -parent $proj.fullname) $to
+            }
+        }
 
         if ([System.IO.Directory]::Exists($from)) {
-            $webconfig = get-childitems $from -filter "web.config"
+            $webconfig = get-childitem $from -filter "web.config"
             if ($webconfig -ne $null) {
                 $from = $webconfig.FullName
             } else {
-                $appconfig = get-childitems $from -filter "app.config"
+                $appconfig = get-childitem $from -filter "app.config"
                 if ($appconfig -ne $null) {
                     $from = $appconfig.FullName
                 }
             }
         }
+
+    
         if ($to -eq $null) {
             $from_file = [System.io.path]::GetFileNameWithoutExtension($from)
             $from_file_ext = [System.io.path]::GetExtension($from)
             $to_file = "$from_file.orig$from_file_ext"
             $to = join-path (split-path -Parent $from) $to_file 
+            if (!(test-path $to)) {
+                # no app.orig.config? 
+                # maybe we should copy to app.debug.config and so on.
+                write-verbose "looking for config files that start with '$from_file' in '$(split-path -Parent $from)'"
+                $configfiles = get-childitem (split-path -Parent $from) -filter "*.config" | ? { $_.Name.ToLower().startswith($from_file.ToLower()) }
+                $to = $configfiles.FullName
+            }
         }
-        $toXml = [xml](get-content $to)
 
-        $src = $fromxml.configuration.runtime.assemblyBinding
+        $fromXml = [xml](get-content $from)   
         
-        $runtime = $toxml.SelectNodes('//configuration/runtime') | select -first 1
-        if ($runtime -eq $null) {
-            write-verbose "adding 'runtime' node to $to"
-            $node = [System.Xml.XmlElement]$toxml.CreateElement("runtime")            
-            $null = $toxml.configuration.AppendChild($node) 
+        $tofiles = @($to)
+        foreach($to in $tofiles) {
+            write-verbose "copying binding redirects from $from to $to" -verbose
+            $toXml = [xml](get-content $to)
+
+            $src = $fromxml.configuration.runtime.assemblyBinding
+            
             $runtime = $toxml.SelectNodes('//configuration/runtime') | select -first 1
-        }
-        if ($toxml.configuration.runtime.assemblyBinding -ne $null) {
-            write-verbose "removing old assemblyBinding section from $to"
-            $null = $toxml.configuration.runtime.RemoveChild($toxml.configuration.runtime.assemblyBinding)
-        }
+            if ($runtime -eq $null) {
+                write-verbose "adding 'runtime' node to $to"
+                $node = [System.Xml.XmlElement]$toxml.CreateElement("runtime")            
+                $null = $toxml.configuration.AppendChild($node) 
+                $runtime = $toxml.SelectNodes('//configuration/runtime') | select -first 1
+            }
+            if ($toxml.configuration.runtime.assemblyBinding -ne $null) {
+                write-verbose "removing old assemblyBinding section from $to"
+                $null = $toxml.configuration.runtime.RemoveChild($toxml.configuration.runtime.assemblyBinding)
+            }
 
-        write-verbose "copying assemblyBinding section from $from to $to"
+            write-verbose "copying assemblyBinding section from $from to $to"
+            
+            $node = $toxml.ImportNode($src, $true)
+            $null = $runtime.AppendChild($node)
+
+            $toXml.OuterXml | out-string | write-verbose 
         
-        $node = $toxml.ImportNode($src, $true)
-        $null = $runtime.AppendChild($node)
-
-        $toXml.OuterXml | out-string | write-verbose 
-    
-        write-verbose "saving $to"
-        $null = $toXml.Save((get-item $to).FullName)
-
+            write-verbose "saving $to"
+            $null = $toXml.Save((get-item $to).FullName)
+    }
 }
 
 function add-packagetoconfig {
