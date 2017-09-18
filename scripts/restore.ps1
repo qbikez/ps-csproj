@@ -5,6 +5,21 @@ install-module publishmap -verbose
 install-module crayon -verbose
 install-module newtonsoft.json -verbose
 
+import-module pathutils
+
+where-is "dotnet"
+dotnet --info
+
+pushd
+try {
+    cd "$psscriptroot\..\test\tools\powerecho"
+    dotnet --info
+} finally {
+    popd
+}
+
+
+
 pushd 
 try {
     cd "$psscriptroot\..\test\tools\powerecho"
