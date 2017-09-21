@@ -9,15 +9,18 @@ function Copy-BindingRedirects {
         $from = $null, 
         [Parameter(ParameterSetName="file")]
         [Parameter(ParameterSetName="project")]
-        $to = $null        
+        $to = $null,
+        $slnfile = $null
         )
 
         if ($project -ne $null) {
-            $slnfile = get-childitem . -Filter "*.sln" | select -first 1
-            if ($slnfile -eq $null) { throw "no solutions found in current directory" }
+            if ($slnfile -eq $null) {
+                $slnfile = get-childitem . -Filter "*.sln" | select -first 1
+                if ($slnfile -eq $null) { throw "no solutions found in current directory" }
+            }
             $sln = import-sln $slnfile
             $projects = get-slnprojects $sln
-            $proj = $sln.projects | ? { $_.Name -eq $project }
+            $proj = $projects | ? { $_.Name -eq $project }
             if ($proj -eq $null) { throw "project $project not found in sln $slnfile" }
             if ($from -eq $null) {
                 $from = (split-path -parent $proj.fullname) 
