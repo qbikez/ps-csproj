@@ -1,6 +1,7 @@
 function Copy-BindingRedirects {
     [CmdletBinding(DefaultParameterSetName="file")]
     param(
+        [Alias("ProjectName")]
         [Parameter(ParameterSetName="project")]
         $project,
         [Parameter(ParameterSetName="file")]
@@ -194,3 +195,4 @@ function new-packageNode([Parameter(Mandatory=$true, ValueFromPipeline=$true)][S
 
 
 new-alias Import-PackagesConfig Get-PackagesConfig -force
+new-alias Copy-BindingRedirect Copy-BindingRedirects -force
