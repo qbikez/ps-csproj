@@ -31,10 +31,12 @@ Pass the input to the output
 
 function Write-Console {
     param($msg)
-    if ($([Environment]::UserInteractive)) {
-        write-host $msg #[$($msg.GetType().Name)]
+    if (!$([Environment]::UserInteractive) -or $env:PS_PROCESS_OUTPUT -eq "verbose") {
+        $showverbose = $env:PS_PROCESS_VERBOSE
+        if ($showverbose -ne $true) { $showverbose = !$([Environment]::UserInteractive) }
+        write-verbose $msg -verbose:$showverbose #[$($msg.GetType().Name)]
     } else {
-        write-verbose $msg -verbose #[$($msg.GetType().Name)]
+        write-host $msg #[$($msg.GetType().Name)]
     }
 }
 
@@ -58,7 +60,7 @@ function Write-Indented
                 $maxlen = $host.UI.RawUI.WindowSize.Width - $level - 1
             }            
         }
-        if (!$([Environment]::UserInteractive)) {
+        if (!$([Environment]::UserInteractive) -or $env:PS_PROCESS_OUTPUT -eq "verbose") {
             if ($env:PS_PROCESS_DEBUG) { write-warning "Write-Indented: non-UserInteractive console. will use verbose stream instead." }
             if ($env:BUILD_ID -ne $null) {
                 # https://johanleino.wordpress.com/2013/10/09/powershell-write-verbose-and-write-debug-without-annoying-word-wrap/
@@ -223,7 +225,7 @@ param(
         }
     }
     if ($showoutput) {
-        write-host "  ===== $command ====="
+        write-console "  ===== $command ====="
         if ($in -ne $null) {
             if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
             $o = $in | & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru -passErrorStream:$passErrorStream
@@ -236,7 +238,7 @@ param(
             }
         }
         
-        write-host "  === END $command == ($lastexitcode)" 
+        write-console "  === END $command == ($lastexitcode)" 
     } else {
         if ($in -ne $null) {
             if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
