@@ -3,17 +3,29 @@ function Copy-BindingRedirects {
     param(
         [Alias("ProjectName")]
         [Parameter(ParameterSetName="project")]
-        $project,
+        $project,        
         [Parameter(ParameterSetName="file")]
         [Parameter(ParameterSetName="project")]
         $from = $null, 
         [Parameter(ParameterSetName="file")]
         [Parameter(ParameterSetName="project")]
-        $to = $null        
+        $to = $null,
+        [Parameter(ParameterSetName="project")]
+        [switch][bool] $Add = $true,
+        $sln = $null
         )
 
+
         if ($project -ne $null) {
-            $slnfile = get-childitem . -Filter "*.sln" | select -first 1
+            if ($add) {
+                Add-BindingRedirect -ProjectName $project -erroraction stop
+            }
+            if ($sln -ne $null) {
+                $slnfile = $sln
+            }
+            else {
+                $slnfile = get-childitem . -Filter "*.sln" | select -first 1
+            }
             if ($slnfile -eq $null) { throw "no solutions found in current directory" }
             $sln = import-sln $slnfile
             $projects = get-slnprojects $sln
