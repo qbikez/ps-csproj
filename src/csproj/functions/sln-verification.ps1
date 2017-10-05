@@ -347,6 +347,7 @@ function repair-slnpaths {
     
          if ($tonuget) {
             $pkgdir =(find-packagesdir $reporoot)
+            write-verbose "packages dir found at: '$pkgdir'"
             if (!(test-path $pkgdir)) {
                 $null = new-item -type Directory $pkgdir
             }
@@ -374,7 +375,7 @@ function repair-slnpaths {
                 $csproj = import-csproj $_.fullname
             
                 if (!$tonuget) {
-                    $null = repair-csprojpaths $csproj -reporoot $reporoot -prerelease:$prerelease
+                    $null = repair-csprojpaths $csproj -reporoot $reporoot -prerelease:$prerelease 
                 }            
             }
         }
@@ -462,6 +463,7 @@ function repair-csprojpaths {
     }
    
     $pkgdir = find-packagesdir $reporoot
+    write-verbose "packages dir found at '$pkgdir'"
     $dir = split-path -parent $csproj.FullName
     if (test-path (Join-Path $dir "packages.config")) {
         write-verbose "($($csproj.name)): checking packages.config"
@@ -483,7 +485,7 @@ function repair-csprojpaths {
                         $dllname = [System.IO.Path]::GetFileNameWithoutExtension($nugetpath.PAth)
                         $ref = $refs | ? { $_.ShortName -eq $dllname }
                         if ($ref -ne $null) {
-                            #write-verbose "$($pkgref.id) maps to $($nugetpath.PAth)"
+                            write-verbose "$($pkgref.id) maps to $($nugetpath.PAth)"
                         }
                     }
                     if ($ref -eq $null) {
