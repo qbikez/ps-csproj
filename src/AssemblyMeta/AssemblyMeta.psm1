@@ -247,7 +247,7 @@ function Set-AssemblyMeta {
                 if ($node -eq $null) {
                     throw "missing node '$key'. adding xml nodes is not implemented yet"
                 }
-                write-verbose "setting xml property '$s'='$value'" -verbose
+                write-verbose "setting xml property '$s'='$value'"
                 $node.InnerText = $value
             }
 
