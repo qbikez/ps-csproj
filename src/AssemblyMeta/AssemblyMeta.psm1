@@ -66,9 +66,9 @@ param($path = ".")
             $dir = split-path -leaf $path            
             if ((test-path $path/$dir.csproj)) { $files +=@("$path/$dir.csproj")  }
             else {
-                $files += get-childitem $path -File -Filter "*.csproj"
+                $files += get-childitem $path -File -Filter "*.csproj" | % { "$path/$($_.Name)" }
             }
-            if ($files.length -gt 0) { return $files }
+            if ($files.length -gt 0) { return $files  }
         }
         if ($ErrorActionPreference -ne "Ignore") {
             throw "AssemblyInfo not found in '$($i.fullname)'"
