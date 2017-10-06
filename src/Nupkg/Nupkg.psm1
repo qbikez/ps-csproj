@@ -122,7 +122,10 @@ process {
         $Symbols = !$stable
     }
     if ($bound.build -eq $null) {
+        # build dev packages by default
         if (!$stable) { $build = $true }
+        # build stable packages by default
+        if ($stable) { $build = $true }
     }
     if ($file -eq $null -and !$build) {
         $files = @(get-childitem -filter "*.nupkg" | sort LastWriteTime -Descending)
