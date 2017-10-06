@@ -225,20 +225,21 @@ param(
         }
     }
     if ($showoutput) {
-        write-console "  ===== $command ====="
+        write-verbose "  ===== $command ====="
+        $cmdtag = " $(split-path -leaf $command) > "
         if ($in -ne $null) {
             if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
-            $o = $in | & $command $arguments 2>&1 | write-indented -level 2 -passthru:$passthru -passErrorStream:$passErrorStream
+            $o = $in | & $command $arguments 2>&1 | write-indented -mark $cmdtag -passthru:$passthru -passErrorStream:$passErrorStream
         } else {
             if ($useShellExecute) {
                 if ([System.IO.Path]::IsPathRooted($command) -or $command.Contains(" ")) { $command = """$command""" }
-                $o = cmd /c "$command $shortargstr" 2>&1 | write-indented -level 2 -passthru:$passthru -passErrorStream:$passErrorStream
+                $o = cmd /c "$command $shortargstr" 2>&1 | write-indented -mark $cmdtag -passthru:$passthru -passErrorStream:$passErrorStream
             } else {
-                $o = & $command $arguments 2>&1	 | write-indented -level 2 -passthru:$passthru -passErrorStream:$passErrorStream
+                $o = & $command $arguments 2>&1	 | write-indented -mark $cmdtag -passthru:$passthru -passErrorStream:$passErrorStream
             }
         }
-        
-        write-console "  === END $command == ($lastexitcode)" 
+        "EXITCODE=$lastexitcode" | write-indented -mark $cmdtag
+        write-verbose "  === END $command === ($lastexitcode)" 
     } else {
         if ($in -ne $null) {
             if ($useShellExecute) { throw "-UseShellExecute is not supported with -in" }
