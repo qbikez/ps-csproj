@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <Something>sss</Something>
+  </PropertyGroup>
+  <PropertyGroup>
+    <VersionPrefix>1.0.1</VersionPrefix>
+    <VersionSuffix>test013-12BCDF</VersionSuffix>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Company>mycompany</Company>
+    <Description>abc</Description>
+  </PropertyGroup>
+</Project>

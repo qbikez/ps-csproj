@@ -55,6 +55,7 @@ Describe "update version" {
         @{ version = "1.0.1-alpha-build.123"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.0.1-alpha-buil124" }
         @{ version = "1.0.1-alpha_2016_01_01.123"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.0.1-alpha2016-124" }
         @{ version = "1.6.0-release_2016_04_01_audio"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.6.0-release20-001" }                      
+        @{ version = "1.2.0"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.2.0-build001" }      
         @{ version = "1.2.0"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.2.0-build001" }                      
         #@{ version = "1.2"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.2.0-build001" }                      
         #@{ version = "1"; component = [VersionComponent]::SuffixBuild; compatibility = $true; expected = "1.0.0-build001" }                      

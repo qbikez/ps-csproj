@@ -146,7 +146,7 @@ function Update-Version {
         }
         if ($semver.BuildNum) {
              $ver2 = join-version $semver
-             $ver2 = update-version $ver2 SuffixBuild -value 1
+             $ver2 = update-version $ver2 SuffixBuild -value 1 -compatibilityMode:$compatibilityMode
              return $ver2 
         } 
     } else {        

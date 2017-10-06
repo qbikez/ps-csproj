@@ -173,6 +173,7 @@ process {
         $source = $env:NUGET_PUSH_SOURCE
         if ($source -ne $null) {
             write-warning "pushing to default source from `$env:NUGET_PUSH_SOURCE=$env:NUGET_PUSH_SOURCE"
+            return
         } else {
             Write-Warning "If you want to push to nuget, set `$env:NUGET_PUSH_SOURCE variable to target feed"
         }
@@ -180,6 +181,10 @@ process {
 
     $sources = @($source)
     foreach($source in $sources) {
+        if ($source -eq $null) {
+            write-error "no source specified. skipping push."
+            continue
+        }
         Write-Host "pushing package '$nupkg' to '$source'"
         $p = @(
             $nupkg
@@ -288,11 +293,12 @@ process {
                     $summary = $o | select -last 1
                     if ($summary -is [System.Management.Automation.ErrorRecord]) { $summary = $summary.Exception.Message }
                     throw "nuget command failed! `r`n$summary"
-                }
-                write-output $nupkg
+                }                
             }
         }
     }
+
+    write-output $nupkg
 }
 }
 
@@ -344,11 +350,22 @@ process {
             throw "-incrementVersion has no meaning when used without -build"
         }
         if ($nuspecorcsproj.endswith("project.json")) {
+            $useDotnet = $true
             $dotnet = get-dotnetcommand
             if ($dotnet -eq $null) { $dotnet = "dotnet" }
             if ($useDotnet) { $dotnet = "dotnet" }
         }
         
+        if ($nuspecOrCsproj.endswith("csproj")) {
+            $xml = [xml](get-content $nuspecOrCsproj)
+            if ($xml.Project.sdk -ne $null) {
+                $useDotnet = $true
+                $dotnet = get-dotnetcommand
+                if ($dotnet -eq $null) { $dotnet = "dotnet" }
+                if ($useDotnet) { $dotnet = "dotnet" }
+            }
+        }
+
         $dir = split-path -parent $nuspecorcsproj
         $nuspecorcsproj = split-path -Leaf $nuspecorcsproj
         write-verbose "packing nuget for $(split-path -leaf $nuspecorcsproj) in $dir"
@@ -369,7 +386,7 @@ process {
                     $newver = update-buildversion -stable:$stable
                 }
             }
-            if ($nuspecorcsproj.endswith("project.json")) {
+            if ($useDotnet) {
                     # don't restore - if user has just built the project, it is already restored
                     # if not, dotnet will detect out-of-date project.lock.json and build will fail
                     #$o = invoke $dotnet restore -verbose:$($verbosePreference="Continue") -passthru
@@ -388,12 +405,15 @@ process {
             }
         }
     
-        if ($nuspecorcsproj.endswith("project.json")) {
+        if ($useDotnet) {
             $a = @() 
             
             $o = invoke $dotnet pack @a -verbose -passthru
             $success = $o | % {
                     if ($_ -match "(?<project>.*) -> (?<nupkg>.*\.nupkg)") {
+                        return $matches["nupkg"]
+                    }
+                    if ($_ -match "Successfully created package '(?<nupkg>.*\.nupkg)'") {
                         return $matches["nupkg"]
                     }
             }
