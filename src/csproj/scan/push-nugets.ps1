@@ -205,5 +205,48 @@ function update-referencesToStable {
     }
 }
 
+function find-unstablePackages ([switch][bool]$byPackage, [switch][bool] $byProject) 
+{
+    if (!$byPackage -and !$byProject) {
+        $byPackage = $true
+    }
+    $r = foreach-project -AllowNoNuspec $true -cmd {
+        try {
+            
+            # $pwd
+            # $_.path
+            # $_.name
+            if (!$_.path.EndsWith(".csproj")) { return }
+            $pkgcfg = import-packagesconfig "packages.config"
+            foreach($pkg in $pkgcfg.packages) {
+                if ($pkg.version -match "-.*") {
+                    write-output (new-object pscustomobject -property @{ Id = $pkg.id; Version = $pkg.Version })
+                }
+            }
+        } catch {
+            write-warning  $_.Exception.Message
+        }
+    } 
+
+    $allPackages = @{}
+    $projects = @()
+    foreach($kvp in $r.getEnumerator()) {
+        if ($kvp.Value) { 
+            $projects += $kvp 
+            foreach($p in $kvp.value) {
+                if ($allPackages[$p.Id] -eq $null) { $allPackages[$p.Id] = @() }
+                $allPackages[$p.Id] += new-object pscustomobject -property @{ Project = $kvp.Key; Version = $p.Version }
+            }
+        }
+    }
+    if ($bypackage) {
+        return $allPackages
+    }
+    if ($byproject) {
+        return $projects
+    }
+    
+}
+
 new-alias Update-PackageReferencesToStable update-referencesToStable
 new-alias Update-PackagesToStable update-referencesToStable

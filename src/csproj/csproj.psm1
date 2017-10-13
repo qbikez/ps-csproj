@@ -30,5 +30,5 @@ Export-ModuleMember -function `
     convert-packagestoprojectjson, repair-ProjectJSonProjectReferences, `
     initialize-projects, push-nugets, use-projects, `
     Copy-BindingRedirects, `
-    update-referencesToStable `
+    update-referencesToStable, find-unstablePackages `
     -Alias *
