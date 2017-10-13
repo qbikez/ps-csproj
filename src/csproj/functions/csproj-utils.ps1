@@ -71,7 +71,7 @@ function import-csproj {
     $guid = $guidnode.Node.InnerText
      } catch {
          Write-Warning $_
-         throw "failed to find ProjectGuid: $($_.Exception.Message)"
+         throw "failed to find ProjectGuid in file '$file': $($_.Exception.Message)"
      }
     $csproj = new-object -type csproj -Property @{ 
         xml = $xml

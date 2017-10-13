@@ -10,7 +10,7 @@ param(
     [switch][bool] $AllowNoNuspec = $true,
     [Parameter(ParameterSetName="default")]
     [switch][bool] $force,
-    [Parameter(Mandatory=$true, ParameterSetName="default")]
+    [Parameter(Mandatory=$true, ParameterSetName="default", Position=1)]
     [ScriptBlock] $cmd
 )
 

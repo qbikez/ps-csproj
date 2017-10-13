@@ -116,3 +116,67 @@ process {
     }   
 }
 }
+
+
+function update-referencesToStable {
+    [CmdletBinding()]
+    param([Parameter(Mandatory=$true)]$packageNames)
+
+    foreach-project -AllowNoNuspec $true -cmd {
+        try {
+            
+            # $pwd
+            # $_.path
+            # $_.name
+            if (!$_.path.EndsWith(".csproj")) { return }
+            $pkgcfg = import-packagesconfig "packages.config"
+            $csproj = import-csproj (split-path -leaf $_.path)
+            
+            $pkgs = $pkgcfg.packages
+            $refs = get-nugetreferences $csproj 
+            $packageNames = @($packageNames)
+            #write-verbose "looking for packagesnames: $packagenames" -verbose
+            #TODO: compare nuspec files for current unstable version and new stable version - make sure dependencies haven't change 
+            $pkgs = @($pkgs | ? {$_.id -in $packageNames })
+
+            if ($pkgs.count -gt 0) {
+                write-verbose "found $($pkgs.count) matching package refernces in project '$($_.name)'" -verbose
+                foreach($pkgref in $pkgs) {
+                    $ver = $pkgref.version
+                    $oldver = $ver
+                    $idx = $ver.indexof("-")
+                    if ($idx -ge 0) {
+                        $ver = $ver.substring(0, $idx)
+                        write-verbose "updating package $($pkgref.id) version $oldver => $ver" -verbose
+                        $pkgref.version = $ver
+                        $pkgcfg | set-packagesconfig -outfile "packages.config"
+                    }
+                    write-output (new-object pscustomobject -property @{ Id=$pkgref.id; Version=$ver })
+                    $ref = $refs | ? { $_.ShortName -eq $pkgref.id }
+                    if ($ref.path -notmatch "$($pkgref.version)\\") {
+                        # bad reference in csproj? try to detect current version
+                        if ($ref.path -match "$($pkgref.id).(?<version>.*?)\\") {
+                            Write-Warning "($($csproj.name)): version of package '$($pkgref.id)' in csproj: '$($matches["version"])' doesn't match packages.config version: '$($pkgref.version)'. Fixing"
+                            # fix it
+                            $ref.path = $ref.path -replace "$($pkgref.id).(?<version>.*?)\\","$($pkgref.id).$($pkgref.version)\"
+                            write-verbose "corrected path: $($ref.path)" -verbose
+                            $ref.Node.HintPath = $ref.path
+                            $inc = $ref.Node.Include
+                            if ($inc -ne $null -and $inc -match "$($pkgref.id),\s*Version=(.*?),") {
+                                write-verbose "($($csproj.name)): fixing include tag" -verbose
+                                $inc = $inc -replace "($($pkgref.id)),\s*Version=(.*?),",'$1,'
+                                write-verbose "corrected include: $($ref.path)" -verbose
+                                $ref.Node.Include = $inc
+                            }
+                            $csproj.save()
+                        }
+                    } else {
+                        write-verbose "$($ref.path) matches version $($pkgref.version)"
+                    }
+                }
+            }
+        } catch {
+            write-error $_
+        }
+    }
+}

@@ -29,5 +29,6 @@ Export-ModuleMember -function `
     get-slndependencies, test-sln, test-slndependencies, repair-slnpaths, get-csprojdependencies, repair-csprojpaths, `
     convert-packagestoprojectjson, repair-ProjectJSonProjectReferences, `
     initialize-projects, push-nugets, use-projects, `
-    Copy-BindingRedirects `
+    Copy-BindingRedirects, `
+    update-referencesToStable `
     -Alias *
