@@ -120,7 +120,9 @@ process {
 
 function update-referencesToStable {
     [CmdletBinding()]
-    param([Parameter(Mandatory=$true)]$packageNames)
+    param(
+        [Parameter(Mandatory=$true)]$packages
+        )
 
     foreach-project -AllowNoNuspec $true -cmd {
         try {
@@ -134,19 +136,36 @@ function update-referencesToStable {
             
             $pkgs = $pkgcfg.packages
             $refs = get-nugetreferences $csproj 
-            $packageNames = @($packageNames)
-            #write-verbose "looking for packagesnames: $packagenames" -verbose
+            $packages = $packages | % { 
+                $id =  $_.Id
+                if ($id -eq $null) {$id = $_ }
+                $version = $_.version
+                return new-object pscustomobject -property @{ Id = $id; Version = $version }
+            }
+            
+            $packages = @($packages)
+            #write-verbose "looking for packagesnames: $($packages)" -verbose
             #TODO: compare nuspec files for current unstable version and new stable version - make sure dependencies haven't change 
-            $pkgs = @($pkgs | ? {$_.id -in $packageNames })
+            $pkgs = @($pkgs | ? {$_.id -in $packages.Id })
 
             if ($pkgs.count -gt 0) {
                 write-verbose "found $($pkgs.count) matching package refernces in project '$($_.name)'" -verbose
                 foreach($pkgref in $pkgs) {
-                    $ver = $pkgref.version
-                    $oldver = $ver
-                    $idx = $ver.indexof("-")
-                    if ($idx -ge 0) {
-                        $ver = $ver.substring(0, $idx)
+                    $oldver = $pkgref.Version
+                    $newpackage = $packages | ? { $_.Id -eq $pkgref.Id }
+                    if ($newpackage -eq $null) { throw "'$($pkgref.Id)' not found in packages list" }
+                    $ver = $newpackage.Version 
+                    if ($ver -eq $null) {
+                        $ver = $pkgref.Version
+                        write-verbose "no version specified for package '$($pkgref.Id)'. just convert to stable from '$ver'" -Verbose
+                        
+                        $idx = $ver.indexof("-")
+                        if ($idx -ge 0) {
+                            $ver = $ver.substring(0, $idx)                            
+                        }
+                    }
+
+                    if ($oldver -ne $ver) {
                         write-verbose "updating package $($pkgref.id) version $oldver => $ver" -verbose
                         $pkgref.version = $ver
                         $pkgcfg | set-packagesconfig -outfile "packages.config"
@@ -177,6 +196,7 @@ function update-referencesToStable {
             }
         } catch {
             write-error $_
+            write-error $_.scriptstacktrace
         }
     }
 }
