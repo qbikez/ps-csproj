@@ -245,7 +245,9 @@ function Set-AssemblyMeta {
                     }
                 }
                 if ($node -eq $null) {
-                    throw "missing node '$key'. adding xml nodes is not implemented yet"
+                    $node = $xml.CreateElement($s)
+                    $xml.Project.PropertyGroup.AppendChild($node)
+                    #throw "missing node '$key'. adding xml nodes is not implemented yet"
                 }
                 write-verbose "setting xml property '$s'='$value'"
                 $node.InnerText = $value
@@ -254,11 +256,19 @@ function Set-AssemblyMeta {
             $separator = "-"              
             if ($k.Contains($separator)) {
                 $idx = $value.IndexOf($separator)
-                $values = @($value.substring(0, $idx), $value.substring($idx+1))
                 $keys = $k.split($separator)
-                for ($i = 0; $i -lt $values.length; $i++) {
-                    set-xmlproperty $xml $keys[$i] $values[$i]
+                $values = @($value)
+                if ($idx -ge 0) {
+                    $values = @($value.substring(0, $idx), $value.substring($idx+1))                    
+                } else {
+                    # throw "expected value '$value' to match key '$key' ($($keys.length) parts)"
                 }
+                for ($i = 0; $i -lt $keys.length; $i++) {
+                    if ($i -lt $values.count) { $val = $values[$i] }
+                    else { $val = "" }
+                    set-xmlproperty $xml $keys[$i]  $val
+                }
+
             } else {
                 set-xmlproperty $xml $k $value
             }
