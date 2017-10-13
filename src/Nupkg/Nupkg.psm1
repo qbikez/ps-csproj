@@ -176,9 +176,9 @@ process {
         $source = $env:NUGET_PUSH_SOURCE
         if ($source -ne $null) {
             write-warning "pushing to default source from `$env:NUGET_PUSH_SOURCE=$env:NUGET_PUSH_SOURCE"
-            return
         } else {
             Write-Warning "If you want to push to nuget, set `$env:NUGET_PUSH_SOURCE variable to target feed"
+            return
         }
     }
 

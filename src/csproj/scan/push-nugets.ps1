@@ -119,9 +119,11 @@ process {
 
 
 function update-referencesToStable {
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName="packages")]
     param(
-        [Parameter(Mandatory=$true)]$packages
+        [Parameter(Mandatory=$true,ParameterSetName="packages")]$packages,
+        [Parameter(Mandatory=$true,ParameterSetName="singlePackage")]$package,
+        [Parameter(Mandatory=$false,ParameterSetName="singlePackage")]$version
         )
 
     foreach-project -AllowNoNuspec $true -cmd {
@@ -136,13 +138,15 @@ function update-referencesToStable {
             
             $pkgs = $pkgcfg.packages
             $refs = get-nugetreferences $csproj 
-            $packages = $packages | % { 
+            if ($packages -eq $null -and $package -ne $null) {
+                $packages = @(@{ Id=$package; Version=$version})
+            }
+            $packages = @($packages) | % { 
                 $id =  $_.Id
                 if ($id -eq $null) {$id = $_ }
                 $version = $_.version
                 return new-object pscustomobject -property @{ Id = $id; Version = $version }
-            }
-            
+            }            
             $packages = @($packages)
             #write-verbose "looking for packagesnames: $($packages)" -verbose
             #TODO: compare nuspec files for current unstable version and new stable version - make sure dependencies haven't change 
@@ -200,3 +204,6 @@ function update-referencesToStable {
         }
     }
 }
+
+new-alias Update-PackageReferencesToStable update-referencesToStable
+new-alias Update-PackagesToStable update-referencesToStable
