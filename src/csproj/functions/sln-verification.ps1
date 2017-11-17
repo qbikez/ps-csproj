@@ -467,8 +467,8 @@ function repair-csprojpaths {
     $dir = split-path -parent $csproj.FullName
     if (test-path (Join-Path $dir "packages.config")) {
         write-verbose "($($csproj.name)): checking packages.config"
-        $pkgs = get-packagesconfig (Join-Path $dir "packages.config") 
-        $pkgs = $pkgs.packages
+        $pkgs_cfg = get-packagesconfig (Join-Path $dir "packages.config") 
+        $pkgs = $pkgs_cfg.packages
         $isInsideVS = (get-command "install-package" -Module nuget -errorAction Ignore) -ne $null 
         if ($isInsideVS) {
             write-verbose "($($csproj.name)): detected Nuget module. using Nuget/install-package"
@@ -497,17 +497,28 @@ function repair-csprojpaths {
                     if ($ref.path -match "$($pkgref.id).(?<version>.*?)\\") {
                         Write-Warning "($($csproj.name)): version of package '$($pkgref.id)' in csproj: '$($matches["version"])' doesn't match packages.config version: '$($pkgref.version)'. Fixing"
                         # fix it
-                        $ref.path = $ref.path -replace "$($pkgref.id).(?<version>.*?)\\","$($pkgref.id).$($pkgref.version)\"
-                        write-verbose "corrected path: $($ref.path)"
-                        $ref.Node.HintPath = $ref.path
-                        $inc = $ref.Node.Include
-                        if ($inc -ne $null -and $inc -match "$($pkgref.id),\s*Version=(.*?),") {
-                            write-verbose "($($csproj.name)): fixing include tag"
-                            $inc = $inc -replace "($($pkgref.id)),\s*Version=(.*?),",'$1,'
-                            write-verbose "corrected include: $($ref.path)"
-                            $ref.Node.Include = $inc
+                        # use latest version
+                        $csproj_ver = split-version $matches["version"]
+                        $packages_ver = split-version $pkgref.version
+                        if (($packages_ver.CompareTo($csproj_ver)) -gt 0) {
+                            write-verbose "correcting csproj` to use version $packages_Ver"
+                            $ref.path = $ref.path -replace "$($pkgref.id).(?<version>.*?)\\","$($pkgref.id).$($pkgref.version)\"
+                            write-verbose "corrected path: $($ref.path)"
+                            $ref.Node.HintPath = $ref.path
+                            $inc = $ref.Node.Include
+                            if ($inc -ne $null -and $inc -match "$($pkgref.id),\s*Version=(.*?),") {
+                                write-verbose "($($csproj.name)): fixing include tag"
+                                $inc = $inc -replace "($($pkgref.id)),\s*Version=(.*?),",'$1,'
+                                write-verbose "corrected include: $($ref.path)"
+                                $ref.Node.Include = $inc
+                            }
+                            $csproj.save()
                         }
-                        $csproj.save()
+                        else {
+                            write-verbose "correcting packages.config to use version $csproj_ver"
+                            $pkgref.version = $csproj_ver.ToString()
+                            set-packagesconfig -pkgconfig $pkgs_cfg -outfile (Join-Path $dir "packages.config") 
+                        }
                     }
                 }
             }

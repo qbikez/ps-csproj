@@ -250,3 +250,4 @@ function find-unstablePackages ([switch][bool]$byPackage, [switch][bool] $byProj
 
 new-alias Update-PackageReferencesToStable update-referencesToStable
 new-alias Update-PackagesToStable update-referencesToStable
+new-alias Get-UnstablePackages Find-unstablePackages

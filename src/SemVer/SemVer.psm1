@@ -15,7 +15,7 @@ Add-Type -TypeDefinition @"
       SuffixRevision = 60
    }
    
-   public class SemVer {
+   public class SemVer : IComparable<SemVer> {
      public int? GetComponent(VersionComponent c) {
          return VerNums.Length > (int)c ? VerNums[(int)c] : (int?)null;
      }
@@ -71,6 +71,17 @@ Add-Type -TypeDefinition @"
          }
          
          return sb.ToString();
+     }
+
+     public int CompareTo(SemVer other) {
+         var major = this.Major.Value.CompareTo(other.Major.Value);
+         if (major != 0) return major;
+         var minor = this.Minor.Value.CompareTo(other.Minor.Value);
+         if (minor != 0) return minor;
+         var patch = this.Patch.Value.CompareTo(other.Patch.Value);
+         if (patch != 0) return patch;
+
+         return this.Suffix.CompareTo(other.Suffix);
      }
    }
 "@

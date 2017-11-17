@@ -1,6 +1,7 @@
 . "$PSScriptRoot\includes.ps1"
 
 import-module pester
+if (gmo semver) { rmo semver }
 import-module semver
 
 
@@ -71,4 +72,21 @@ Describe "update version" {
          
     }
     
+}
+
+Describe "compare versions" {
+    $cases = @(                
+            @{ left = "1.0.1"; right = "1.0.1"; expected = 0 }
+            @{ left = "1.0.2"; right = "1.0.1"; expected = 1 }
+            @{ left = "1.0.0"; right = "1.0.1"; expected = -1 }
+    )
+
+    It "version <left> comare to <right> returns <expected>" -testcases $cases {
+        param($left,$right,$expected) 
+
+        $verleft = split-version $left
+        $verRigth = split-version $right
+
+        $verleft.CompareTo($verRigth) | Should Be $expected
+    }
 }
