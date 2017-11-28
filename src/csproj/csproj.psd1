@@ -12,7 +12,7 @@
 RootModule = 'csproj.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.24'
+ModuleVersion = '1.0.25'
 
 # ID used to uniquely identify this module
 GUID = 'ab338b65-83f7-441c-848b-d4f7c84d078e'
@@ -63,7 +63,7 @@ Description = 'csproj and sln files manipulation'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @( "Nupkg","AssemblyMeta","newtonsoft.json","publishmap","PathUtils")
+NestedModules = @(); RequiredModules =@( "Nupkg","AssemblyMeta","Newtonsoft.Json","Publishmap","PathUtils")
 
 # Functions to export from this module
 FunctionsToExport = '*'

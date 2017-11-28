@@ -12,7 +12,7 @@
 RootModule = 'AssemblyMeta.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.4.0'
+ModuleVersion = '1.0.5'
 
 # ID used to uniquely identify this module
 GUID = '1131511f-1058-49d3-825f-aa83a61404d1'
@@ -48,7 +48,7 @@ Description = 'manipulating .cs AssemblyMeta'
 # ProcessorArchitecture = ''
 
 # Modules that must be imported into the global environment prior to importing this module
-# RequiredModules = @()
+RequiredModules = @("Newtonsoft.Json")
 
 # Assemblies that must be loaded prior to importing this module
 # RequiredAssemblies = @()
@@ -63,7 +63,7 @@ Description = 'manipulating .cs AssemblyMeta'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @("Newtonsoft.json")
+NestedModules = @(); RequiredModules =@()
 
 # Functions to export from this module
 FunctionsToExport = '*'
@@ -117,6 +117,9 @@ PrivateData = @{
 # DefaultCommandPrefix = ''
 
 }
+
+
+
 
 
 

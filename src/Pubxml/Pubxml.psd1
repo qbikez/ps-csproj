@@ -63,7 +63,7 @@ Description = 'Manipulate publishing profile files (.pubxml)'
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-# NestedModules = @()
+# NestedModules = @(); RequiredModules =@()
 
 # Functions to export from this module
 FunctionsToExport = '*'
