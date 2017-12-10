@@ -12,7 +12,7 @@
 RootModule = 'AssemblyMeta.psm1'
 
 # Version number of this module.
-ModuleVersion = '1.0.5'
+ModuleVersion = '1.0.6'
 
 # ID used to uniquely identify this module
 GUID = '1131511f-1058-49d3-825f-aa83a61404d1'
@@ -63,7 +63,7 @@ RequiredModules = @("Newtonsoft.Json")
 # FormatsToProcess = @()
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
-NestedModules = @(); RequiredModules =@()
+NestedModules = @()
 
 # Functions to export from this module
 FunctionsToExport = '*'

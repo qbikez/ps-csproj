@@ -165,7 +165,7 @@ function Get-AssemblyMeta {
         }
         else {
             $key = get-assemblymetakey $originalKey     
-            write-verbose "looking for key '$key' in '$assemblyinfo'"
+            write-verbose "looking for key '$key' to set in '$assemblyinfo'"
             $content = get-content $assemblyinfo   
             $value += @($content | % {
                 $regex = "\[assembly: (?<fileKey>(System\.Reflection\.){0,1}(?<key>$($key))(Attribute){0,1})\(""(?<value>.*)""\)\]"
@@ -221,11 +221,11 @@ function Set-AssemblyMeta {
         }
         elseif ($assemblyinfo.endswith(".csproj")) {   
             $key = get-assemblymetakey $originalKey -type "csproj"
-            write-verbose "looking for key '$key' in '$assemblyinfo'"
             if ($key -eq $null) {
                 continue
             }            
             if (!(test-path $assemblyinfo)) { throw "assembly meta file '$assemblyinfo' not found" }
+            write-verbose "looking for key '$key' to SET in '$assemblyinfo'"
             try {
                 $xml = [xml](get-content $assemblyinfo)                
             } catch {
@@ -234,7 +234,7 @@ function Set-AssemblyMeta {
             } 
             $k = @($key) | select -first 1
 
-            function set-xmlproperty($xml, $key, $value) {
+            function set-xmlproperty($xml, $key, $value, [switch][bool]$ifExists) {
                 $node = $null
                 $s = $key
                 foreach($g in $xml.Project.PropertyGroup) {
@@ -245,15 +245,25 @@ function Set-AssemblyMeta {
                     }
                 }
                 if ($node -eq $null) {
-                    $node = $xml.CreateElement($s)
-                    $xml.Project.PropertyGroup.AppendChild($node)
-                    #throw "missing node '$key'. adding xml nodes is not implemented yet"
+                    if (!$ifExists) {
+                        write-verbose "appending xml node '$s'"
+                        $node = $xml.CreateElement($s)
+                        $targetgroup = $xml.Project.PropertyGroup | ? { $_.Condition -eq $null } | select -First 1
+                        $ch = $targetgroup.AppendChild($node)
+                        #throw "missing node '$key'. adding xml nodes is not implemented yet"
+                    } else {
+                        Write-Verbose "skipping non-existing xml node '$s' (ifExists=$ifExists)"
+                        return 
+                    }
                 }
-                write-verbose "setting xml property '$s'='$value'"
+                write-verbose "setting xml property '$s'='$value'" 
                 $node.InnerText = $value
             }
 
             $separator = "-"              
+            #for old csproj formats (no SDK specified), only update existsing xml nodes, do not append new ones
+            $ifExists = $xml.Project.Sdk -eq $null
+                    
             if ($k.Contains($separator)) {
                 $idx = $value.IndexOf($separator)
                 $keys = $k.split($separator)
@@ -266,11 +276,11 @@ function Set-AssemblyMeta {
                 for ($i = 0; $i -lt $keys.length; $i++) {
                     if ($i -lt $values.count) { $val = $values[$i] }
                     else { $val = "" }
-                    set-xmlproperty $xml $keys[$i]  $val
+                    set-xmlproperty $xml $keys[$i]  $val -ifExists:$ifExists
                 }
 
             } else {
-                set-xmlproperty $xml $k $value
+                set-xmlproperty $xml $k $value -ifExists:$ifExists
             }
 
             $xml.Save((get-item $assemblyinfo).FullName)                        
