@@ -366,13 +366,17 @@ process {
                 $dotnet = get-dotnetcommand
                 if ($dotnet -eq $null) { $dotnet = "dotnet" }
                 if ($useDotnet) { $dotnet = "dotnet" }
+                write-verbose "using 'dotnet' for this csproj (SDK attribute is set in xml)"
+            } else {
+                write-verbose "using standard 'nuget' for this csproj (SDK attribute is NOT set in xml)"
             }
         }
 
         $dir = split-path -parent $nuspecorcsproj
+        if ([string]::isnullorempty($dir)) { $dir = "." }
         $nuspecorcsproj = split-path -Leaf $nuspecorcsproj
-        write-verbose "packing nuget for $(split-path -leaf $nuspecorcsproj) in $dir"
-    
+        write-verbose "packing nuget for $(split-path -leaf $nuspecorcsproj) in $((get-item $dir).fullname)"
+            
         cd $dir
 
         if ($Build) {
