@@ -5,9 +5,10 @@ if ([string]::isnullorempty($root)) {
 
 write-host "== includes 64bit=$([Environment]::Is64BitProcess) =="
 
+import-module require
 #if ($host.name -eq "Windows PowerShell ISE Host" -and (gmo pester)) { rmo pester }
-import-module pester
-import-module pathutils
+req pester
+req pathutils
 $i = (gi "$root\..\src")
 $fp = (gi "$root\..\src").fullname
 write-verbose "adding path of $i '$fp' to psmodulepath"
@@ -17,19 +18,7 @@ if ((pwd).Drive.Name -eq "TestDrive") {
     cd c:\
 }
 
-if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
-    write-Verbose "reloading csproj"
-    if (gmo csproj) {
-        rmo csproj 
-    }
-}
-
-write-Verbose "importing csproj"
-import-module csproj -DisableNameChecking
-write-Verbose "reloading csproj DONE"
-
-
-import-module crayon
+req crayon
 
 #if ((get-module chalk) -eq $null) {
 #    write-host "importing chalk"

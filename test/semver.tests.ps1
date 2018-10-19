@@ -1,8 +1,7 @@
 . "$PSScriptRoot\includes.ps1"
 
-import-module pester
 if (gmo semver) { rmo semver }
-import-module semver
+import-module $PSScriptRoot\..\src\semver\semver.psm1
 
 
 Describe "parse version" {

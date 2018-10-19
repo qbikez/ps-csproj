@@ -1,7 +1,6 @@
 . $PSScriptRoot\includes.ps1
 
-import-module pester
-import-module csproj -DisableNameChecking
+import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
 
 $xml = @'
 <?xml version="1.0" encoding="utf-8"?>

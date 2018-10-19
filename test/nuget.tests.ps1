@@ -4,12 +4,11 @@ if (gmo assemblymeta -ErrorAction Ignore) { rmo assemblymeta -Force }
 if (gmo nupkg -ErrorAction Ignore) { rmo nupkg -Force }
 if (gmo semver -ErrorAction Ignore) { rmo semver -Force }
 
-import-module pester
-import-module csproj
-import-module semver
-import-module assemblymeta -verbose
-import-module process
-import-module nupkg
+import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
+import-module $PSScriptRoot\..\src\semver\semver.psm1
+import-module $PSScriptRoot\..\src\assemblymeta\assemblymeta.psm1
+import-module $PSScriptRoot\..\src\process\process.psm1
+import-module $PSScriptRoot\..\src\nupkg\nupkg.psm1
 
 Describe "find Nuget packages dir" {
     $targetdir = copy-samples

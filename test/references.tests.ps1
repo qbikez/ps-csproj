@@ -1,7 +1,7 @@
 . $PSScriptRoot\includes.ps1
 
-Import-Module csproj
-Import-Module nupkg
+import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
+import-module $PSScriptRoot\..\src\nupkg\nupkg.psm1
 
 $xml = invoke-command { @'
 <?xml version="1.0" encoding="utf-8"?>

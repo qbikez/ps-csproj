@@ -1,8 +1,16 @@
 . $PSScriptRoot\includes.ps1
 
-import-module pester
-import-module csproj -DisableNameChecking
-import-module pathutils
+
+if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
+    write-Verbose "reloading csproj"
+    if (gmo csproj) {
+        rmo csproj 
+    }
+}
+
+write-Verbose "importing csproj"
+import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
+write-Verbose "reloading csproj DONE"
 
 #TODO: use https://github.com/pester/Pester/wiki/TestDrive 
 Describe "project file manipulation" {

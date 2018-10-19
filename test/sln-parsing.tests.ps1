@@ -1,6 +1,10 @@
 . $PSScriptRoot\includes.ps1
-import-module csproj
 
+import-module $PSScriptRoot\..\src\csproj\csproj.psm1
+
+if (!(get-command msbuild)) {
+    throw "add msbuild to PATH!"
+}
 
 Describe "parsing sln" {
     $targetdir = "testdrive:"

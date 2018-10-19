@@ -1,8 +1,16 @@
 . $PSScriptRoot\includes.ps1
 
-import-module Pester
-import-module pathutils
-import-module csproj
+
+if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
+    write-Verbose "reloading csproj"
+    if (gmo csproj) {
+        rmo csproj 
+    }
+}
+
+write-Verbose "importing csproj"
+import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
+write-Verbose "reloading csproj DONE"
 
 $inputdir = "$psscriptroot\input"
 
@@ -78,7 +86,6 @@ Describe "Basic reference parsing" {
         }
    }
 }
-
 
 Describe "Reference node manipulation" {
     $csproj = import-csproj $xml
