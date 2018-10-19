@@ -41,8 +41,13 @@ Describe "Processing output from invoke" {
         $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$false
         $r | Should Be $msg
         if ($error.count -gt 0) {
-            $error | % { write-verbose $_ -Verbose }
+            $i = 0
+            $error | % { write-verbose "ERROR[$($i)]: $_" -Verbose; $i++; }
         }
+        # expect 3 lines of log in stderr:
+        # powerecho.exe > verbose: using stderr for log output
+        # powerecho.exe > verbose: will return 'this is my result'
+        # powerecho.exe > verbose: Power echo here! Args:
         $error.count | Should Be 3
     }
     It "Should not duplicate output when showoutput=true" {
