@@ -1,8 +1,8 @@
 . "$PSScriptRoot\includes.ps1"
 
-if (gmo assemblymeta -ErrorAction Ignore) { rmo assemblymeta }
-if (gmo nupkg -ErrorAction Ignore) { rmo nupkg }
-if (gmo semver -ErrorAction Ignore) { rmo semver }
+if (gmo assemblymeta -ErrorAction Ignore) { rmo assemblymeta -Force }
+if (gmo nupkg -ErrorAction Ignore) { rmo nupkg -Force }
+if (gmo semver -ErrorAction Ignore) { rmo semver -Force }
 
 import-module pester
 import-module csproj
@@ -30,17 +30,20 @@ Describe "find Nuget packages dir" {
 
 Describe "Nuget Version manipulation" {
     $cases = @(   
+        @{ version = "1.2.*"; component = "Patch"; value = "33"; expected = "1.2.33" }
         @{ version = "1.2.*"; expected = "1.3.0-build001" }
         @{ version = "1.2.3.*"; expected = "1.2.4-build001" }    
         @{ version = "1.0.1"; expected = "1.0.1-build001" }
         @{ version = "1.0.0.0"; expected = "1.0.1-build001" }
         @{ version = "1.0.0.*"; expected = "1.0.1-build001" }
-        @{ version = "1.*"; expected = "2.0.0-build001" }
+        @{ version = "1.*"; expected = "2.0.0-build001" }      
     )
     In "TestDrive:" {      
         It "incrementing part <component> of '<version>' should yield '<expected>'" -testcases $cases   {
             param($version, $component, $value, $expected) 
-            $r = update-buildversion -version $version 
+            if ($component -eq $null) { $component = [VersionComponent]::SuffixBuild }
+
+            $r = update-buildversion -version $version -component $component -value $value
             $r | Should Be $expected
         } 
         It "update build version with custom suffix" {

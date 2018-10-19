@@ -617,7 +617,7 @@ process {
             $newver = $newver.trim(".*")
             $splits = $newver.Split(".")
             $c= $splits.Length - 1
-            if ($component -eq $null -or $component -gt $c) {
+            if ($component -eq $null -or ($component -gt $c -and $value -eq $null)) {
                 $newver = Update-Version $newver $c -nuget -verbose:$verb    
             }
         }        
