@@ -29,3 +29,24 @@ function Invoke-AsAdmin($ArgumentList, $proc = "powershell", [switch][bool] $Wai
         }
     }
 }
+
+function Invoke-AsUser(
+    [Parameter(Mandatory=$true)]$user, 
+    $proc = "powershell", 
+    [switch][bool] $Wait = $true, 
+    [switch][bool] $NoExit = $false
+) 
+{	
+    if ($NoExit) {
+        $argumentList = @("-NoExit") +  @($argumentList)
+    }
+    $cred = $null
+    
+    if (get-module -ListAvailable "cache") {
+        ipmo cache
+        $cred = Get-CredentialsCached $user
+    } else {
+        $cred = get-credential -UserName $user
+    }
+    Start-Process $proc -wait:$Wait -Credential:$cred
+}

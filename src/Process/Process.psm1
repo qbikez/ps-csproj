@@ -331,4 +331,6 @@ if ((get-alias Run-AsAdmin -ErrorAction ignore) -eq $null) { New-alias Run-AsAdm
 if ((get-alias sudo -ErrorAction ignore) -eq $null) { New-alias sudo Invoke-AsAdmin }
 new-alias Is-Admin Test-IsAdmin -force
 
+if ((get-alias Run-As -ErrorAction ignore) -eq $null) { New-alias Run-As Invoke-AsUser }
+
 Export-ModuleMember -Function * -Alias *
