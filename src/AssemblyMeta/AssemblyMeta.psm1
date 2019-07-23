@@ -59,9 +59,13 @@ param($path = ".")
         if ($i.psiscontainer) {
             $files = @()
             if (test-path "$path/project.json") { $files += @("$path/project.json")}
+            if (test-path "$path/src/AssemblyVersionInfo.cs") { $files += @("$path/src/AssemblyVersionInfo.cs") }
             if (test-path "$path/AssemblyVersionInfo.cs") { $files += @("$path/AssemblyVersionInfo.cs") }
+            if (test-path "$path/src/Properties/AssemblyInfo.cs") { $files += @("$path/src/Properties/AssemblyInfo.cs") }
             if (test-path "$path/Properties/AssemblyInfo.cs") { $files += @("$path/Properties/AssemblyInfo.cs") }
+            if (test-path "$path/src/AssemblyInfo.cs") { $files += @("$path/src/AssemblyInfo.cs") }            
             if (test-path "$path/AssemblyInfo.cs") { $files += @("$path/AssemblyInfo.cs") }            
+            if (test-path "$path/src/GeneratedAssemblyInfo.cs") { $files += @("$path/src/GeneratedAssemblyInfo.cs") }                        
             if (test-path "$path/GeneratedAssemblyInfo.cs") { $files += @("$path/GeneratedAssemblyInfo.cs") }                        
             $dir = split-path -leaf $path            
             if ((test-path $path/$dir.csproj)) { $files +=@("$path/$dir.csproj")  }
