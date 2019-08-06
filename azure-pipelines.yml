@@ -6,20 +6,31 @@
 trigger:
 - master
 
+pool:
+  vmImage: 'windows-latest'
 
-jobs:
-- job: build_and_test
-  pool: 
-    vmImage: 'windows-latest'
-  steps:
-  - script: |
-      git submodule update --init --recursive
-      & scripts/init.ps1 
-      & scripts/restore.ps1 -pesterVersion 4.0.2
-    displayName: 'install'
+steps:
+  - powershell: git submodule update --init --recursive
+    displayName: 'update git submodules'
 
-  - script: scripts/build.ps1
-    displayName: 'build'
-    
-  - script: scripts/lib/test.appveyor.ps1
-    displayName: test
+  - powershell: |
+      scripts/lib/init.ps1 .
+      scripts/init.ps1 .
+    displayName: 'init'
+
+  - powershell: |
+      scripts/lib/restore.ps1 .
+      scripts/restore.ps1
+    displayName: 'restore'
+
+  - powershell: scripts/lib/test.azure-pipelines.ps1
+    displayName: 'Run Pester tests'
+    failOnStderr: false
+    ignoreLASTEXITCODE: false
+
+  - task: PublishTestResults@2
+    inputs:
+      testRunner: NUnit
+      testResultsFiles: 'artifacts/test-result.xml'
+      failTaskOnFailedTests: true
+
