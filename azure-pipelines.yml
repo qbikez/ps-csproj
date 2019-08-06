@@ -9,7 +9,8 @@ trigger:
 
 jobs:
 - job: build_and_test
-  pool: windows-2019
+  pool: 
+    vmImage: 'windows-latest'
   steps:
   - script: |
       git submodule update --init --recursive
