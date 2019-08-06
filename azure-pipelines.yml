@@ -8,7 +8,7 @@ trigger:
 
 
 jobs:
-- job: build & test
+- job: build_and_test
   pool: windows-latest
   steps:
   - script: |
