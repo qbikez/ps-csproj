@@ -1,0 +1,29 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+jobs:
+- job: install
+  steps:
+  - script: |
+      git submodule update --init --recursive
+      & scripts/init.ps1 
+      & scripts/restore.ps1 -pesterVersion 4.0.2
+  displayName: 'install'
+
+- job: build
+  steps:
+  - script: scripts/build.ps1
+    displayName: 'build'
+
+- job: test
+  steps:
+    - script: scripts/lib/test.appveyor.ps1
+      displayName: test
