@@ -9,7 +9,7 @@ trigger:
 
 jobs:
 - job: build_and_test
-  pool: windows-latest
+  pool: windows-2019
   steps:
   - script: |
       git submodule update --init --recursive
