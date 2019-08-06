@@ -1,0 +1,36 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-latest'
+
+steps:
+  - powershell: git submodule update --init --recursive
+    displayName: 'update git submodules'
+
+  - powershell: |
+      scripts/lib/init.ps1 .
+      scripts/init.ps1 .
+    displayName: 'init'
+
+  - powershell: |
+      scripts/lib/restore.ps1 .
+      scripts/restore.ps1
+    displayName: 'restore'
+
+  - powershell: scripts/lib/test.azure-pipelines.ps1
+    displayName: 'Run Pester tests'
+    failOnStderr: false
+    ignoreLASTEXITCODE: false
+
+  - task: PublishTestResults@2
+    inputs:
+      testRunner: NUnit
+      testResultsFiles: 'artifacts/test-result.xml'
+      failTaskOnFailedTests: true
+

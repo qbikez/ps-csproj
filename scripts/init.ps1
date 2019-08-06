@@ -1,6 +1,6 @@
 & "$PSScriptRoot\lib\init.ps1"
 
-if (!(get-command nuget)) {
+if (!(get-command nuget -ErrorAction Ignore)) {
     choco install -y nuget.commandline
 }
 
