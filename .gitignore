@@ -12,3 +12,7 @@ obj/
 bin/
 test-results/
 .tools/
+*.suo
+/csproj.pssproj.user
+/npm-debug.log
+/csproj.sln.DotSettings.user
