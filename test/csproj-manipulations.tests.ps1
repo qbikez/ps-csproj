@@ -1,5 +1,5 @@
 . $PSScriptRoot\includes.ps1
-
+# . "$PSScriptRoot\..\scripts\lib\imports\msbuild.ps1" # needed for get-msbuildpath to work
 
 if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
     write-Verbose "reloading csproj"
@@ -86,8 +86,8 @@ Describe "project file manipulation" {
         $packagename = "Core.Boundaries"
         
         #It "should build before replacing" {
-        #    Add-MsbuildPath
-        #    $msbuildout = & msbuild 
+        #    $msbuild = Get-MsbuildPath
+        #    $msbuildout = & $msbuild 
         #    $lec = $lastexitcode
         #    $lec | Should Be 0
         #}

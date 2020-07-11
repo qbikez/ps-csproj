@@ -92,3 +92,16 @@ The version template looks like this:
 * whole suffix part is limited to 20 chars: 10 for branch,  3 fro buildno, 6 for commit hash
 
     
+# Contributing
+
+1. Initialize dependencies:
+
+    ```shell
+    npm run init
+    ```
+
+2. Test:
+
+    ```powershell
+    npm test
+    ```

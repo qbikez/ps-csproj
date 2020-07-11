@@ -1,4 +1,5 @@
 . "$PSScriptRoot\..\includes.ps1"
+. "$PSScriptRoot\..\scripts\lib\imports\msbuild.ps1"
 
 import-module pester
 import-module csproj
@@ -56,8 +57,8 @@ Describe "Converting Project reference to nuget" {
             $lastexitcode | Should Be 0
         }
         It "Should build on start" {
-                #Add-MsbuildPath
-                $msbuildout = & msbuild 2>&1
+                $msbuild = Get-MsbuildPath
+                $msbuildout = & $msbuild 2>&1
                 $lec = $lastexitcode 
                 if ($lec -ne 0) {
                     $msbuildout | % { Write-Warning $_ }
@@ -184,9 +185,9 @@ Describe "Converting Project reference to nuget" {
         }
 
         It "Should build after conversion" {
-            #Add-MsbuildPath
+            $msbuild = Get-MsbuildPath
             In $slndir {
-                $msbuildout = & msbuild 2>&1
+                $msbuildout = & $msbuild 2>&1
             }
             $lec = $lastexitcode              
             $errors = $msbuildout | ? { $_ -match ": error" } 
