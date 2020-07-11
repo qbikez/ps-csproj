@@ -1,8 +1,9 @@
-. "$PSScriptRoot\includes.ps1"
+BeforeAll {
+    . "$PSScriptRoot\includes.ps1"
 
-if (gmo semver) { rmo semver }
-import-module $PSScriptRoot\..\src\semver\semver.psm1
-
+    if (gmo semver) { rmo semver }
+    import-module $PSScriptRoot\..\src\semver\semver.psm1
+}
 
 Describe "parse version" {
     $cases = @(

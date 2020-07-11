@@ -1,62 +1,70 @@
-. "$PSScriptRoot\..\includes.ps1"
-. "$PSScriptRoot\..\scripts\lib\imports\msbuild.ps1"
+BeforeAll {
+    . "$PSScriptRoot\..\includes.ps1"
+    . "$PSScriptRoot\..\..\scripts\lib\imports\msbuild.ps1"
 
-import-module pester
-import-module csproj
-import-module pathutils
+    import-module pester
+    import-module csproj
+    import-module pathutils
+}
 
 Describe "Converting dll reference to project" {    
-
-    $i = $MyInvocation 
-    $targetdir = get-testoutputdir 
-    copy-item "$inputdir\test" "$targetdir\test" -recurse -force
-    copy-item "$inputdir\packages" "$targetdir\packages" -recurse -Force
+    BeforeAll {
+        $i = $MyInvocation 
+        $targetdir = get-testoutputdir 
+        copy-item "$inputdir\test" "$targetdir\test" -recurse -force
+        copy-item "$inputdir\packages" "$targetdir\packages" -recurse -Force
         
-    $slnfile = "$targetdir\test\sln\Sample.Solution\Sample.Solution.sln"
-    $slndir = split-path -parent $slnfile
-    $packagesdir = "$targetdir\test\packages"
+        $slnfile = "$targetdir\test\sln\Sample.Solution\Sample.Solution.sln"
+        $slndir = split-path -parent $slnfile
+        $packagesdir = "$targetdir\test\packages"
     
-    $referenceName = "Core.Library2"
-    $targetProject = "$targetdir\test\src\Core\Core.Library2\Core.Library2.csproj"
-    $specificProject = "Console1"
+        $referenceName = "Core.Library2"
+        $targetProject = "$targetdir\test\src\Core\Core.Library2\Core.Library2.csproj"
+        $specificProject = "Console1"
     
-    $sln = import-sln $slnfile
+        $sln = import-sln $slnfile
     
-    $projects = $sln | get-slnprojects | ? { $_.Type -eq "csproj" }
-    $projects = $projects | ? { $_.Name -eq $specificProject }       
+        $projects = $sln | get-slnprojects | ? { $_.Type -eq "csproj" }
+        $projects = $projects | ? { $_.Name -eq $specificProject }       
     
-    $projects | % {
-        convert-nugettoprojectreference $referencename $targetProject $_.FullName -confirm:$false
-    }    
-   
+        $projects | % {
+            convert-nugettoprojectreference $referencename $targetProject $_.FullName -confirm:$false
+        }    
+    }
+
+    It "does something" {
+
+    }
 }
 
 Describe "Converting Project reference to nuget" {
-    
-    $targetdir = get-testoutputdir 
+    BeforeAll {
+        $targetdir = get-testoutputdir 
 
-    copy-item "$inputdir\test" "$targetdir\test" -recurse 
-    #copy-item "$inputdir\packages" "$targetdir\packages" -recurse
-    copy-item "$inputdir\packages-repo" "$targetdir\packages-repo" -recurse -Force
+        copy-item "$inputdir\test" "$targetdir\test" -recurse 
+        #copy-item "$inputdir\packages" "$targetdir\packages" -recurse
+        copy-item "$inputdir\packages-repo" "$targetdir\packages-repo" -recurse -Force
 
-    $slnfile = "$targetdir\test\sln\Sample.Solution\Sample.Solution.sln"
-    $slndir = split-path -parent $slnfile
-    $packagesdir = "$targetdir\test\packages"
-    if (!(test-path $packagesdir)) { $null = new-item $packagesdir -type directory }
+        $slnfile = "$targetdir\test\sln\Sample.Solution\Sample.Solution.sln"
+        $slndir = split-path -parent $slnfile
+        $packagesdir = "$targetdir\test\packages"
+        if (!(test-path $packagesdir)) { $null = new-item $packagesdir -type directory }
     
-    $sln = import-sln $slnfile
-   
+        $sln = import-sln $slnfile
+    }
     Context "on start" { 
-      
-      In $slndir {
+       
         It "Should restore on start" {
-            $o = nuget restore -nocache
-            if ($lastexitcode -ne 0) {
-                $o | % { write-warning $_ }
+            In $slndir {
+                $o = nuget restore -nocache
+                if ($lastexitcode -ne 0) {
+                    $o | % { write-warning $_ }
+                }
+                $lastexitcode | Should Be 0
             }
-            $lastexitcode | Should Be 0
         }
         It "Should build on start" {
+            In $slndir {
                 $msbuild = Get-MsbuildPath
                 $msbuildout = & $msbuild 2>&1
                 $lec = $lastexitcode 
@@ -64,14 +72,15 @@ Describe "Converting Project reference to nuget" {
                     $msbuildout | % { Write-Warning $_ }
                 }
                 $lec | Should Be 0
+            }
         }
-      }
     }
     
     
     Context "When loading sln file" {
-        $projectName = "Core.Library1"
-    
+        BeforeAll {
+            $projectName = "Core.Library1"
+        }
         It "Should resolve all sln projects" {
             $sln.gettype().Name | should Be "Sln"
             $projects = $sln | get-slnprojects
@@ -95,28 +104,30 @@ Describe "Converting Project reference to nuget" {
         
         It "Should list all references to $projectname" {
             $refs = get-referencesto $sln $projectname 
-            $refs | Should Not BeNullOrEmpty
+            $refs | Should -Not -BeNullOrEmpty
         }
     }
     
     
 
     Context "When converting project with matching nuget" {
+        BeforeAll {
+            $projectname = "Core.Library1"
+            #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\" -type directory
+            #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\$projectname.dll" -type file
         
-        $projectname = "Core.Library1"
-        #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\" -type directory
-        #$null = new-item "$targetdir\packages\$projectname.1.0.1\lib\$projectname.dll" -type file
-        
-        $projects = $sln | get-slnprojects | ? { $_.type -eq "csproj" }
-        $oldpkgs = $projects | % { 
-            $dir = Split-Path -Parent $_.FullName
-            return @{
-                pkgs = get-packagesconfig "$dir/packages.config"
-                project = $_
+            $projects = $sln | get-slnprojects | ? { $_.type -eq "csproj" }
+            $oldpkgs = $projects | % { 
+                $dir = Split-Path -Parent $_.FullName
+                return @{
+                    pkgs    = get-packagesconfig "$dir/packages.config"
+                    project = $_
+                }
             }
-         }
 
-        $oldrefs = get-referencesto $sln $projectname
+            $oldrefs = get-referencesto $sln $projectname
+        }
+
         It "should convert without errors" {
             In $slndir {
                 $outdir = (get-relativepath $slndir $packagesdir)
@@ -147,7 +158,7 @@ Describe "Converting Project reference to nuget" {
         It "converted references should exist in packages.config" {
             $refs = get-referencesto $sln $projectname 
             $nugetrefs = @($refs | ? { $_.type -eq "nuget" }) 
-            foreach($n in $nugetrefs) {
+            foreach ($n in $nugetrefs) {
                 $dir = split-path $n.projectpath
                 $pkg = get-packagesconfig "$dir/packages.config"
                 $pkg | Should Not BeNullOrEmpty
@@ -167,22 +178,22 @@ Describe "Converting Project reference to nuget" {
             ipmo pathutils
             $refs = get-referencesto $sln $projectname 
             $nugetrefs = $refs | ? { $_.type -eq "nuget" }  
-            foreach($n in $nugetrefs) {
+            foreach ($n in $nugetrefs) {
                 $n.ref.path | Should not benullorempty
                 test-ispathrelative $n.ref.path | should be $true 
             }
         }
         
-        in $slndir {
-        It "Should restore after conversion" {
-            remove-item "$targetdir/test/packages" -force -Recurse
-            $o = nuget restore -nocache
-            if ($lastexitcode -ne 0) {
-                $o | % { write-warning $_ }
-            }
-            $lastexitcode | Should Be 0
-        }
-        }
+        # in $slndir {
+        #     It "Should restore after conversion" {
+        #         remove-item "$targetdir/test/packages" -force -Recurse
+        #         $o = nuget restore -nocache
+        #         if ($lastexitcode -ne 0) {
+        #             $o | % { write-warning $_ }
+        #         }
+        #         $lastexitcode | Should Be 0
+        #     }
+        # }
 
         It "Should build after conversion" {
             $msbuild = Get-MsbuildPath
@@ -202,6 +213,4 @@ Describe "Converting Project reference to nuget" {
         }
         
     }
-
-    
 }

@@ -38,7 +38,7 @@ req crayon
 $inputdir = "$psscriptroot\input"
 
 function get-testoutputdir() {
-    $targetdir = "testdrive:"
+    $targetdir = "TestDrive:"
     if (get-command get-pesterstate -ErrorAction Ignore -and $false) {
         $s = get-pesterstate
         $targetdir = "$psscriptroot\test-results\$(get-date -Format "yyyy-MM-dd HHmmss")-$($s.currentdescribe)"

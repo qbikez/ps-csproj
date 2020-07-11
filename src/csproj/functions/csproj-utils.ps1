@@ -40,7 +40,7 @@ public class ReferenceMeta {
 "@
 
 if (-not ([System.Management.Automation.PSTypeName]'Csproj').Type) {
-    add-type -TypeDefinition $types -ReferencedAssemblies "System.Xml"
+    add-type -TypeDefinition $types -ReferencedAssemblies "System.Xml","System.Xml.ReaderWriter","System.IO","System.Runtime.Extensions"
 }
 
 

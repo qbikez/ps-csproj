@@ -1,18 +1,20 @@
-. "$PSScriptRoot\includes.ps1"
+BeforeAll {
+    . "$PSScriptRoot\includes.ps1"
 
-if (gmo assemblymeta -ErrorAction Ignore) { rmo assemblymeta -Force }
-if (gmo nupkg -ErrorAction Ignore) { rmo nupkg -Force }
-if (gmo semver -ErrorAction Ignore) { rmo semver -Force }
+    if (gmo assemblymeta -ErrorAction Ignore) { rmo assemblymeta -Force }
+    if (gmo nupkg -ErrorAction Ignore) { rmo nupkg -Force }
+    if (gmo semver -ErrorAction Ignore) { rmo semver -Force }
 
-import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
-import-module $PSScriptRoot\..\src\semver\semver.psm1
-import-module $PSScriptRoot\..\src\assemblymeta\assemblymeta.psm1
-import-module $PSScriptRoot\..\src\process\process.psm1
-import-module $PSScriptRoot\..\src\nupkg\nupkg.psm1
+    import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
+    import-module $PSScriptRoot\..\src\semver\semver.psm1
+    import-module $PSScriptRoot\..\src\assemblymeta\assemblymeta.psm1
+    import-module $PSScriptRoot\..\src\process\process.psm1
+    import-module $PSScriptRoot\..\src\nupkg\nupkg.psm1
+}
 
 Describe "find Nuget packages dir" {
     $targetdir = copy-samples
-    $targetdir = $targetdir -replace "TestDrive:","$testdrive"
+    $targetdir = $targetdir -replace "TestDrive:","$TestDrive"
     $csproj = "$targetdir/test/src/Core/Core.vnext/project.json"
     $dir = split-path -parent $csproj
     
@@ -134,7 +136,7 @@ Describe "Generate nuget for csproj" {
 
 Describe "Generate nuget for project.json" {
     $targetdir = copy-samples
-    $targetdir = $targetdir -replace "TestDrive:","$testdrive"
+    $targetdir = $targetdir -replace "TestDrive:","$TestDrive"
     $csproj = "$targetdir/test/src/Core/Core.vnext/project.json"
     $dir = split-path -parent $csproj
     $project = split-path -leaf $csproj
@@ -191,7 +193,7 @@ Describe "Generate nuget for project.json" {
 
 Describe "Handle csproj with project.json" {
     $targetdir = copy-samples
-    $targetdir = $targetdir -replace "TestDrive:","$testdrive"
+    $targetdir = $targetdir -replace "TestDrive:","$TestDrive"
     $dir = "$targetdir/test/src/Core/Core.csproj+json/"
 
      In $dir {
@@ -253,7 +255,7 @@ Describe "Handle csproj with project.json" {
 
 Describe "Handle .Net Core 2.0 csproj format" {
     $targetdir = copy-samples
-    $targetdir = $targetdir -replace "TestDrive:","$testdrive"
+    $targetdir = $targetdir -replace "TestDrive:","$TestDrive"
     $dir = "$targetdir/test/src/Core/Core.2.0/"
 
      In $dir {       
@@ -308,5 +310,4 @@ Describe "Handle .Net Core 2.0 csproj format" {
      }
      
 }
-
 

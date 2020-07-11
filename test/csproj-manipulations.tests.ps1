@@ -1,25 +1,26 @@
-. $PSScriptRoot\includes.ps1
-# . "$PSScriptRoot\..\scripts\lib\imports\msbuild.ps1" # needed for get-msbuildpath to work
+BeforeAll {
+    . $PSScriptRoot\includes.ps1
+    # . "$PSScriptRoot\..\scripts\lib\imports\msbuild.ps1" # needed for get-msbuildpath to work
 
-if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
-    write-Verbose "reloading csproj"
-    if (gmo csproj) {
-        rmo csproj 
+    if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
+        write-Verbose "reloading csproj"
+        if (gmo csproj) {
+            rmo csproj -Force
+        }
     }
+
+    write-Verbose "importing csproj"
+    import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
+    write-Verbose "reloading csproj DONE"
 }
 
-write-Verbose "importing csproj"
-import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
-write-Verbose "reloading csproj DONE"
-
-#TODO: use https://github.com/pester/Pester/wiki/TestDrive 
 Describe "project file manipulation" {
-    $null = new-item -ItemType Directory "testdrive:\input\"
-    copy-item "$inputdir\test.csproj" "testdrive:\input\"
-    copy-item "$inputdir\packages.config" "testdrive:\input\"
-    copy-item "$inputdir\packages" "testdrive:\packages" -Recurse
-    copy-item "$inputdir\test" "testdrive:\input\test" -Recurse
-    $testdir = "testdrive:\input" 
+    $null = new-item -ItemType Directory "TestDrive:\input\"
+    copy-item "$inputdir\test.csproj" "TestDrive:\input\"
+    copy-item "$inputdir\packages.config" "TestDrive:\input\"
+    copy-item "$inputdir\packages" "TestDrive:\packages" -Recurse
+    copy-item "$inputdir\test" "TestDrive:\input\test" -Recurse
+    $testdir = "TestDrive:\input" 
     In $testdir {
 
     Context "When project reference version differs from packages.config" {
@@ -52,7 +53,7 @@ Describe "project file manipulation" {
         }
 
         It "Should fix the difference" {
-            repair-csprojpaths $csproj -reporoot "testdrive:\"
+            repair-csprojpaths $csproj -reporoot "TestDrive:\"
         }
 
         It "difference should be fixed" {
@@ -99,7 +100,7 @@ Describe "project file manipulation" {
         }
         It "Should convert properly to nuget" {
             $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
-            $nugetref = convertto-nuget $ref "testdrive:\packages"
+            $nugetref = convertto-nuget $ref "TestDrive:\packages"
             $nugetref | Should Not BeNullOrEmpty
             replace-reference $csproj -originalref $ref -newref $nugetref
         }

@@ -1,9 +1,11 @@
-. "$psscriptroot\..\includes.ps1"
+BeforeAll {
+    . "$psscriptroot\..\includes.ps1"
 
-import-module pester
-import-module csproj
-import-module publishmap
-import-module pathutils
+    import-module pester
+    import-module csproj
+    import-module publishmap
+    import-module pathutils
+}
 
 Describe "fix api" {
     It "should deprecate test-slndependencies" {
@@ -59,7 +61,7 @@ Describe "fix solution" {
 }
 
 Describe "verify solution project set" {
-    $targetdir = "testdrive:/"
+    $targetdir = "TestDrive:/"
     copy-item "$inputdir/test" $targetdir -Recurse
     $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"
     
@@ -86,7 +88,7 @@ Describe "verify solution project set" {
 
 
 Describe "fix a project with missing references" {
-    $targetdir = "testdrive:/"
+    $targetdir = "TestDrive:/"
     copy-item "$inputdir/test" $targetdir -Recurse
     copy-item "$inputdir/packages" "$targetdir/test" -Recurse
     copy-item "$inputdir/packages-repo" "$targetdir" -Recurse
@@ -115,7 +117,7 @@ Describe "fix a project with missing references" {
 
 
 Describe "fix a solution with missing references" {
-    $targetdir = "testdrive:/"
+    $targetdir = "TestDrive:/"
     copy-item "$inputdir/test" $targetdir -Recurse
     copy-item "$inputdir/packages" "$targetdir/test" -Recurse
     copy-item "$inputdir/packages-repo" "$targetdir" -Recurse

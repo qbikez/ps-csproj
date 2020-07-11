@@ -1,17 +1,20 @@
-. $PSScriptRoot\includes.ps1
+BeforeAll {
+    . $PSScriptRoot\includes.ps1
 
-import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
+    import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
 
-$xml = @'
-<?xml version="1.0" encoding="utf-8"?>
-<packages>
-  <package id="Microsoft.Bcl" version="1.1.10" targetFramework="portable-net45+win+wp80+MonoAndroid10+xamarinios10+MonoTouch10" />
-  <package id="Microsoft.Bcl.Build" version="1.0.14" targetFramework="portable-net45+win+wp80+MonoAndroid10+xamarinios10+MonoTouch10" />
-  <package id="Newtonsoft.Json" version="6.0.8" targetFramework="portable-net45+win+wp80+MonoAndroid10+xamarinios10+MonoTouch10" />
-</packages>
+    $xml = @'
+    <?xml version="1.0" encoding="utf-8"?>
+    <packages>
+      <package id="Microsoft.Bcl" version="1.1.10" targetFramework="portable-net45+win+wp80+MonoAndroid10+xamarinios10+MonoTouch10" />
+      <package id="Microsoft.Bcl.Build" version="1.0.14" targetFramework="portable-net45+win+wp80+MonoAndroid10+xamarinios10+MonoTouch10" />
+      <package id="Newtonsoft.Json" version="6.0.8" targetFramework="portable-net45+win+wp80+MonoAndroid10+xamarinios10+MonoTouch10" />
+    </packages>
 '@
 
-#TODO: use https://github.com/pester/Pester/wiki/TestDrive 
+    #TODO: use https://github.com/pester/Pester/wiki/TestDrive 
+}
+
 Describe "packages config manipulation" {
     Context "When loaded from string" {
         $conf = get-packagesconfig $xml
@@ -98,24 +101,24 @@ Describe "packages config manipulation" {
 
 Describe "packages config file" {
     Context "When referencing non-existing file" {
-        test-path "testdrive:\packages.config" | Should be $false
+        test-path "TestDrive:\packages.config" | Should be $false
         It "should create if -createifnotexists is specified" {
-            $pkg = get-packagesconfig "testdrive:\packages.config" -createifnotexists
-            test-path "testdrive:\packages.config" | Should be $true
+            $pkg = get-packagesconfig "TestDrive:\packages.config" -createifnotexists
+            test-path "TestDrive:\packages.config" | Should be $true
             $pkg | Should Not BeNullOrEmpty
             $pkg.xml | Should Not Be $null
         }
         It "should not overwrite if -createifnotexists is specified" {
-            if (test-path "testdrive:\packages.config") {
-                remove-item "testdrive:\packages.config"
+            if (test-path "TestDrive:\packages.config") {
+                remove-item "TestDrive:\packages.config"
             }
             $xml = '<?xml version="1.0" encoding="utf-8"?><packages><package id="a.test.1" /></packages>'
-            $xml | out-file "testdrive:\packages.config" -encoding utf8
+            $xml | out-file "TestDrive:\packages.config" -encoding utf8
             
-            $pkg = get-packagesconfig "testdrive:\packages.config" -createifnotexists
+            $pkg = get-packagesconfig "TestDrive:\packages.config" -createifnotexists
             $pkg | Should Not BeNullOrEmpty
             $pkg.xml | Should Not Be $null
-            get-content "testdrive:\packages.config" | Should Be $xml
+            get-content "TestDrive:\packages.config" | Should Be $xml
         }
     }
 } 

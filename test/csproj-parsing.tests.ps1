@@ -1,52 +1,54 @@
-. $PSScriptRoot\includes.ps1
+BeforeAll {
+    . $PSScriptRoot\includes.ps1
 
 
-if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
-    write-Verbose "reloading csproj"
-    if (gmo csproj) {
-        rmo csproj 
+    if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
+        write-Verbose "reloading csproj"
+        if (gmo csproj) {
+            rmo csproj -Force
+        }
     }
-}
 
-write-Verbose "importing csproj"
-import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
-write-Verbose "reloading csproj DONE"
+    write-Verbose "importing csproj"
+    import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
+    write-Verbose "reloading csproj DONE"
 
-$inputdir = "$psscriptroot\input"
+    $inputdir = "$psscriptroot\input"
 
-$xml = invoke-command { @'
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <ItemGroup>
-    <Reference Include="Castle.Core">
-      <HintPath>..\..\..\..\packages\Castle.Core.3.3.3\lib\net45\Castle.Core.dll</HintPath>
-    </Reference>   
-    <Reference Include="Common.Configuration.log4net, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\..\packages\Common.Configuration.log4net.2.0.0-beta1\lib\net451\Common.Configuration.log4net.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="Microsoft.CSharp" />
-  </ItemGroup>
-  <ItemGroup>   
-    <Compile Include="App_Start\BundleConfig.cs" />    
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="App_Data\" />
-  </ItemGroup>  
-  <ItemGroup>
-    <ProjectReference Include="..\..\Core\Core.Client\Core.Client.csproj">
-      <Project>{1ed821b1-89d1-4383-9e3a-ad7161b6640a}</Project>
-      <Name>Core.Client</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Core\Core.Interface\Core.Interface.csproj">
-      <Project>{32ab2453-d53f-4739-8243-42fa29d9f093}</Project>
-      <Name>Core.Interface</Name>
-    </ProjectReference>  
-  </ItemGroup>  
-  <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />  
-</Project>
+    $xml = invoke-command { @'
+    <?xml version="1.0" encoding="utf-8"?>
+    <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+      <ItemGroup>
+        <Reference Include="Castle.Core">
+          <HintPath>..\..\..\..\packages\Castle.Core.3.3.3\lib\net45\Castle.Core.dll</HintPath>
+        </Reference>   
+        <Reference Include="Common.Configuration.log4net, Version=2.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+          <SpecificVersion>False</SpecificVersion>
+          <HintPath>..\..\..\..\packages\Common.Configuration.log4net.2.0.0-beta1\lib\net451\Common.Configuration.log4net.dll</HintPath>
+          <Private>True</Private>
+        </Reference>
+        <Reference Include="Microsoft.CSharp" />
+      </ItemGroup>
+      <ItemGroup>   
+        <Compile Include="App_Start\BundleConfig.cs" />    
+      </ItemGroup>
+      <ItemGroup>
+        <Folder Include="App_Data\" />
+      </ItemGroup>  
+      <ItemGroup>
+        <ProjectReference Include="..\..\Core\Core.Client\Core.Client.csproj">
+          <Project>{1ed821b1-89d1-4383-9e3a-ad7161b6640a}</Project>
+          <Name>Core.Client</Name>
+        </ProjectReference>
+        <ProjectReference Include="..\..\Core\Core.Interface\Core.Interface.csproj">
+          <Project>{32ab2453-d53f-4739-8243-42fa29d9f093}</Project>
+          <Name>Core.Interface</Name>
+        </ProjectReference>  
+      </ItemGroup>  
+      <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />  
+    </Project>
 '@
+    }
 }
 
 Describe "Basic reference parsing" {
@@ -114,4 +116,3 @@ Describe "Reference node manipulation" {
         }
     }
 }
-

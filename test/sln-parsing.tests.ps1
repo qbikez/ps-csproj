@@ -1,13 +1,15 @@
-. $PSScriptRoot\includes.ps1
+BeforeAll {
+    . $PSScriptRoot\includes.ps1
 
-import-module $PSScriptRoot\..\src\csproj\csproj.psm1
+    import-module $PSScriptRoot\..\src\csproj\csproj.psm1
 
-if (!(get-command msbuild)) {
-    throw "add msbuild to PATH!"
+    if (!(get-command msbuild)) {
+        throw "add msbuild to PATH!"
+    }
 }
 
 Describe "parsing sln" {
-    $targetdir = "testdrive:"
+    $targetdir = "TestDrive:"
     copy-item -Recurse "$inputdir/test" "$targetdir"
     copy-item -Recurse "$inputdir/packages-repo" "$targetdir"
     
@@ -26,20 +28,20 @@ Describe "parsing sln" {
         }
     }
 
-     Context "when removing project from sln" {
+    Context "when removing project from sln" {
         $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"
         $sln = import-sln $slnfile
         $oldprojects = get-slnprojects $sln
         $toremove = "Console1"
-        It "Should build on start" {
+        It "Should build before" {
             In (split-path -Parent $slnfile) {
-            $r = nuget restore
-            if ($LASTEXITCODE -ne 0) { $r | out-string | write-host }
-            $LASTEXITCODE | Should Be 0
+                $r = nuget restore
+                if ($LASTEXITCODE -ne 0) { $r | out-string | write-host }
+                $LASTEXITCODE | Should Be 0
             
-            $r = msbuild (split-path -Leaf $slnfile)
-            if ($LASTEXITCODE -ne 0) { $r | out-string | write-host }
-            $LASTEXITCODE | Should Be 0
+                $r = msbuild (split-path -Leaf $slnfile)
+                if ($LASTEXITCODE -ne 0) { $r | out-string | write-host }
+                $LASTEXITCODE | Should Be 0
             }
         }
         It "sln Should not contain removed projects" {
@@ -51,17 +53,17 @@ Describe "parsing sln" {
         It "Should build after removal" {
             $sln.Save()
             In (split-path -Parent $slnfile) {
-            $r = msbuild (split-path -Leaf $slnfile)
-            if ($LASTEXITCODE -ne 0) {
-                $r | out-string | write-host
-            }
-            $LASTEXITCODE | Should Be 0
+                $r = msbuild (split-path -Leaf $slnfile)
+                if ($LASTEXITCODE -ne 0) {
+                    $r | out-string | write-host
+                }
+                $LASTEXITCODE | Should Be 0
             }
         }
 
-     }
+    }
      
-     Context "When updating project in sln" {
+    Context "When updating project in sln" {
         $sln = import-sln "$inputdir\platform\sln\legimi.core\Legimi.Core.Utils\Legimi.Core.Utils.sln"
         $oldprojects = get-slnprojects $sln
         It "sln Should contain updated projects" {
@@ -71,7 +73,7 @@ Describe "parsing sln" {
             $newprojects.Count | Should Be ($oldprojects.Count)
             $newprojects[0].Name | Should Be "Something.New"
         }        
-     }
+    }
 }
 
 . $PSScriptRoot\teardown.ps1
