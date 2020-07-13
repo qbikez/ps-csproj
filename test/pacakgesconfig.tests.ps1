@@ -22,12 +22,12 @@ Describe "packages config manipulation" {
         It "Should load properly" {
            # $conf | Should Not Be $null # BeNullOrEmpty # why does it throw for a valid object? 
            $conf.xml | Should Not BeNullOrEmpty
-           $conf -isnot [Object[]] | Should Be True
+           $conf -isnot [Object[]] | Should -Be True
         }
         
         It "Should List all packages" {
             $conf.packages | Should not BeNullOrEmpty
-            $conf.packages.Count | Should Be 3
+            $conf.packages.Count | Should -Be 3
         }
         
         $ids =  @("Microsoft.Bcl","Microsoft.Bcl.Build", "Newtonsoft.Json")
@@ -48,7 +48,7 @@ Describe "packages config manipulation" {
             $conf.packages | Should not BeNullOrEmpty
             $oldcount = $conf.packages.count
             add-packagetoconfig $conf $id $version 
-            $conf.packages.count | Should Be ($oldcount + 1)
+            $conf.packages.count | Should -Be ($oldcount + 1)
             $conf.packages | ? { $_.id -eq $id } | Should Not BeNullOrEmpty            
         }
     }
@@ -84,7 +84,7 @@ Describe "packages config manipulation" {
   
         It "should not contain removed id" {
             remove-packagefromconfig $conf $id
-            $conf.packages | ? { $_.Id -eq $id } | Should BeNullOrEmpty            
+            $conf.packages | ? { $_.Id -eq $id } | Should -BeNullOrEmpty            
         }
     }
     
@@ -101,10 +101,10 @@ Describe "packages config manipulation" {
 
 Describe "packages config file" {
     Context "When referencing non-existing file" {
-        test-path "TestDrive:\packages.config" | Should be $false
+        test-path "TestDrive:\packages.config" | Should -Be $false
         It "should create if -createifnotexists is specified" {
             $pkg = get-packagesconfig "TestDrive:\packages.config" -createifnotexists
-            test-path "TestDrive:\packages.config" | Should be $true
+            test-path "TestDrive:\packages.config" | Should -Be $true
             $pkg | Should Not BeNullOrEmpty
             $pkg.xml | Should Not Be $null
         }
@@ -118,7 +118,7 @@ Describe "packages config file" {
             $pkg = get-packagesconfig "TestDrive:\packages.config" -createifnotexists
             $pkg | Should Not BeNullOrEmpty
             $pkg.xml | Should Not Be $null
-            get-content "TestDrive:\packages.config" | Should Be $xml
+            get-content "TestDrive:\packages.config" | Should -Be $xml
         }
     }
 } 

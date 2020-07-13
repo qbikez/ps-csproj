@@ -34,6 +34,10 @@ Add-Type -TypeDefinition @"
 
      public int[] VerNums {get;set;}
      public string RevSeparator {get;set;}
+
+     public SemVer() {
+
+     }
      
      public override string ToString() {
          var s = Version;
@@ -151,7 +155,7 @@ function Update-Version {
             $lastNum++
         }
         $semver.vernums[$component] = $lastNum.ToString()
-        #each lesser component should be set to 0 
+        #each lesser component Should -Be set to 0 
         for($i = [int]$component + 1; $i -lt $semver.vernums.length; $i++) {
             $semver.vernums[$i] = 0
         }

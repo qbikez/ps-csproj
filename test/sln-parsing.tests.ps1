@@ -24,7 +24,7 @@ Describe "parsing sln" {
         It "Should contain Legimi.Core.Utils" {
             $p = $projects | ? { $_.Name -eq "Legimi.Core.Utils" }
             $p | Should Not BeNullorempty
-            $p.type | Should Be "csproj"
+            $p.type | Should -Be "csproj"
         }
     }
 
@@ -37,17 +37,17 @@ Describe "parsing sln" {
             In (split-path -Parent $slnfile) {
                 $r = nuget restore
                 if ($LASTEXITCODE -ne 0) { $r | out-string | write-host }
-                $LASTEXITCODE | Should Be 0
+                $LASTEXITCODE | Should -Be 0
             
                 $r = msbuild (split-path -Leaf $slnfile)
                 if ($LASTEXITCODE -ne 0) { $r | out-string | write-host }
-                $LASTEXITCODE | Should Be 0
+                $LASTEXITCODE | Should -Be 0
             }
         }
         It "sln Should not contain removed projects" {
             remove-slnproject $sln $toremove
             $newprojects = get-slnprojects $sln
-            $newprojects.Count | Should Be ($oldprojects.Count - 1)
+            $newprojects.Count | Should -Be ($oldprojects.Count - 1)
         }
         
         It "Should build after removal" {
@@ -57,7 +57,7 @@ Describe "parsing sln" {
                 if ($LASTEXITCODE -ne 0) {
                     $r | out-string | write-host
                 }
-                $LASTEXITCODE | Should Be 0
+                $LASTEXITCODE | Should -Be 0
             }
         }
 
@@ -70,8 +70,8 @@ Describe "parsing sln" {
             $oldprojects[0].Name = "Something.New"
             update-slnproject $sln $oldprojects[0]
             $newprojects = get-slnprojects $sln
-            $newprojects.Count | Should Be ($oldprojects.Count)
-            $newprojects[0].Name | Should Be "Something.New"
+            $newprojects.Count | Should -Be ($oldprojects.Count)
+            $newprojects[0].Name | Should -Be "Something.New"
         }        
     }
 }

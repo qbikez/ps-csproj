@@ -12,36 +12,36 @@ Describe "Processing output from invoke" {
     It "long messages does not break output" {
         $msg = "this is my very long line afsdfggert345v w35 34tesw23523r w4fgset q25r tsdfgzsw5312rfsdf awer sef ser waq324 123rfwefszer t235r 312gergt324w5 fsdf ds f sdf sdf sdf dsf esf sdf ds"
         $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$true
-        $r | Should Be $msg
+        $r | Should -Be $msg
     }
     It "newline should cause result split" {
         $error.clear()
         $msg = "this is my `nresult"
         $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$true
-        $r.count | should be 2
-        $r[0] | Should Be "this is my "
-        $r[1] | Should Be "result"
+        $r.count | Should -Be 2
+        $r[0] | Should -Be "this is my "
+        $r[1] | Should -Be "result"
     }
     It "Should ignore command output when passthru=false" {
         $msg = "this is my result"
         $r = invoke $echoargs "--return" $msg --log null
-        $r | Should BeNullOrEmpty
+        $r | Should -BeNullOrEmpty
     }
     It "Should return only stdout when logging to null" {
         $msg = "this is my result"
         $r = invoke $echoargs "--return" $msg --log null -passthru
-        $r | Should Be $msg
+        $r | Should -Be $msg
     }
     It "Should return only stdout when logging to stderr" {
         $msg = "this is my result"
         $r = invoke $echoargs "--return" $msg --log stderr -passthru
-        $r | Should Be $msg
+        $r | Should -Be $msg
     }
     It "Should fill error stream when showoutput=false" {
         $error.clear()
         $msg = "this is my result"
         $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$false
-        $r | Should Be $msg
+        $r | Should -Be $msg
         if ($error.count -gt 0) {
             $i = 0
             $error | % { write-verbose "ERROR[$($i)]: $_" -Verbose; $i++; }
@@ -50,19 +50,19 @@ Describe "Processing output from invoke" {
         # powerecho.exe > verbose: using stderr for log output
         # powerecho.exe > verbose: will return 'this is my result'
         # powerecho.exe > verbose: Power echo here! Args:
-        $error.count | Should Be 3
+        $error.count | Should -Be 3
     }
     It "Should not duplicate output when showoutput=true" {
         $msg = "this is my result"
         $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$true
-        $r | Should Be $msg
+        $r | Should -Be $msg
     }
  
       It "Should not write errors to console when showoutput=false" {
         $error.clear()
         $msg = "this is my result"
         $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$false
-        $r | Should Be $msg
+        $r | Should -Be $msg
         # HOW to test this??
     }
 }
@@ -87,7 +87,7 @@ Command line:
 "$echoargs" test -a=1 -b 2 "-e=1 2"
 
 "@ | % { $_ -replace "`r`n","`n" }
-        $r | Should Be $expected
+        $r | Should -Be $expected
 
     }
 
@@ -101,7 +101,7 @@ Command line:
 "$echoargs" -a=1 -b=2 "-e=1 2"
 
 "@ | % { $_ -replace "`r`n","`n" }
-        $r | Should Be $expected
+        $r | Should -Be $expected
 
     }
 
@@ -116,7 +116,7 @@ Command line:
 "$echoargs" "-e=1 2" -a=1 -b 2
 
 "@ | % { $_ -replace "`r`n","`n" }
-        $r | Should Be $expected
+        $r | Should -Be $expected
 
     }
 
@@ -131,7 +131,7 @@ Command line:
 "$echoargs" -a=1 -b 2 -e=1
 
 "@ | % { $_ -replace "`r`n","`n" }
-        $r | Should Be $expected
+        $r | Should -Be $expected
 
     }
      
@@ -152,7 +152,7 @@ Command line:
 "$echoargs" -a=1 -b 2 "-e=1 2"
 
 "@ | % { $_ -replace "`r`n","`n" }
-        $r | Should Be $expected
+        $r | Should -Be $expected
 
     }
     It "Should pass array args whith double quotes" {
@@ -172,7 +172,7 @@ Command line:
 "$echoargs" -a=1 -b 2 "-e=1 2"
 
 "@  | % { $_ -replace "`r`n","`n" }
-        $r | Should Be $expected
+        $r | Should -Be $expected
 
     }
     It "Should pass array args by position" {
@@ -190,7 +190,7 @@ Command line:
 "$echoargs" -a=1 -b 2
 
 "@  | % { $_ -replace "`r`n","`n" }
-        $r | Should Be $expected
+        $r | Should -Be $expected
 
     }
 }

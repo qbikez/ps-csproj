@@ -54,16 +54,16 @@ Describe "Reference conversion" {
    Context "converting reference to nuget and no packages dir specified" {
        $projectname = "Core.Client"
         $projref = $refs | ? { $_.Node.Name -ieq $projectname }
-        It "project references to $projectname should be valid" {
+        It "project references to $projectname Should -Be valid" {
             $projref | Should Not BeNullOrEmpty
         }
 
         It "Should Convert properly" {
             $nugetref = convertto-nuget $projref -packagesRelPath $packagesdir
             $nugetref | Should Not BeNullOrEmpty
-            $nugetref.GetType().Name | Should Be "ReferenceMeta"
+            $nugetref.GetType().Name | Should -Be "ReferenceMeta"
             $nugetref.Node.HintPath | Should Not BeNullOrEmpty
-            $nugetref.Node.Hintpath.Contains($packagesdir) | Should Be $true        
+            $nugetref.Node.Hintpath.Contains($packagesdir) | Should -Be $true        
         }
         #It "Should use global packages dir" {
         #    $nugetref | Should Not BeNullOrEmpty
@@ -75,7 +75,7 @@ Describe "Reference conversion" {
             $csproj.Save("$psscriptroot\input\tmp.csproj")
             $outxml = $w.ToString()
             $w.Dispose()
-            $outxml | Should Be $original
+            $outxml | Should -Be $original
         }
    }
 }
