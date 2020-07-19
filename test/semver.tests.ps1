@@ -33,8 +33,8 @@ Describe "parse version" {
 }
 
 Describe "update version" {
+    import-module $PSScriptRoot\..\src\semver\semver.psm1
     $cases = @(        
-    
         @{ version = "1.0.1-build123"; component = [VersionComponent]::SuffixBuild; expected = "1.0.1-build.124" }
         @{ version = "1.0.1"; component = [VersionComponent]::Patch; expected = "1.0.2" }
         @{ version = "1.0.1"; component = [VersionComponent]::Minor; expected = "1.1.0" }
