@@ -63,7 +63,7 @@ namespace powerecho
                     }
                     else
                     {
-                        throw new NotSupportedException($"parameter '{args[i]}' value should be one of: [stderr, stdout, null]");
+                        throw new NotSupportedException($"parameter '{args[i]}' value Should -Be one of: [stderr, stdout, null]");
                     }
                 } else {
                     result.Add(args[i]);

@@ -1,3 +1,5 @@
+import-module nupkg
+
 $script:ns = 'http://schemas.microsoft.com/developer/msbuild/2003'
 
 $script:types = @"
@@ -39,8 +41,9 @@ public class ReferenceMeta {
 }
 "@
 
+
 if (-not ([System.Management.Automation.PSTypeName]'Csproj').Type) {
-    add-type -TypeDefinition $types -ReferencedAssemblies "System.Xml"
+    add-type -TypeDefinition $types -ReferencedAssemblies "System.Xml","System.Xml.ReaderWriter","System.IO","System.Runtime.Extensions"
 }
 
 
@@ -54,7 +57,7 @@ function import-csproj {
         $name = [System.IO.Path]::GetFilenameWithoutExtension($file)
     }
     elseif ($file.Contains("<?xml") -or $file.Contains("<Project")) {
-        $content = $file
+        $content = $file.Trim()
     }
     else {
         throw "csproj file not found: '$file'"

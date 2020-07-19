@@ -1,8 +1,9 @@
-. "$PSScriptRoot\includes.ps1"
+BeforeAll {
+    . "$PSScriptRoot\includes.ps1"
 
-if (gmo semver) { rmo semver }
-import-module $PSScriptRoot\..\src\semver\semver.psm1
-
+    if (gmo semver) { rmo semver }
+    import-module $PSScriptRoot\..\src\semver\semver.psm1
+}
 
 Describe "parse version" {
     $cases = @(
@@ -22,20 +23,18 @@ Describe "parse version" {
         param($version, $major, $minor, $patch, $branch, $build, $rev) 
         
         $ver = Split-Version $version
-        if ($major -ne $null) { $ver.major | Should Be $major }
-        if ($minor -ne $null) { $ver.minor | Should Be $minor }
-        if ($patch -ne $null) { $ver.patch | Should Be $patch }
-        if ($branch -ne $null) { $ver.branchname | Should Be $branch }
-        if ($build -ne $null) { $ver.BuildNum | Should Be $build }
-        if ($rev -ne $null) { $ver.revision | Should Be $rev }
+        if ($major -ne $null) { $ver.major | Should -Be $major }
+        if ($minor -ne $null) { $ver.minor | Should -Be $minor }
+        if ($patch -ne $null) { $ver.patch | Should -Be $patch }
+        if ($branch -ne $null) { $ver.branchname | Should -Be $branch }
+        if ($build -ne $null) { $ver.BuildNum | Should -Be $build }
+        if ($rev -ne $null) { $ver.revision | Should -Be $rev }
     }
 }
 
-
-
 Describe "update version" {
+    import-module $PSScriptRoot\..\src\semver\semver.psm1
     $cases = @(        
-    
         @{ version = "1.0.1-build123"; component = [VersionComponent]::SuffixBuild; expected = "1.0.1-build.124" }
         @{ version = "1.0.1"; component = [VersionComponent]::Patch; expected = "1.0.2" }
         @{ version = "1.0.1"; component = [VersionComponent]::Minor; expected = "1.1.0" }
@@ -66,8 +65,8 @@ Describe "update version" {
         param($version, $component, $value, $expected, $compatibility)
         if ($compatibility -eq $null) { $compatibility = $false } 
         $newver = update-version -ver $version -component $component -value $value -compatibilityMode:$compatibility
-        $newver | Should Be $expected
-        #if ($compatibility) { $newver.Suffix.Length | Should Be }
+        $newver | Should -Be $expected
+        #if ($compatibility) { $newver.Suffix.Length | Should -Be }
          
     }
     
@@ -86,6 +85,6 @@ Describe "compare versions" {
         $verleft = split-version $left
         $verRigth = split-version $right
 
-        $verleft.CompareTo($verRigth) | Should Be $expected
+        $verleft.CompareTo($verRigth) | Should -Be $expected
     }
 }

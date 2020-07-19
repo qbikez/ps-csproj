@@ -1,8 +1,8 @@
 version: 1.0.{build}
 
 os:
-- Visual Studio 2015
-- WMF 5
+- Visual Studio 2019
+# - WMF 5
 
 #clone_script:
 #- ps: 'write-host "cloning... this replaces default clone method"'

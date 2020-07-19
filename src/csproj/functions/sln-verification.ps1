@@ -1,5 +1,6 @@
 import-module pathutils 
 import-module publishmap
+import-module nupkg
 
 
 function get-slndependencies {
@@ -382,7 +383,7 @@ function repair-slnpaths {
     }
     
 #    $valid,$missing = test-slndependencies $sln
-#    $valid | Should Be $true
+#    $valid | Should -Be $true
     
 }
 
@@ -446,14 +447,15 @@ function repair-csprojpaths {
             else {
                 $relpath = get-relativepath $csproj.fullname $_.matching.fullname
             
+                $oldPath = $_.ref.Path
                 $_.ref.Path = $relpath
                 if ($_.ref.type -eq "project" -and $_.ref.Node.Include -ne $null) {
-                    write-verbose "($($csproj.name)): fixing CSPROJ reference in $($csproj.name): $($_.ref.Path) => $relpath"
+                    write-verbose "($($csproj.name)): fixing CSPROJ reference in $($csproj.name): $oldPath => $relpath"
                     $_.ref.Node.Include = $relpath
                 } 
                 if ($_.ref.type -eq "nuget" -and $_.ref.Node.HintPath -ne $null) {
-                    write-verbose "($($csproj.name)): fixing NUGET reference in $($csproj.name): $($_.ref.Path) => $relpath"
-                    $_.ref.Node.HintPath = $relpath                
+                    write-verbose "($($csproj.name)): fixing NUGET reference in $($csproj.name): $oldPath => $relpath"
+                    $_.ref.Node.HintPath = $relpath
                 }
             }
 
@@ -527,7 +529,7 @@ function repair-csprojpaths {
     }
     
 #    $valid,$missing = test-slndependencies $sln
-#    $valid | Should Be $true
+#    $valid | Should -Be $true
     
 }
 

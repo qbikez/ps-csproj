@@ -71,7 +71,7 @@ begin {
                     if ($bound[$p.Key].IsPresent -eq $true) {
                         $r += @{ $p.key = $true }
                     } else {
-                        # switch should be set to false
+                        # switch Should -Be set to false
                         $r += @{ $p.key = $false }
                     }
                 }

@@ -408,7 +408,7 @@ process {
                     $buildProperties.GetEnumerator() | % { $a += @("-p:$($_.Key)=$($_.Value)") }
                 }
                 write-host "building project: msbuild $nuspecorcsproj $a "
-                $o = invoke msbuild $nuspecorcsproj $a -passthru                
+                $o = invoke msbuild $nuspecorcsproj $a -passthru
             }
         }
     
