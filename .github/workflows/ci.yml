@@ -10,14 +10,35 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-2019
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
-    - name: Run a one-line script
+    - name: checkout submodules
+      run: git submodule update --init --recursive
+      
+    - name: init
+      shell: pwsh
+      run: scripts/init.ps1 
+
+    - name: restore
+      shell: pwsh
+      run: scripts/restore.ps1 -pesterVersion 5.0.2
+
+    - name: build
+      shell: pwsh
+      run: scripts/build.ps1
+
+    - name: test
+      shell: pwsh
+      run: scripts/lib/test.appveyor.ps1
+    
+    - name: test csproj installation
       shell: pwsh
       run: |
-        write-host "test1"
-        write-host "test2"
+        Uninstall-Module pathutils -verbose
+        Install-Module -Name csproj -RequiredVersion 1.0.6 -Force -Verbose
+        Get-module csproj -listavailable | format-list
+        Import-Module csproj -verbose
