@@ -27,5 +27,3 @@ try {
 } finally {
     popd
 }
-
-Install-Module pester -Scope CurrentUser -Force
