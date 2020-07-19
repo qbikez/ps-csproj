@@ -33,8 +33,13 @@ jobs:
 
     - name: test
       shell: pwsh
-      run: scripts/lib/test.appveyor.ps1
+      run: scripts/lib/test.ps1 -EnableExit
     
+    - uses: ashley-taylor/junit-report-annotations-action@1.3
+      if: always()
+      with:
+        access-token: ${{ secrets.GITHUB_TOKEN }}
+
     - name: test csproj installation
       shell: pwsh
       run: |
