@@ -33,13 +33,13 @@ jobs:
 
     - name: test
       shell: pwsh
-      run: scripts/lib/test.ps1 -EnableExit -OutputFormat JUnitXml
+      run: scripts/lib/test.ps1 -EnableExit -OutputFormat NUnitXml
     
-    - uses: ashley-taylor/junit-report-annotations-action@master
+    - uses: MirrorNG/nunit-reporter@v1.0.9
       if: always()
       with:
-        access-token: ${{ secrets.GITHUB_TOKEN }}
         path: "**/test-result.xml"
+        access-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: test csproj installation
       shell: pwsh
