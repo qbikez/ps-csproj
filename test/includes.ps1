@@ -105,7 +105,7 @@ function In {
 
     $originalPath = $pwd
     if (-not $doNothing) {
-        & $SafeCommands['Set-Location'] $Path
+        & Set-Location $Path
         $pwd = $Path
     }
     try {
@@ -113,7 +113,7 @@ function In {
     }
     finally {
         if (-not $doNothing) {
-            & $SafeCommands['Set-Location'] $originalPath
+            & Set-Location $originalPath
             $pwd = $originalPath
         }
     }
