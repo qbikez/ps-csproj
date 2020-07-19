@@ -102,18 +102,18 @@ Describe "project file manipulation" {
         It "csproj Should contain reference to project $packagename" {
             $refs = get-projectreferences $csproj
             $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
-            $ref | Should Not BeNullOrEmpty
+            $ref | Should -Not -BeNullOrEmpty
         }
         It "Should convert properly to nuget" {
             $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
             $nugetref = convertto-nuget $ref "TestDrive:\packages"
-            $nugetref | Should Not BeNullOrEmpty
+            $nugetref | Should -Not -BeNullOrEmpty
             replace-reference $csproj -originalref $ref -newref $nugetref
         }
         
         It "result Project should contain nuget reference to $packagename" {
             $ref = get-nugetreferences $csproj | ? { $_.Name -eq $packagename }
-            $ref | Should Not BeNullOrEmpty
+            $ref | Should -Not -BeNullOrEmpty
         } 
         $ref = get-nugetreferences $csproj
         
@@ -124,8 +124,8 @@ Describe "project file manipulation" {
          }  
         It "nuget reference <name> should have relative path" -TestCases $cases {
             param($name,$path)
-                $name | Should Not BeNullOrEmpty
-                $path | Should Not BeNullOrEmpty
+                $name | Should -Not -BeNullOrEmpty
+                $path | Should -Not -BeNullOrEmpty
                 Test-IsPathRelative $path | Should -Be True 
             
         }
@@ -137,13 +137,13 @@ Describe "project file manipulation" {
         
         It "packages.config should contain nuget reference" {        
             $p = "packages.config"
-            gi $p | Should Not BeNullOrEmpty
+            gi $p | Should -Not -BeNullOrEmpty
             $content = gc $p | out-string
             $conf = [xml]$content
-            $conf | Should not BeNullOrEmpty
-            $conf.packages | Should not BeNullOrEmpty
+            $conf | Should -Not -BeNullOrEmpty
+            $conf.packages | Should -Not -BeNullOrEmpty
             $entry = $conf.packages.package | ? { $_.id -eq $packagename }
-            $entry | Should Not BeNullOrEmpty
+            $entry | Should -Not -BeNullOrEmpty
         }
         It "Should restore properly" {
             $error.Clear()

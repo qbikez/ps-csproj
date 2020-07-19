@@ -22,7 +22,7 @@ Describe "packages config manipulation" {
         }
         
         It "Should load properly" {
-           # $conf | Should Not Be $null # BeNullOrEmpty # why does it throw for a valid object? 
+           # $conf | Should -Not -Be $null # BeNullOrEmpty # why does it throw for a valid object? 
            $conf.xml | Should -Not -BeNullOrEmpty
            $conf -isnot [Object[]] | Should -Be True
         }
@@ -119,7 +119,7 @@ Describe "packages config file" {
             $pkg = get-packagesconfig "TestDrive:\packages.config" -createifnotexists
             test-path "TestDrive:\packages.config" | Should -Be $true
             $pkg | Should -Not -BeNullOrEmpty
-            $pkg.xml | Should Not Be $null
+            $pkg.xml | Should -Not -Be $null
         }
         It "should not overwrite if -createifnotexists is specified" {
             if (test-path "TestDrive:\packages.config") {
@@ -130,7 +130,7 @@ Describe "packages config file" {
             
             $pkg = get-packagesconfig "TestDrive:\packages.config" -createifnotexists
             $pkg | Should -Not -BeNullOrEmpty
-            $pkg.xml | Should Not Be $null
+            $pkg.xml | Should -Not -Be $null
             get-content "TestDrive:\packages.config" | Should -Be $xml
         }
     }

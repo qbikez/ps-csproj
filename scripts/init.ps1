@@ -6,3 +6,4 @@ if (!(get-command nuget)) {
 
 choco install dotnetcore-sdk -y --sxs --version 3.1.300
 
+& "$PSScriptRoot\build"

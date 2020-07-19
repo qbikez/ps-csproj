@@ -58,7 +58,7 @@ Describe "Processing output from invoke" {
         $r | Should -Be $msg
     }
  
-      It "Should not write errors to console when showoutput=false" {
+    It "Should not write errors to console when showoutput=false" {
         $error.clear()
         $msg = "this is my result"
         $r = invoke $echoargs "--return" $msg --log stderr -passthru -showoutput:$false
@@ -76,7 +76,7 @@ Describe "Passing arguments from invoke" {
     # }
 
     It "Should pass all direct arguments quoted 1" {
-        $r = invoke $echoargs test -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs test -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n", "`n" }
         $expected = @"
 Arg 0 is <test>
 Arg 1 is <-a=1>
@@ -86,13 +86,13 @@ Arg 4 is <-e=1 2>
 Command line:
 "$echoargs" test -a=1 -b 2 "-e=1 2"
 
-"@ | % { $_ -replace "`r`n","`n" }
+"@ | % { $_ -replace "`r`n", "`n" }
         $r | Should -Be $expected
 
     }
 
-     It "Should pass all direct arguments quoted 2" {
-        $r = invoke $echoargs -a=1 -b=2 -e="1 2" -passthru  -verbose | out-string | % { $_ -replace "`r`n","`n" }
+    It "Should pass all direct arguments quoted 2" {
+        $r = invoke $echoargs -a=1 -b=2 -e="1 2" -passthru  -verbose | out-string | % { $_ -replace "`r`n", "`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b=2>
@@ -100,13 +100,13 @@ Arg 2 is <-e=1 2>
 Command line:
 "$echoargs" -a=1 -b=2 "-e=1 2"
 
-"@ | % { $_ -replace "`r`n","`n" }
+"@ | % { $_ -replace "`r`n", "`n" }
         $r | Should -Be $expected
 
     }
 
-     It "Should pass all direct arguments quoted 3" {
-        $r = invoke $echoargs -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+    It "Should pass all direct arguments quoted 3" {
+        $r = invoke $echoargs -a=1 -b 2 -e="1 2" -passthru -verbose | out-string | % { $_ -replace "`r`n", "`n" }
         $expected = @"
 Arg 0 is <-e=1 2>
 Arg 1 is <-a=1>
@@ -115,13 +115,13 @@ Arg 3 is <2>
 Command line:
 "$echoargs" "-e=1 2" -a=1 -b 2
 
-"@ | % { $_ -replace "`r`n","`n" }
+"@ | % { $_ -replace "`r`n", "`n" }
         $r | Should -Be $expected
 
     }
 
-     It "Should pass all direct arguments" {
-        $r = invoke $echoargs -a=1 -b 2 -e=1 -passthru -verbose | out-string | % { $_ -replace "`r`n","`n" }
+    It "Should pass all direct arguments" {
+        $r = invoke $echoargs -a=1 -b 2 -e=1 -passthru -verbose | out-string | % { $_ -replace "`r`n", "`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
@@ -130,7 +130,7 @@ Arg 3 is <-e=1>
 Command line:
 "$echoargs" -a=1 -b 2 -e=1
 
-"@ | % { $_ -replace "`r`n","`n" }
+"@ | % { $_ -replace "`r`n", "`n" }
         $r | Should -Be $expected
 
     }
@@ -142,7 +142,7 @@ Command line:
             "2"
             "-e=1 2"
         )
-        $r = invoke $echoargs -argumentList $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -argumentList $a -passthru | out-string  | % { $_ -replace "`r`n", "`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
@@ -151,7 +151,7 @@ Arg 3 is <-e=1 2>
 Command line:
 "$echoargs" -a=1 -b 2 "-e=1 2"
 
-"@ | % { $_ -replace "`r`n","`n" }
+"@ | % { $_ -replace "`r`n", "`n" }
         $r | Should -Be $expected
 
     }
@@ -162,7 +162,7 @@ Command line:
             "2"
             "-e=`"1 2`""
         )
-        $r = invoke $echoargs -arguments $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs -arguments $a -passthru | out-string  | % { $_ -replace "`r`n", "`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
@@ -171,7 +171,7 @@ Arg 3 is <-e=1 2>
 Command line:
 "$echoargs" -a=1 -b 2 "-e=1 2"
 
-"@  | % { $_ -replace "`r`n","`n" }
+"@  | % { $_ -replace "`r`n", "`n" }
         $r | Should -Be $expected
 
     }
@@ -181,7 +181,7 @@ Command line:
             "-b"
             "2"
         )
-        $r = invoke $echoargs $a -passthru | out-string  | % { $_ -replace "`r`n","`n" }
+        $r = invoke $echoargs $a -passthru | out-string  | % { $_ -replace "`r`n", "`n" }
         $expected = @"
 Arg 0 is <-a=1>
 Arg 1 is <-b>
@@ -189,7 +189,7 @@ Arg 2 is <2>
 Command line:
 "$echoargs" -a=1 -b 2
 
-"@  | % { $_ -replace "`r`n","`n" }
+"@  | % { $_ -replace "`r`n", "`n" }
         $r | Should -Be $expected
 
     }

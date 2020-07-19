@@ -2,37 +2,46 @@ BeforeAll {
     . $PSScriptRoot\includes.ps1
 
     import-module $PSScriptRoot\..\src\csproj\csproj.psm1
-
-    if (!(get-command msbuild)) {
-        throw "add msbuild to PATH!"
-    }
+    import-module $PSScriptRoot\..\scripts\lib\imports\msbuild.ps1
 }
 
 Describe "parsing sln" {
-    $targetdir = "TestDrive:"
-    copy-item -Recurse "$inputdir/test" "$targetdir"
-    copy-item -Recurse "$inputdir/packages-repo" "$targetdir"
-    
+    BeforeAll {
+        $targetdir = "TestDrive:"
+        copy-item -Recurse "$inputdir/test" "$targetdir"
+        copy-item -Recurse "$inputdir/packages-repo" "$targetdir"
+
+        $path = $env:Path
+        Add-MsbuildPath
+    }
+    AfterAll {
+        if ($path) {
+             $env:Path = $path
+        }
+    }
     Context "when parsing sln projects" {
-        $sln = import-sln "$inputdir\platform\sln\legimi.core\Legimi.Core.Utils\Legimi.Core.Utils.sln"
-        $projects = get-slnprojects $sln
-            
+        BeforeAll {
+            $sln = import-sln "$inputdir\platform\sln\legimi.core\Legimi.Core.Utils\Legimi.Core.Utils.sln"
+            $projects = get-slnprojects $sln
+        }
         It "Should return all projects" {
             #$projects | format-table | out-string | log-info
-            $projects | Should not benullorempty
+            $projects | Should -Not -BeNullOrEmpty
         }
         It "Should contain Legimi.Core.Utils" {
             $p = $projects | ? { $_.Name -eq "Legimi.Core.Utils" }
-            $p | Should Not BeNullorempty
+            $p | Should -Not -BeNullOrEmpty
             $p.type | Should -Be "csproj"
         }
     }
 
     Context "when removing project from sln" {
-        $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"
-        $sln = import-sln $slnfile
-        $oldprojects = get-slnprojects $sln
-        $toremove = "Console1"
+        BeforeAll {
+            $slnfile = "$targetdir/test/sln/Sample.Solution/Sample.Solution.sln"
+            $sln = import-sln $slnfile
+            $oldprojects = get-slnprojects $sln
+            $toremove = "Console1"
+        }
         It "Should build before" {
             In (split-path -Parent $slnfile) {
                 $r = nuget restore
@@ -64,8 +73,10 @@ Describe "parsing sln" {
     }
      
     Context "When updating project in sln" {
-        $sln = import-sln "$inputdir\platform\sln\legimi.core\Legimi.Core.Utils\Legimi.Core.Utils.sln"
-        $oldprojects = get-slnprojects $sln
+        BeforeAll {
+            $sln = import-sln "$inputdir\platform\sln\legimi.core\Legimi.Core.Utils\Legimi.Core.Utils.sln"
+            $oldprojects = get-slnprojects $sln
+        }
         It "sln Should contain updated projects" {
             $oldprojects[0].Name = "Something.New"
             update-slnproject $sln $oldprojects[0]
@@ -75,5 +86,3 @@ Describe "parsing sln" {
         }        
     }
 }
-
-. $PSScriptRoot\teardown.ps1

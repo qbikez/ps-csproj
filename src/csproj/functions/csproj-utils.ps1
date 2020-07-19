@@ -54,7 +54,7 @@ function import-csproj {
         $name = [System.IO.Path]::GetFilenameWithoutExtension($file)
     }
     elseif ($file.Contains("<?xml") -or $file.Contains("<Project")) {
-        $content = $file
+        $content = $file.Trim()
     }
     else {
         throw "csproj file not found: '$file'"

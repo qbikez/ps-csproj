@@ -263,7 +263,7 @@ Describe "Handle csproj with project.json" {
     
     It "short assembly version should not have prefix" {
         $newver = update-buildversion -verbose
-        $newver | Should Match "1\.2\.4-.*"
+        $newver | Should -Match "1\.2\.4-.*"
 
         $csver = Get-AssemblyMeta "AssemblyInformationalVersion"  -assemblyinfo "Properties/AssemblyInfo.cs"
         $csvershort = Get-AssemblyMeta "AssemblyVersion"  -assemblyinfo "Properties/AssemblyInfo.cs"
@@ -323,7 +323,7 @@ Describe "Handle .Net Core 2.0 csproj format" {
     <#
         It "short assembly version should not have prefix" {
             $newver = update-buildversion -verbose
-            $newver | Should Match "1\.2\.4-.*"
+            $newver | Should -Match "1\.2\.4-.*"
 
             $csver = Get-AssemblyMeta "AssemblyInformationalVersion"  -assemblyinfo "Properties/AssemblyInfo.cs"
             $csvershort = Get-AssemblyMeta "AssemblyVersion"  -assemblyinfo "Properties/AssemblyInfo.cs"
