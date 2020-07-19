@@ -10,7 +10,7 @@ os:
 install:
 - git submodule update --init --recursive
 - ps: scripts/init.ps1 
-- ps: scripts/restore.ps1 -pesterVersion 4.0.2
+- ps: scripts/restore.ps1 -pesterVersion 5.0.2
 
 #assembly_info:
 #  patch: true
