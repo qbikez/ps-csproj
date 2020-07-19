@@ -1,3 +1,5 @@
+import-module nupkg
+
 $script:ns = 'http://schemas.microsoft.com/developer/msbuild/2003'
 
 $script:types = @"

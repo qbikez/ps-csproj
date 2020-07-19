@@ -1,5 +1,6 @@
 import-module pathutils 
 import-module publishmap
+import-module nupkg
 
 
 function get-slndependencies {
