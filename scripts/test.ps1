@@ -1,0 +1,1 @@
+& "$PSScriptRoot\lib\test.ps1"

@@ -162,8 +162,8 @@ function get-packagesconfig {
     [Parameter(Mandatory=$true)]$packagesconfig,
     [switch][bool] $createifnotexists
     )
-    if ($packagesconfig.startswith('<?xml')) {
-        $xml = [xml]$packagesconfig
+    if ($packagesconfig.Trim().startswith('<?xml')) {
+        $xml = [xml]$packagesconfig.Trim()
     }
     else {
         if ($packagesconfig.EndsWith('.csproj')) {

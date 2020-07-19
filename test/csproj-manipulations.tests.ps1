@@ -1,35 +1,42 @@
-. $PSScriptRoot\includes.ps1
+BeforeAll {
+    . $PSScriptRoot\includes.ps1
+    # . "$PSScriptRoot\..\scripts\lib\imports\msbuild.ps1" # needed for get-msbuildpath to work
 
-
-if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
-    write-Verbose "reloading csproj"
-    if (gmo csproj) {
-        rmo csproj 
+    if ($host.name -eq "Windows PowerShell ISE Host" -or $host.name -eq "ConsoleHost") {
+        write-Verbose "reloading csproj"
+        if (gmo csproj) {
+            rmo csproj -Force
+        }
     }
+
+    write-Verbose "importing csproj"
+    import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
+    write-Verbose "reloading csproj DONE"
 }
 
-write-Verbose "importing csproj"
-import-module $psscriptroot\..\src\csproj\csproj.psm1 -DisableNameChecking
-write-Verbose "reloading csproj DONE"
-
-#TODO: use https://github.com/pester/Pester/wiki/TestDrive 
 Describe "project file manipulation" {
-    $null = new-item -ItemType Directory "testdrive:\input\"
-    copy-item "$inputdir\test.csproj" "testdrive:\input\"
-    copy-item "$inputdir\packages.config" "testdrive:\input\"
-    copy-item "$inputdir\packages" "testdrive:\packages" -Recurse
-    copy-item "$inputdir\test" "testdrive:\input\test" -Recurse
-    $testdir = "testdrive:\input" 
-    In $testdir {
-
+    BeforeAll {
+        $null = new-item -ItemType Directory "TestDrive:\input\"
+        copy-item "$inputdir\test.csproj" "TestDrive:\input\"
+        copy-item "$inputdir\packages.config" "TestDrive:\input\"
+        copy-item "$inputdir\packages" "TestDrive:\packages" -Recurse
+        copy-item "$inputdir\test" "TestDrive:\input\test" -Recurse
+        $testdir = "TestDrive:\input"
+        pushd $testdir
+    }
+    AfterAll {
+        popd
+    }
     Context "When project reference version differs from packages.config" {
-        $csproj = import-csproj "test\src\Core\Core.Lib3\Core.Lib3.csproj"
-        $pkgconfig =  $conf = get-packagesconfig "test\src\Core\Core.Lib3\packages.config"       
+        BeforeAll {
+            $csproj = import-csproj "test\src\Core\Core.Lib3\Core.Lib3.csproj"
+            $pkgconfig = $conf = get-packagesconfig "test\src\Core\Core.Lib3\packages.config"       
+        }
 
         It "Should detect the difference" {
             $refs = get-nugetreferences $csproj
             $incorect = @()
-            foreach($pkgref in $pkgconfig.packages) {
+            foreach ($pkgref in $pkgconfig.packages) {
                 $ref = $refs | ? { $_.ShortName -eq $pkgref.id }
                 if ($ref -eq $null) {
                     write-warning "missing csproj reference for package $($pkgref.id)"
@@ -47,18 +54,18 @@ Describe "project file manipulation" {
                 }
             }
 
-            $incorect.length | Should Be 1
-            $incorect[0] | Should Be "log4net"
+            $incorect.length | Should -Be 1
+            $incorect[0] | Should -Be "log4net"
         }
 
         It "Should fix the difference" {
-            repair-csprojpaths $csproj -reporoot "testdrive:\"
+            repair-csprojpaths $csproj -reporoot "TestDrive:\"
         }
 
-        It "difference should be fixed" {
+        It "difference Should -Be fixed" {
             $refs = get-nugetreferences $csproj
             $incorect = @()
-            foreach($pkgref in $pkgconfig.packages) {
+            foreach ($pkgref in $pkgconfig.packages) {
                 $ref = $refs | ? { $_.ShortName -eq $pkgref.id }
                 if ($ref -eq $null) {
                     write-warning "missing csproj reference for package $($pkgref.id)"
@@ -76,37 +83,37 @@ Describe "project file manipulation" {
                 }
             }
 
-            $incorect.length | Should Be 0
+            $incorect.length | Should -Be 0
         }
     }
-<#
+    <#
     Context "When replacing projectreference" {        
         
         $csproj = import-csproj "test.csproj"
         $packagename = "Core.Boundaries"
         
         #It "should build before replacing" {
-        #    Add-MsbuildPath
-        #    $msbuildout = & msbuild 
+        #    $msbuild = Get-MsbuildPath
+        #    $msbuildout = & $msbuild 
         #    $lec = $lastexitcode
-        #    $lec | Should Be 0
+        #    $lec | Should -Be 0
         #}
         
         It "csproj Should contain reference to project $packagename" {
             $refs = get-projectreferences $csproj
             $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
-            $ref | Should Not BeNullOrEmpty
+            $ref | Should -Not -BeNullOrEmpty
         }
         It "Should convert properly to nuget" {
             $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
-            $nugetref = convertto-nuget $ref "testdrive:\packages"
-            $nugetref | Should Not BeNullOrEmpty
+            $nugetref = convertto-nuget $ref "TestDrive:\packages"
+            $nugetref | Should -Not -BeNullOrEmpty
             replace-reference $csproj -originalref $ref -newref $nugetref
         }
         
         It "result Project should contain nuget reference to $packagename" {
             $ref = get-nugetreferences $csproj | ? { $_.Name -eq $packagename }
-            $ref | Should Not BeNullOrEmpty
+            $ref | Should -Not -BeNullOrEmpty
         } 
         $ref = get-nugetreferences $csproj
         
@@ -117,26 +124,26 @@ Describe "project file manipulation" {
          }  
         It "nuget reference <name> should have relative path" -TestCases $cases {
             param($name,$path)
-                $name | Should Not BeNullOrEmpty
-                $path | Should Not BeNullOrEmpty
-                Test-IsPathRelative $path | Should Be True 
+                $name | Should -Not -BeNullOrEmpty
+                $path | Should -Not -BeNullOrEmpty
+                Test-IsPathRelative $path | Should -Be True 
             
         }
 
         It "result Project should not contain project  reference to $packagename" {
             $ref = get-projectreferences $csproj | ? { $_.Name -eq $packagename }
-            $ref | Should BeNullOrEmpty
+            $ref | Should -BeNullOrEmpty
         } 
         
         It "packages.config should contain nuget reference" {        
             $p = "packages.config"
-            gi $p | Should Not BeNullOrEmpty
+            gi $p | Should -Not -BeNullOrEmpty
             $content = gc $p | out-string
             $conf = [xml]$content
-            $conf | Should not BeNullOrEmpty
-            $conf.packages | Should not BeNullOrEmpty
+            $conf | Should -Not -BeNullOrEmpty
+            $conf.packages | Should -Not -BeNullOrEmpty
             $entry = $conf.packages.package | ? { $_.id -eq $packagename }
-            $entry | Should Not BeNullOrEmpty
+            $entry | Should -Not -BeNullOrEmpty
         }
         It "Should restore properly" {
             $error.Clear()
@@ -144,7 +151,7 @@ Describe "project file manipulation" {
             if ($lastexitcode -ne 0) {
                 $nugetout | % {Write-Warning $_}
             }
-            $lastexitcode | Should be 0
+            $lastexitcode | Should -Be 0
         }
         
         
@@ -154,5 +161,5 @@ Describe "project file manipulation" {
     }
 #>
     
-    }
+    
 }

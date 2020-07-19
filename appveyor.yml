@@ -1,8 +1,8 @@
 version: 1.0.{build}
 
 os:
-- Visual Studio 2015
-- WMF 5
+- Visual Studio 2019
+# - WMF 5
 
 #clone_script:
 #- ps: 'write-host "cloning... this replaces default clone method"'
@@ -10,7 +10,7 @@ os:
 install:
 - git submodule update --init --recursive
 - ps: scripts/init.ps1 
-- ps: scripts/restore.ps1 -pesterVersion 4.0.2
+- ps: scripts/restore.ps1 -pesterVersion 5.0.2
 
 #assembly_info:
 #  patch: true

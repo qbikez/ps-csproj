@@ -1,10 +1,20 @@
 & "$PSScriptRoot\lib\init.ps1"
 
-if (!(get-command nuget)) {
+if (!(get-command nuget -ErrorAction ignore)) {
     choco install -y nuget.commandline
 }
 
-# sdk 1.1.1 is required for powerecho compilation
-choco install dotnetcore-sdk -y --sxs --version 1.0.0-RC2 # this corresponds to sdk version 1.0.0-preview1-002702 needed by test input
-choco install dotnetcore-sdk -y --sxs --version 1.1.11 # needed by powerecho tool
+$dotnetsdk = $null
+if ((get-command dotnet -ErrorAction ignore)) {
+    $sdks = dotnet --list-sdks
+    $matching = $sdks | ? { $_.Trim().StartsWith("3.1.") }
+    if ($matching) {
+        $dotnetsdk = @($matching) | select -first 1
+    }
+}
+if (!$dotnetsdk) {
+    write-host "dotnet sdk version 3.1.* not found. Installing..."
+    choco install dotnetcore-sdk -y --sxs --version 3.1.300
+}
 
+& "$PSScriptRoot\build"
