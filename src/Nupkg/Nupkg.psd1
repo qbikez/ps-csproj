@@ -64,7 +64,7 @@ Description = 'Cmdlets for building, packing and pushing nugets'
 
 # Modules to import as nested modules of the module specified in RootModule/ModuleToProcess
 NestedModules = @()
-RequiredModules =@("AssemblyMeta","Process","SemVer","Newtonsoft.Json", "PathUtils")
+RequiredModules =@("AssemblyMeta","Process","CustomSemVer","Newtonsoft.Json", "PathUtils")
 
 # Functions to export from this module
 FunctionsToExport = '*'

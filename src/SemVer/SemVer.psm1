@@ -1,93 +1,96 @@
 
 if (-not ([System.Management.Automation.PSTypeName]'VersionComponent').Type) {
-Add-Type -TypeDefinition @"
-   using System;
-   using System.Text;
-   public enum VersionComponent
-   {
-      Major = 0,
-      Minor = 1,
-      Patch = 2,
-      Build = 3,
-      Suffix = 4,
-      SuffixBranch = 45,
-      SuffixBuild = 50,
-      SuffixRevision = 60
-   }
+    Add-Type -TypeDefinition @"
+    using System;
+    using System.Text;
+    public enum VersionComponent
+    {
+        Major = 0,
+        Minor = 1,
+        Patch = 2,
+        Build = 3,
+        Suffix = 4,
+        SuffixBranch = 45,
+        SuffixBuild = 50,
+        SuffixRevision = 60
+    }
    
-   public class SemVer : IComparable<SemVer> {
-     public int? GetComponent(VersionComponent c) {
-         return VerNums.Length > (int)c ? VerNums[(int)c] : (int?)null;
-     }
-     public int? Major { get { return GetComponent(VersionComponent.Major); }}
-     public int? Minor { get { return GetComponent(VersionComponent.Minor); }}
-     public int? Patch { get { return GetComponent(VersionComponent.Patch); }}
-     
-     public string Version { get {
-         return String.Join(".", VerNums);
-     }}
-     public string Suffix {get;set;}
-     
-     public string BranchName {get;set;}
-     public int? BuildNum {get;set;}
-     public string Revision {get;set;}
+    public class CustomSemVer : IComparable<CustomSemVer> {
+        
+        public string Suffix {get;set;}
+        
+        public string BranchName {get;set;}
+        public int? BuildNum {get;set;}
+        public string Revision {get;set;}
 
-     public int[] VerNums {get;set;}
-     public string RevSeparator {get;set;}
+        public int[] VerNums {get;set;}
+        public string RevSeparator {get;set;}
 
-     public SemVer() {
+        public CustomSemVer() {
 
-     }
-     
-     public override string ToString() {
-         var s = Version;
-         if (!string.IsNullOrEmpty(Suffix)) {
-             s += "-" + Suffix;
-         }
-         return s;
-     }
-     
-     public string FormatSuffix(bool compatibilityMode = false) {
-         StringBuilder sb = new StringBuilder();
-         if (!string.IsNullOrEmpty(BranchName)) {
-             var b = BranchName;
-             if (compatibilityMode) b = b.Replace("_","").Replace("+","").Replace(".","").Replace("/",""); // nuget does not tolerate these chars in suffix
-             if (compatibilityMode) b = b.Substring(0, Math.Min(10,b.Length)); // max 20 chars for suffix: branch:10, build:3, rev:6, revseparator:1
-             sb.Append(b);
-         }
-         if (BuildNum != null) {
-             if (sb.Length == 0) {
-                 sb.Append("build");
-             }
-             if (!compatibilityMode) sb.Append("."); // nuget does not tolerate `.` in suffix             
-             if (sb.Length > 0 && Char.IsNumber(sb[sb.Length-1])) sb[sb.Length-1] = '-'; // separate branchname digits from build number
-             sb.Append(BuildNum.Value.ToString("000"));
-         }
-         if (!string.IsNullOrEmpty(Revision)) {
-             if (sb.Length > 0) {
-                 var revsep = RevSeparator;
-                 if (compatibilityMode) revsep = "-";
-                 sb.Append(revsep);
-             }
-             var rev = Revision;
-             if (compatibilityMode) rev = rev.Substring(0, Math.Min(6,rev.Length));
-             sb.Append(rev);
-         }
-         
-         return sb.ToString();
-     }
+        }
+        
+        public int? GetComponent(VersionComponent c) {
+            return VerNums.Length > (int)c ? VerNums[(int)c] : (int?)null;
+        }
+    
+        public int? Major { get { return GetComponent(VersionComponent.Major); }}
+        public int? Minor { get { return GetComponent(VersionComponent.Minor); }}
+        public int? Patch { get { return GetComponent(VersionComponent.Patch); }}
 
-     public int CompareTo(SemVer other) {
-         var major = this.Major.Value.CompareTo(other.Major.Value);
-         if (major != 0) return major;
-         var minor = this.Minor.Value.CompareTo(other.Minor.Value);
-         if (minor != 0) return minor;
-         var patch = this.Patch.Value.CompareTo(other.Patch.Value);
-         if (patch != 0) return patch;
+        public string Version { get {
+            return String.Join(".", VerNums);
+        }}
 
-         return this.Suffix.CompareTo(other.Suffix);
-     }
-   }
+        public override string ToString() {
+            var s = Version;
+            if (!string.IsNullOrEmpty(Suffix)) {
+                s += "-" + Suffix;
+            }
+            return s;
+        }
+        
+        public string FormatSuffix(bool compatibilityMode = false) {
+            StringBuilder sb = new StringBuilder();
+            if (!string.IsNullOrEmpty(BranchName)) {
+                var b = BranchName;
+                if (compatibilityMode) b = b.Replace("_","").Replace("+","").Replace(".","").Replace("/",""); // nuget does not tolerate these chars in suffix
+                if (compatibilityMode) b = b.Substring(0, Math.Min(10,b.Length)); // max 20 chars for suffix: branch:10, build:3, rev:6, revseparator:1
+                sb.Append(b);
+            }
+            if (BuildNum != null) {
+                if (sb.Length == 0) {
+                    sb.Append("build");
+                }
+                if (!compatibilityMode) sb.Append("."); // nuget does not tolerate `.` in suffix             
+                if (sb.Length > 0 && Char.IsNumber(sb[sb.Length-1])) sb[sb.Length-1] = '-'; // separate branchname digits from build number
+                sb.Append(BuildNum.Value.ToString("000"));
+            }
+            if (!string.IsNullOrEmpty(Revision)) {
+                if (sb.Length > 0) {
+                    var revsep = RevSeparator;
+                    if (compatibilityMode) revsep = "-";
+                    sb.Append(revsep);
+                }
+                var rev = Revision;
+                if (compatibilityMode) rev = rev.Substring(0, Math.Min(6,rev.Length));
+                sb.Append(rev);
+            }
+            
+            return sb.ToString();
+        }
+
+        public int CompareTo(CustomSemVer other) {
+            var major = this.Major.Value.CompareTo(other.Major.Value);
+            if (major != 0) return major;
+            var minor = this.Minor.Value.CompareTo(other.Minor.Value);
+            if (minor != 0) return minor;
+            var patch = this.Patch.Value.CompareTo(other.Patch.Value);
+            if (patch != 0) return patch;
+
+            return this.Suffix.CompareTo(other.Suffix);
+        }
+    }
 "@
 }
 
@@ -96,12 +99,12 @@ $buildSuffixRegex = "(\.|build){0,1}(?<buildno>[0-9]{3})($|[-+][a-fA-F0-9]+$)"
 <#
 
 .SYNOPSIS
-Updates given component of a SemVer string
+Updates given component of a CustomSemVer string
 
 .DESCRIPTION 
 
 .PARAMETER ver 
-SemVer string 
+CustomSemVer string 
 
 .PARAMETER component
 The version component you wish to update (Major, Minor, Patch)
@@ -126,12 +129,12 @@ Increment Patch component of version 1.0.1
 function Update-Version {
     [CmdletBinding()]
     param(
-        [Parameter(mandatory=$true)]$ver, 
+        [Parameter(mandatory = $true)]$ver, 
         [VersionComponent]$component = [VersionComponent]::Patch, 
         $value = $null,
         [Alias("nuget")]
         [switch][bool] $compatibilityMode
-        ) 
+    ) 
         
     write-verbose "updating version $ver component $component to value $value"
     $semver = split-version $ver -compatibilityMode:$compatibilityMode
@@ -139,7 +142,7 @@ function Update-Version {
     
     $lastNumIdx = $component
     if ($component -lt [VersionComponent]::Suffix) {      
-        while ($lastNumIdx -gt ($semver.vernums.length-1)) {
+        while ($lastNumIdx -gt ($semver.vernums.length - 1)) {
             write-verbose "$lastNumIdx > version length ($($semver.vernums.length-1)) => adding .0"
             $semver.vernums += @(0)
         }
@@ -156,15 +159,16 @@ function Update-Version {
         }
         $semver.vernums[$component] = $lastNum.ToString()
         #each lesser component Should -Be set to 0 
-        for($i = [int]$component + 1; $i -lt $semver.vernums.length; $i++) {
+        for ($i = [int]$component + 1; $i -lt $semver.vernums.length; $i++) {
             $semver.vernums[$i] = 0
         }
         if ($semver.BuildNum) {
-             $ver2 = join-version $semver
-             $ver2 = update-version $ver2 SuffixBuild -value 1 -compatibilityMode:$compatibilityMode
-             return $ver2 
+            $ver2 = join-version $semver
+            $ver2 = update-version $ver2 SuffixBuild -value 1 -compatibilityMode:$compatibilityMode
+            return $ver2 
         } 
-    } else {        
+    }
+    else {        
         if ([string]::IsNullOrEmpty($suffix)) {
             $semver.buildnum = 0
         }        
@@ -228,8 +232,9 @@ function Split-Version($ver, [switch][bool] $compatibilityMode) {
     if ($suffix -match "^(?<branchname>[^.+]+)") {
         $branch = $matches["branchname"]
         if ($buildnumidx -ne $null -and $buildnumidx -gt 0) {
-            $branch = $suffix.SubString(0,$buildnumidx)
-        } elseif ($buildnumidx -eq 0) {
+            $branch = $suffix.SubString(0, $buildnumidx)
+        }
+        elseif ($buildnumidx -eq 0) {
             $null = $suffix -match "^(?<branchname>[^.+\-0-9]+)"
             $branch = $matches["branchname"]
         }
@@ -242,18 +247,18 @@ function Split-Version($ver, [switch][bool] $compatibilityMode) {
         $rev = $Matches["rev"]
     }
    
-    $r = new-object -type SemVer -property @{
-        Suffix = $suffix    
-        BuildNum = $buildnum
-        Revision = $rev
-        VerNums = $vernums
+    $r = new-object -type CustomSemVer -property @{
+        Suffix       = $suffix    
+        BuildNum     = $buildnum
+        Revision     = $rev
+        VerNums      = $vernums
         RevSeparator = $revSeparator
-        BranchName = $branch
+        BranchName   = $branch
     }
     return $r
 }
 
-function Join-Version([SemVer] $version) {
+function Join-Version([CustomSemVer] $version) {
     return $version.ToString()
 }
 

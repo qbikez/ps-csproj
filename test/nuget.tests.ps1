@@ -1,5 +1,6 @@
 BeforeAll {
     . "$PSScriptRoot\includes.ps1"
+    . "$PSScriptRoot\..\scripts\lib\imports\msbuild.ps1"
 
     if (gmo assemblymeta -ErrorAction Ignore) { rmo assemblymeta -Force }
     if (gmo nupkg -ErrorAction Ignore) { rmo nupkg -Force }
@@ -10,6 +11,9 @@ BeforeAll {
     import-module $PSScriptRoot\..\src\assemblymeta\assemblymeta.psm1
     import-module $PSScriptRoot\..\src\process\process.psm1
     import-module $PSScriptRoot\..\src\nupkg\nupkg.psm1
+
+    $path = $env:Path
+    add-msbuildpath
 }
 
 Describe "find Nuget packages dir" {
@@ -18,6 +22,18 @@ Describe "find Nuget packages dir" {
         $targetdir = $targetdir -replace "TestDrive:", "$TestDrive"
         $csproj = "$targetdir/test/src/Core/Core.vnext/project.json"
         $dir = split-path -parent $csproj
+        
+        $path = $env:Path
+        add-msbuildpath
+    }
+
+    AfterAll {
+        if ($path) {
+            $env:Path = $path 
+        }
+        else {
+            throw 'failed to restore PATH'
+        }
     }
     #remove-item "$targetdir/test/nuget.config" 
     It "should find packages dir" {
@@ -74,6 +90,7 @@ Describe "Generate nuget for csproj" {
             $csproj = "$targetdir/test/src/Core/Core.Library2/Core.Library2.csproj"
             $dir = split-path -parent $csproj
             $project = split-path -leaf $csproj
+            
             pushd $dir
         }
         AfterAll {
@@ -144,8 +161,6 @@ Describe "Generate nuget for csproj" {
     }
 }
 
-
-
 Describe "Generate nuget for project.json" {
     BeforeAll {
         $targetdir = copy-samples
@@ -205,8 +220,6 @@ Describe "Generate nuget for project.json" {
         #$pkgver | Should -Be $ver
     }
 } 
-
-
 
 Describe "Handle csproj with project.json" {
     BeforeAll {
