@@ -37,6 +37,7 @@ jobs:
     
     - name: Upload test result artifact
       uses: actions/upload-artifact@v1
+      if: always()
       with:
         name: drop
         path: artifacts/
