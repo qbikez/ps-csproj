@@ -33,12 +33,13 @@ jobs:
 
     - name: test
       shell: pwsh
-      run: scripts/lib/test.ps1 -EnableExit
+      run: scripts/lib/test.ps1 -EnableExit -OutputFormat JUnitXml
     
     - uses: ashley-taylor/junit-report-annotations-action@master
       if: always()
       with:
         access-token: ${{ secrets.GITHUB_TOKEN }}
+        path: "**/test-result.xml"
 
     - name: test csproj installation
       shell: pwsh
