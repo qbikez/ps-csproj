@@ -98,20 +98,26 @@ Describe "Reference node manipulation" {
   Context "When converting project reference to nuget" {
     BeforeAll {
       $refs = get-projectreferences -csproj $csproj
-    }
-    It "Cannot convert when nuget is missing" {
       $projref = $refs | ? { $_.Name -eq "Core.Client" }
-      if (test-path "$inputdir\packages\Core.Client.*") {
-        remove-item "$inputdir\packages\Core.Client.*" -Recurse
-      } 
-      { convertto-nuget -ref $projref "$inputdir\packages" } | Should -Throw 
     }
 
-    $projref = $refs | ? { $_.Name -eq "Core.Client" }
-    if (!(test-path "$inputdir\packages\Core.Client.*")) {
-      $null = new-item -type directory "$inputdir\packages\Core.Client.1.0.1\lib"
-      $null = new-item -type file "$inputdir\packages\Core.Client.1.0.1\lib\Core.Client.dll"
-    } 
+    Context "When nuget package is missing" {
+      BeforeAll {
+        if (test-path "$inputdir\packages\Core.Client.*") {
+          remove-item "$inputdir\packages\Core.Client.*" -Recurse
+        } 
+      }
+      AfterAll {
+        if (!(test-path "$inputdir\packages\Core.Client.*")) {
+          $null = new-item -type directory "$inputdir\packages\Core.Client.1.0.1\lib"
+          $null = new-item -type file "$inputdir\packages\Core.Client.1.0.1\lib\Core.Client.dll"
+        } 
+      }
+      It "Cannot convert when nuget is missing" {
+        { convertto-nuget -ref $projref "$inputdir\packages" } | Should -Throw 
+      }
+    }
+
     It "Project reference should convert to nuget reference" {
       $converted = convertto-nuget -ref $projref "$inputdir\packages" 
       $converted.Node.Name | Should -Be "Reference"
