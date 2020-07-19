@@ -1,10 +1,13 @@
+
 BeforeAll {
     . "$PSScriptRoot\includes.ps1"
     if ((gmo process) -ne $null) { rmo process -Force }
 
     import-module $PSScriptRoot\..\src\process\process.psm1
 
-    $echoargs = "$psscriptroot\tools\powerecho\bin\Debug\netcoreapp1.1\win10-x64\powerecho.exe"
+    $target = "netcoreapp3.1"
+    $platform = "win10-x64"
+    $echoargs = "$psscriptroot\tools\powerecho\bin\Debug\$target\$platform\powerecho.exe"
     $echoargs = [System.IO.Path]::GetFullPath($echoargs)
 }
 
