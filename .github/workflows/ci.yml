@@ -1,0 +1,58 @@
+name: CI
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: windows-2019
+
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: checkout submodules
+      run: git submodule update --init --recursive
+      
+    - name: init
+      shell: pwsh
+      run: scripts/init.ps1 
+
+    - name: restore
+      shell: pwsh
+      run: scripts/restore.ps1 -pesterVersion 5.0.2
+
+    - name: build
+      shell: pwsh
+      run: scripts/build.ps1
+
+    - name: test
+      shell: pwsh
+      run: scripts/lib/test.ps1 -EnableExit -OutputFormat NUnitXml
+    
+    - name: Upload test result artifact
+      uses: actions/upload-artifact@v1
+      if: always()
+      with:
+        name: drop
+        path: artifacts/
+    
+    - name: report test results
+      uses: qbikez/nunit-reporter@nunit-v2
+      if: always()
+      with:
+        path: "**/test-result.xml"
+        access-token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: test csproj installation
+      shell: pwsh
+      run: |
+        Uninstall-Module pathutils -verbose
+        Install-Module -Name csproj -RequiredVersion 1.0.6 -Force -Verbose
+        Get-module csproj -listavailable | format-list
+        Import-Module csproj -verbose
