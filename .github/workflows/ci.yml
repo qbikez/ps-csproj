@@ -43,7 +43,7 @@ jobs:
         path: artifacts/
     
     - name: report test results
-      uses: MirrorNG/nunit-reporter@v1.0.9
+      uses: qbikez/nunit-reporter@nunit-v2
       if: always()
       with:
         path: "**/test-result.xml"
