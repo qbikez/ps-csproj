@@ -16,3 +16,4 @@ test-results/
 /csproj.pssproj.user
 /npm-debug.log
 /csproj.sln.DotSettings.user
+*.user
