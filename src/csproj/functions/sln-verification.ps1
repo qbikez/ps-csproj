@@ -39,9 +39,11 @@ function get-slndependencies {
                 #$null = $r | add-property -name "Valid" -value $existsInSln
                 
                 $targetFw = ""
+                $resolvedPath = ""
                 if ($r.type -eq "project") {
                     $r.IsValid = $r.IsValid -and $existsInSln 
                     $targetFw = $p.csproj.TargetFw
+                    $resolvedPath = $r.ResolvedPath
                 }
                 
                 
@@ -51,12 +53,12 @@ function get-slndependencies {
                         $version = $Matches["version"]
                     }
                 }
-                $props = [ordered]@{ project = $p.project; ref = $r; refType = $r.type; version = $version;  IsProjectValid = $true; targetFw = $targetFw }
+                $props = [ordered]@{ project = $p.project; ref = $r; refType = $r.type; version = $version;  IsProjectValid = $true; targetFw = $targetFw; ReslovedPath = $resolvedPath }
                 $result += new-object -type pscustomobject -property $props 
             }
         } else {
             $isvalid = $true
-            $props = [ordered]@{ project = $p.project; ref = $null; refType = $null; version = $null; IsProjectValid = $isvalid; targetFw = ""; }
+            $props = [ordered]@{ project = $p.project; ref = $null; refType = $null; version = $null; IsProjectValid = $isvalid; targetFw = ""; ReslovedPath = ""}
             $result += new-object -type pscustomobject -property $props 
         }
     }

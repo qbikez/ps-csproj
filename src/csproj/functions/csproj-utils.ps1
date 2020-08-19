@@ -186,7 +186,7 @@ param(
             Path = $path
             IsValid = $isvalid
             TargetFw = $csproj.TargetFw
-            ResolvedPath = Resolve-Path $abspath
+            ResolvedPath = Resolve-Path -ErrorAction  Continue -Path $abspath 
         }
     }
 }
