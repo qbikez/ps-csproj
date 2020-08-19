@@ -57,6 +57,7 @@ public class ReferenceMeta {
     public string Path {get;set;}
     public bool? IsValid {get;set;}
     public string TargetFw {get; set;}
+    public string ResolvedPath {get; set;}
     
     public override string ToString() {
         return string.Format("-> {1}{0}", ShortName, IsValid != null ? ((IsValid.Value ? "[+]" : "[-]") + " ") : "");
@@ -185,6 +186,7 @@ param(
             Path = $path
             IsValid = $isvalid
             TargetFw = $csproj.TargetFw
+            ResolvedPath = Resolve-Path $abspath
         }
     }
 }
@@ -203,6 +205,7 @@ function get-referencenodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nod
 }
 
 function get-projectreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
+    Write-Host "> Getting Project References for: " $csproj.Path
     return get-referencenodes $csproj.xml "ProjectReference"  -csproj $csproj
 }
 

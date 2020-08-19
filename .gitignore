@@ -22,3 +22,7 @@ csproj.sln.DotSettings.user
 /npm-debug.log
 /csproj.sln.DotSettings.user
 *.user
+test/debug.ps1
+env.cmd
+env.cmd
+env.cmd
