@@ -16,6 +16,9 @@ get-childitem "$helpersPath\scan" -filter "*.ps1" |
     ? { -not ($_.Name.Contains(".Tests.")) } |
     % { . $_.FullName }
 
+get-childitem "$helpersPath\commandline" -filter "*.ps1" | 
+    ? { -not ($_.Name.Contains(".Tests.")) } |
+    % { . $_.FullName }
 
 #Export-ModuleMember -Function *
 Export-ModuleMember -function `
@@ -30,5 +33,6 @@ Export-ModuleMember -function `
     convert-packagestoprojectjson, repair-ProjectJSonProjectReferences, `
     initialize-projects, push-nugets, use-projects, `
     Copy-BindingRedirects, `
-    update-referencesToStable, find-unstablePackages `
+    update-referencesToStable, find-unstablePackages, `
+	get-csprojdeps `
     -Alias *

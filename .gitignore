@@ -12,3 +12,15 @@ obj/
 bin/
 test-results/
 .tools/
+csproj.pssproj.user
+csproj.sln.DotSettings.user
+.vs/csproj/v14/.suo
+.vs/csproj/v16/.suo
+.tools/
+*.suo
+/csproj.pssproj.user
+/npm-debug.log
+/csproj.sln.DotSettings.user
+*.user
+test/debug.ps1
+env.cmd

@@ -1,4 +1,8 @@
+$script:ns = 'http://schemas.microsoft.com/developer/msbuild/2003'
+
 $script:types = @"
+using System.IO;
+
 public class Sln {
     public string OriginalPath {get;set;}
     public string Path {get;set;}
@@ -6,10 +10,27 @@ public class Sln {
     public string[] Content {get;set;}
     public SlnProject[] projects {get;set;} 
     
-    public void Save() {
+	public Sln() {
+	}
+	
+	public Sln (string pa) {
+		var fullpath = System.IO.Path.GetFullPath(pa);
+		try {
+			var name = System.IO.Path.GetFileName(fullpath);
+			this.Content = System.IO.File.ReadAllLines(fullpath);
+			this.OriginalPath = pa;
+			this.Path = fullpath;
+		}
+		catch(System.Exception ex) {
+			throw new System.Exception("Not a valid solution: " + fullpath, ex);
+		}
+	}
+
+	public void Save() {
         System.IO.File.WriteAllLines(Fullname, Content);
     }
 }
+
 public class SlnProject {
     public string Name {get;set;}
     public string Path {get;set;}
@@ -26,8 +47,9 @@ public class SlnProject {
   
 }
 "@
+
 if (-not ([System.Management.Automation.PSTypeName]'Sln').Type) {
-    add-type -TypeDefinition $types
+    add-type -TypeDefinition $types -ReferencedAssemblies "System"
 }
 
 function import-sln {
@@ -40,12 +62,12 @@ function import-sln {
 
     $content = get-content $path
 
-    $sln = new-object -type "sln" 
-    
-    $sln.originalpath = $path
-    $sln.path = (get-item $path).FullName
-    $sln.content = $content
-    
+    $sln = new-object -type Sln -Property @{ 
+		originalpath = $path
+		path = (get-item $path).FullName
+		content = $content
+    }
+
     return $sln
 }
 

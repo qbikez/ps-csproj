@@ -4,13 +4,35 @@ $script:ns = 'http://schemas.microsoft.com/developer/msbuild/2003'
 
 $script:types = @"
 using System.Xml;
+using System.IO;
+
 public class Csproj {
     public System.Xml.XmlDocument Xml {get;set;}
     public string Path {get;set;}
     public string FullName { get { return Path; } }
     public string Name {get;set;}
     public string Guid {get;set;}
+	public string Folder {get {return System.IO.Path.GetDirectoryName(Path);}}
+	public string TargetFw {get;set;}
     
+	public Csproj() {
+	}
+
+	public Csproj(string pa) {
+		var fullpath = System.IO.Path.GetFullPath(pa);
+		try {
+			var xml = new XmlDocument();
+			xml.Load(fullpath);
+			Xml = xml;
+			Path = pa;
+			Guid = xml.GetElementsByTagName("ProjectGuid").Item(0).InnerText;
+			TargetFw = xml.GetElementsByTagName("TargetFrameworkVersion").Item(0).InnerText;
+		}
+		catch(System.Exception ex) {
+			throw new System.Exception("Not a valid project: " + fullpath, ex);
+		}
+	}
+
     public override string ToString() {
         return Name;
     }
@@ -34,6 +56,8 @@ public class ReferenceMeta {
     public string Type {get;set;}
     public string Path {get;set;}
     public bool? IsValid {get;set;}
+    public string TargetFw {get; set;}
+    public string ResolvedPath {get; set;}
     
     public override string ToString() {
         return string.Format("-> {1}{0}", ShortName, IsValid != null ? ((IsValid.Value ? "[+]" : "[-]") + " ") : "");
@@ -76,11 +100,20 @@ function import-csproj {
          Write-Warning $_
          throw "failed to find ProjectGuid in file '$file': $($_.Exception.Message)"
      }
-    $csproj = new-object -type csproj -Property @{ 
+
+	try {
+	$fwNode = $xml | get-nodes -nodeName "TargetFrameworkVersion"
+	$fw = $fwNode.Node.InnerText
+	} catch {
+		Write-Warning $_.Exception.Message
+	}
+
+    $csproj = new-object -type Csproj -Property @{ 
         xml = $xml
         path = $path
         name = $name
         guid = $guid
+        TargetFw = $fw
     }
 
     return $csproj
@@ -152,6 +185,8 @@ param(
             Type = $type
             Path = $path
             IsValid = $isvalid
+            TargetFw = $csproj.TargetFw
+            ResolvedPath = Resolve-Path -ErrorAction  Continue -Path $abspath 
         }
     }
 }
@@ -170,6 +205,7 @@ function get-referencenodes([Parameter(ValueFromPipeline=$true)][xml] $xml, $nod
 }
 
 function get-projectreferences([Parameter(ValueFromPipeline=$true, Mandatory=$true)][csproj] $csproj) {
+    Write-Host "> Getting Project References for: " $csproj.Path
     return get-referencenodes $csproj.xml "ProjectReference"  -csproj $csproj
 }
 

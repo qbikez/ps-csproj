@@ -37,22 +37,28 @@ function get-slndependencies {
                 $existsInSln = $slnproj -ne $null 
                 $exists = test-path $path
                 #$null = $r | add-property -name "Valid" -value $existsInSln
+                
+                $targetFw = ""
+                $resolvedPath = ""
                 if ($r.type -eq "project") {
                     $r.IsValid = $r.IsValid -and $existsInSln 
+                    $targetFw = $p.csproj.TargetFw
+                    $resolvedPath = $r.ResolvedPath
                 }
+                
+                
                 $version = $null
                 if ($r.type -eq "nuget") {
                     if ($r.path -ne $null -and $r.path.replace("\","/") -match "/.*?(?<version>[0-9]+\.[0-9]+\.[0-9]+.*?)/") {                    
                         $version = $Matches["version"]
                     }
                 }
-                $props = [ordered]@{ project = $p.project; ref = $r; refType = $r.type; version = $version;  IsProjectValid = $true }
+                $props = [ordered]@{ project = $p.project; projectTargetFw = $targetFw; ref = $r; refType = $r.type; version = $version;  IsProjectValid = $true; ReslovedPath = $resolvedPath }
                 $result += new-object -type pscustomobject -property $props 
             }
         } else {
             $isvalid = $true
-            if ($p.csproj -eq $null) { $isvalid = $false }
-            $props = [ordered]@{ project = $p.project; ref = $null; refType = $null; version = $null; IsProjectValid = $isvalid }
+            $props = [ordered]@{ project = $p.project; projectTargetFw = ""; ref = $null; refType = $null; version = $null; IsProjectValid = $isvalid; ReslovedPath = ""}
             $result += new-object -type pscustomobject -property $props 
         }
     }
@@ -403,7 +409,7 @@ function get-csprojdependencies {
     
     $refs = $refs | % {
         $r = $_
-        $props = [ordered]@{ ref = $r; refType = $r.type; path = $r.path }
+        $props = [ordered]@{ projectTargetFw = $csproj.TargetFw; ref = $r; refType = $r.type; path = $r.path; targetFw = $r.TargetFw }
         return new-object -type pscustomobject -property $props 
     }
     
