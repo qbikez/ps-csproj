@@ -12,3 +12,7 @@ obj/
 bin/
 test-results/
 .tools/
+csproj.pssproj.user
+csproj.sln.DotSettings.user
+.vs/csproj/v14/.suo
+.vs/csproj/v16/.suo
