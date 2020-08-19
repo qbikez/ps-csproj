@@ -96,8 +96,6 @@
     <Compile Include="src\csproj\commandline\commandlines.ps1" />
     <Compile Include="src\csproj\csproj.psd1" />
     <Compile Include="src\csproj\Csproj.psm1" />
-    <Compile Include="src\csproj\functions\assemblyinfo-utils.ps1" />
-    <Compile Include="src\csproj\functions\choco-utils.ps1" />
     <Compile Include="src\csproj\functions\conversion.ps1" />
     <Compile Include="src\csproj\functions\csproj-utils.ps1" />
     <Compile Include="src\csproj\functions\nuget-utils.ps1" />
