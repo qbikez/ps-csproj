@@ -53,12 +53,12 @@ function get-slndependencies {
                         $version = $Matches["version"]
                     }
                 }
-                $props = [ordered]@{ project = $p.project; ref = $r; refType = $r.type; version = $version;  IsProjectValid = $true; targetFw = $targetFw; ReslovedPath = $resolvedPath }
+                $props = [ordered]@{ project = $p.project; projectTargetFw = $targetFw; ref = $r; refType = $r.type; version = $version;  IsProjectValid = $true; ReslovedPath = $resolvedPath }
                 $result += new-object -type pscustomobject -property $props 
             }
         } else {
             $isvalid = $true
-            $props = [ordered]@{ project = $p.project; ref = $null; refType = $null; version = $null; IsProjectValid = $isvalid; targetFw = ""; ReslovedPath = ""}
+            $props = [ordered]@{ project = $p.project; projectTargetFw = ""; ref = $null; refType = $null; version = $null; IsProjectValid = $isvalid; ReslovedPath = ""}
             $result += new-object -type pscustomobject -property $props 
         }
     }
@@ -409,7 +409,7 @@ function get-csprojdependencies {
     
     $refs = $refs | % {
         $r = $_
-        $props = [ordered]@{ ref = $r; refType = $r.type; path = $r.path; targetFw = $r.TargetFw }
+        $props = [ordered]@{ projectTargetFw = $csproj.TargetFw; ref = $r; refType = $r.type; path = $r.path; targetFw = $r.TargetFw }
         return new-object -type pscustomobject -property $props 
     }
     
