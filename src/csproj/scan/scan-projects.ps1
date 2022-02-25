@@ -7,7 +7,7 @@ function Initialize-Projects {
 $_path = $path
 
 ipmo pathutils
-$projectFiles = Get-Listing -Path $_path -files -include "*.csproj","*.xproj","*.nuspec","project.json" -Recursive `
+$projectFiles = Get-Listing -Path $_path -files -include "*.csproj","*.xproj","*.nuspec","project.json","*.vbproj" -Recursive `
     -Excludes "node_modules/","artifacts/","bin/","obj/",".hg/","dnx-packages/","packages/","/common/","bower_components/","reader-content/","publish/","^\..*/"
 
 $projects = @{}

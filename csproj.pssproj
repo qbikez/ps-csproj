@@ -29,6 +29,7 @@
   <ItemGroup>
     <Folder Include="src\" />
     <Folder Include="src\csproj\" />
+    <Folder Include="src\csproj\commandline\" />
     <Folder Include="src\csproj\functions\" />
     <Folder Include="test\" />
     <Folder Include="test\features\" />
@@ -92,15 +93,15 @@
     <Folder Include="test\input\test\src\Core\Core.Library2\Properties\" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="src\csproj\commandline\commandlines.ps1" />
     <Compile Include="src\csproj\csproj.psd1" />
     <Compile Include="src\csproj\Csproj.psm1" />
-    <Compile Include="src\csproj\functions\assemblyinfo-utils.ps1" />
-    <Compile Include="src\csproj\functions\choco-utils.ps1" />
     <Compile Include="src\csproj\functions\conversion.ps1" />
     <Compile Include="src\csproj\functions\csproj-utils.ps1" />
     <Compile Include="src\csproj\functions\nuget-utils.ps1" />
     <Compile Include="src\csproj\functions\packagesconfig-utils.ps1" />
     <Compile Include="src\csproj\functions\sln-utils.ps1" />
+    <Compile Include="src\csproj\functions\sln-verification.ps1" />
     <Compile Include="test\csproj-manipulations.tests.ps1" />
     <Compile Include="test\csproj-parsing.tests.ps1" />
     <Compile Include="test\features\referenceconvertion.feature.tests.ps1" />
