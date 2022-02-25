@@ -10,7 +10,7 @@ function get-slndependencies {
         [Parameter(Mandatory=$true, ParameterSetName="slnfile",Position=0)][string]$slnfile
     )
     if ($sln -eq $null) { $sln = import-sln $slnfile }
-    $projects = get-slnprojects $sln | ? { $_.type -eq "csproj" }
+    $projects = get-slnprojects $sln | ? { ($_.type -eq "csproj") -or ($_.type -eq "vbproj") }
     $deps = $projects | % {
         if (test-path $_.fullname) {
             $p = import-csproj $_.fullname

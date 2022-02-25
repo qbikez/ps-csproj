@@ -83,8 +83,12 @@ function get-slnprojects {
     foreach($line in $sln.content) {
         if ($line -match $regex) {
             $type = "?"
+            Write-Host $Matches["path"]
             if ([System.io.path]::GetExtension($Matches["path"]) -eq ".csproj") {
                 $type = "csproj"
+            }
+            if ([System.io.path]::GetExtension($Matches["path"]) -eq ".vbproj") {
+                $type = "vbproj"
             }
             $result += @( new-object -type SlnProject -Property @{ 
                 name = $Matches["name"]
